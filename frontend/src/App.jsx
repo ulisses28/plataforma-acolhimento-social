@@ -1,9 +1,31 @@
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import Navbar from './components/layout/Navbar'
+import Footer from './components/layout/Footer'
+import Home from './pages/public/Home'
+import QuemSomos from './pages/public/QuemSomos'
+import Projetos from './pages/public/Projetos'
+import Transparencia from './pages/public/Transparencia'
+import Voluntario from './pages/public/Voluntario'
+import Parceiros from './pages/public/Parceiros'
+import Login from './pages/public/Login'
+
 function App() {
   return (
-    <div>
-      <h1>Plataforma de Acolhimento Social</h1>
-      <p>Projeto iniciado com sucesso.</p>
-    </div>
+    <BrowserRouter>
+      <Navbar />
+
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/quem-somos" element={<QuemSomos />} />
+        <Route path="/projetos" element={<Projetos />} />
+        <Route path="/transparencia" element={<Transparencia />} />
+        <Route path="/voluntario" element={<Voluntario />} />
+        <Route path="/parceiros" element={<Parceiros />} />
+        <Route path="/login" element={<Login />} />
+      </Routes>
+
+      <Footer />
+    </BrowserRouter>
   )
 }
 
