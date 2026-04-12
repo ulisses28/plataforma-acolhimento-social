@@ -4,10 +4,14 @@
 }
 
 .hero {
-  background: linear-gradient(rgba(11, 61, 145, 0.55), rgba(11, 61, 145, 0.55)),
+  background: linear-gradient(
+      rgba(0, 0, 0, 0.25),
+      rgba(0, 0, 0, 0.25)
+    ),
     url('/hero-banner.jpg');
   background-size: cover;
   background-position: center;
+  margin-top: -5px;
   min-height: 520px;
   display: flex;
   align-items: center;
@@ -19,14 +23,14 @@
 }
 
 .hero-content {
-  max-width: 650px;
   color: white;
+  max-width: 650px;
+  text-shadow: 0 3px 12px rgba(0, 0, 0, 0.6);
 }
 
 .hero-content h1 {
-  font-size: 3rem;
-  line-height: 1.1;
-  margin-bottom: 20px;
+ font-size: 48px;
+  font-weight: 700;
 }
 
 .hero-content p {
