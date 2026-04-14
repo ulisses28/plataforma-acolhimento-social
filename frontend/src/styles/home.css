@@ -1,6 +1,9 @@
 .home {
-  background-color: #f5f7fb;
+  background-color: #f5f7f9;
   min-height: 100vh;
+  .indicator-card {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
 }
 
 .hero {

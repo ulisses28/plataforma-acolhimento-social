@@ -37,15 +37,15 @@ function Navbar() {
 
 const styles = {
   header: {
-    display: 'grid',
-    gridTemplateColumns: '180px 1fr auto',
-    alignItems: 'center',
-    gap: '24px',
-    padding: '10px 28px',
-    backgroundColor: '#ffffff',
-    borderBottom: '1px solid #e5e7eb',
-    minHeight: '84px'
-  },
+  display: 'grid',
+  gridTemplateColumns: '160px 1fr auto',
+  alignItems: 'center',
+  gap: '16px',
+  padding: '6px 24px', // 🔥 reduz altura
+  backgroundColor: '#ffffff',
+  borderBottom: '1px solid #e5e7eb',
+  minHeight: '80px' // 🔥 menor e mais profissional
+},
   searchArea: {
   display: 'flex',
   justifyContent: 'center',
@@ -55,7 +55,7 @@ const styles = {
 searchWrapper: {
   position: 'relative',
   width: '100%',
-  maxWidth: '380px'
+  maxWidth: '300px' // 🔥 menor para não empurrar layout
 },
 
 searchIcon: {
@@ -70,12 +70,13 @@ searchIcon: {
 
 searchInput: {
   width: '100%',
-  padding: '12px 16px 12px 40px', // espaço para a lupa
+  height: '36px', // 🔥 menor
+  padding: '0 14px 0 40px',
   borderRadius: '999px',
   border: '1px solid #d1d5db',
   outline: 'none',
-  fontSize: '14px',
-  backgroundColor: '#f9fafb'
+  fontSize: '13px',
+  backgroundColor: '#ffffff'
 },
   logoArea: {
     display: 'flex',
@@ -84,13 +85,11 @@ searchInput: {
   },
 
   logo: {
-    height: '110px',
-    maxHeight: '100%',
-    width: 'auto',
-    objectFit: 'contain',
-    display: 'block'
-  },
-
+  height: '78px', // 🔥 ocupa melhor o header
+  width: 'auto',
+  objectFit: 'contain',
+  display: 'block'
+},
   searchArea: {
     display: 'flex',
     justifyContent: 'center',
@@ -110,12 +109,11 @@ searchInput: {
   },
 
   nav: {
-    display: 'flex',
-    gap: '18px',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    flexWrap: 'wrap'
-  },
+  display: 'flex',
+  gap: '14px', // 🔥 mais compacto
+  alignItems: 'center',
+  justifyContent: 'flex-end'
+},
 
   link: {
     textDecoration: 'none',

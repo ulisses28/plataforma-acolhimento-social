@@ -8,6 +8,9 @@ import Transparencia from './pages/public/Transparencia'
 import Voluntario from './pages/public/Voluntario'
 import Parceiros from './pages/public/Parceiros'
 import Login from './pages/public/Login'
+import AdminLogin from './pages/admin/AdminLogin'
+import DoadorLogin from './pages/public/DoadorLogin'
+import PainelDoador from './pages/public/PainelDoador'
 
 function App() {
   return (
@@ -22,6 +25,9 @@ function App() {
         <Route path="/voluntario" element={<Voluntario />} />
         <Route path="/parceiros" element={<Parceiros />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/doador/login" element={<DoadorLogin />} />
+        <Route path="/doador/painel" element={<PainelDoador />} />
       </Routes>
 
       <Footer />
