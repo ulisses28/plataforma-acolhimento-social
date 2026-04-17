@@ -23,17 +23,23 @@ function PainelDoador() {
   }, [])
 
   function handleBuscar(nome) {
-    setBusca(nome)
-    setMostrarHistoricoDoador(false)
+  setBusca(nome)
+  setMostrarHistoricoDoador(false)
 
-    if (nome.length < 2) {
-      setResultados([])
-      return
-    }
-
-    const lista = buscarDoadores(nome)
-    setResultados(lista)
+  if (nome.trim().length === 0) {
+    setResultados([])
+    setDoadorSelecionado(null)
+    return
   }
+
+  if (nome.length < 2) {
+    setResultados([])
+    return
+  }
+
+  const lista = buscarDoadores(nome)
+  setResultados(lista)
+}
 
   function selecionarDoador(doador) {
     setDoadorSelecionado(doador)
