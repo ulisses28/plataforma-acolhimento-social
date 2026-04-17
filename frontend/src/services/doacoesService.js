@@ -70,3 +70,15 @@ function formatarValor(valor) {
     currency: 'BRL'
   })
 }
+export function atualizarStatusDoacao(id, novoStatus) {
+  const doacoes = listarDoacoes()
+
+  const indice = doacoes.findIndex((d) => d.id === id)
+
+  if (indice !== -1) {
+    doacoes[indice].status = novoStatus
+    salvarDoacoes(doacoes)
+  }
+
+  return doacoes
+}

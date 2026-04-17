@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { listarDoacoes } from '../../services/doacoesService'
+import { listarDoacoes, atualizarStatusDoacao } from '../../services/doacoesService'
 
 function PendentesAdmin() {
   const [doacoes, setDoacoes] = useState([])
@@ -15,6 +15,11 @@ function PendentesAdmin() {
 
     return () => clearInterval(intervalo)
   }, [])
+
+  function handleAtualizarStatus(id, novoStatus) {
+    atualizarStatusDoacao(id, novoStatus)
+    setDoacoes([...listarDoacoes()])
+  }
 
   const pendentes = doacoes.filter((doacao) => doacao.status === 'Pendente')
   const falhas = doacoes.filter((doacao) => doacao.status === 'Erro')
@@ -65,12 +70,13 @@ function PendentesAdmin() {
                   <th style={styles.th}>Valor</th>
                   <th style={styles.th}>Forma</th>
                   <th style={styles.th}>Status</th>
+                  <th style={styles.th}>Ações</th>
                 </tr>
               </thead>
               <tbody>
                 {naoConcluidas.length === 0 ? (
                   <tr>
-                    <td style={styles.emptyTd} colSpan="4">
+                    <td style={styles.emptyTd} colSpan="5">
                       Nenhuma doação pendente ou com falha no momento.
                     </td>
                   </tr>
@@ -91,6 +97,30 @@ function PendentesAdmin() {
                         >
                           {doacao.status}
                         </span>
+                      </td>
+                      <td style={styles.td}>
+                        <div style={styles.actions}>
+                          <button
+                            style={styles.confirmButton}
+                            onClick={() => handleAtualizarStatus(doacao.id, 'Confirmado')}
+                          >
+                            Confirmar
+                          </button>
+
+                          <button
+                            style={styles.pendingButton}
+                            onClick={() => handleAtualizarStatus(doacao.id, 'Pendente')}
+                          >
+                            Pendente
+                          </button>
+
+                          <button
+                            style={styles.errorButton}
+                            onClick={() => handleAtualizarStatus(doacao.id, 'Erro')}
+                          >
+                            Erro
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -182,7 +212,8 @@ const styles = {
   td: {
     padding: '14px',
     borderBottom: '1px solid #f1f5f9',
-    color: '#1f2937'
+    color: '#1f2937',
+    verticalAlign: 'middle'
   },
   emptyTd: {
     padding: '20px 14px',
@@ -203,6 +234,41 @@ const styles = {
   statusError: {
     backgroundColor: '#fee2e2',
     color: '#991b1b'
+  },
+  actions: {
+    display: 'flex',
+    gap: '8px',
+    flexWrap: 'wrap'
+  },
+  confirmButton: {
+    border: 'none',
+    backgroundColor: '#166534',
+    color: '#ffffff',
+    padding: '8px 12px',
+    borderRadius: '10px',
+    cursor: 'pointer',
+    fontSize: '12px',
+    fontWeight: '600'
+  },
+  pendingButton: {
+    border: 'none',
+    backgroundColor: '#92400e',
+    color: '#ffffff',
+    padding: '8px 12px',
+    borderRadius: '10px',
+    cursor: 'pointer',
+    fontSize: '12px',
+    fontWeight: '600'
+  },
+  errorButton: {
+    border: 'none',
+    backgroundColor: '#991b1b',
+    color: '#ffffff',
+    padding: '8px 12px',
+    borderRadius: '10px',
+    cursor: 'pointer',
+    fontSize: '12px',
+    fontWeight: '600'
   }
 }
 
