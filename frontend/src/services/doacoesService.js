@@ -1,15 +1,20 @@
-let doacoes = []
+const STORAGE_KEY = 'doacoes_lar_batista'
 
 export function criarDoacao(valor) {
+  const doacoes = listarDoacoes()
+
+  const valorFormatado = formatarValor(valor)
+
   const nova = {
     id: Date.now(),
-    valor,
-    data: new Date().toLocaleDateString(),
-    forma: "Pix",
-    status: "Pendente"
+    valor: valorFormatado,
+    data: new Date().toLocaleDateString('pt-BR'),
+    forma: 'Pix',
+    status: 'Pendente'
   }
 
   doacoes.push(nova)
+  salvarDoacoes(doacoes)
 
   simularRetornoBanco(nova.id)
 
@@ -17,21 +22,51 @@ export function criarDoacao(valor) {
 }
 
 export function listarDoacoes() {
-  return doacoes
+  const dados = localStorage.getItem(STORAGE_KEY)
+  return dados ? JSON.parse(dados) : []
+}
+
+function salvarDoacoes(doacoes) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(doacoes))
 }
 
 function simularRetornoBanco(id) {
   setTimeout(() => {
-    const statusPossiveis = ["Confirmado", "Erro"]
-    const status = statusPossiveis[Math.floor(Math.random() * statusPossiveis.length)]
+    const doacoes = listarDoacoes()
 
-    const doacao = doacoes.find(d => d.id === id)
+    const sorteio = Math.random()
+    let status = 'Pendente'
 
-    if (doacao) {
-      doacao.status = status
-
-      // Notificação simples
-      alert(`Doação ${status}: R$ ${doacao.valor}`)
+    if (sorteio < 0.7) {
+      status = 'Confirmado'
+    } else if (sorteio < 0.9) {
+      status = 'Pendente'
+    } else {
+      status = 'Erro'
     }
-  }, 3000) // 3 segundos
+
+    const indice = doacoes.findIndex((d) => d.id === id)
+
+    if (indice !== -1) {
+      doacoes[indice].status = status
+      salvarDoacoes(doacoes)
+
+      if (status === 'Confirmado') {
+        alert(`Doação confirmada com sucesso: ${doacoes[indice].valor}`)
+      } else if (status === 'Erro') {
+        alert(`Houve uma falha no processamento da doação: ${doacoes[indice].valor}`)
+      }
+    }
+  }, 3000)
+}
+
+function formatarValor(valor) {
+  const numero = Number(String(valor).replace(',', '.'))
+
+  if (isNaN(numero)) return 'R$ 0,00'
+
+  return numero.toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL'
+  })
 }
