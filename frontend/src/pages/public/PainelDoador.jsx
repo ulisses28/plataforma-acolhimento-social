@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { criarDoacao, listarDoacoes } from '../../services/doacoesService'
-import { buscarDoadores } from '../../services/doadoresService'
+import { buscarDoadores, salvarNovoDoador } from '../../services/doadoresService'
 
 function PainelDoador() {
   const [doacoes, setDoacoes] = useState([])
@@ -9,6 +9,11 @@ function PainelDoador() {
   const [doadorSelecionado, setDoadorSelecionado] = useState(null)
   const [modoDoador, setModoDoador] = useState(null)
   const [mostrarHistoricoDoador, setMostrarHistoricoDoador] = useState(false)
+
+  const [novoNome, setNovoNome] = useState('')
+  const [novoTipo, setNovoTipo] = useState('Financeiro')
+  const [novoTelefone, setNovoTelefone] = useState('')
+  const [novoObs, setNovoObs] = useState('')
 
   useEffect(() => {
     setDoacoes([...listarDoacoes()])
@@ -23,23 +28,23 @@ function PainelDoador() {
   }, [])
 
   function handleBuscar(nome) {
-  setBusca(nome)
-  setMostrarHistoricoDoador(false)
+    setBusca(nome)
+    setMostrarHistoricoDoador(false)
 
-  if (nome.trim().length === 0) {
-    setResultados([])
-    setDoadorSelecionado(null)
-    return
+    if (nome.trim().length === 0) {
+      setResultados([])
+      setDoadorSelecionado(null)
+      return
+    }
+
+    if (nome.length < 2) {
+      setResultados([])
+      return
+    }
+
+    const lista = buscarDoadores(nome)
+    setResultados(lista)
   }
-
-  if (nome.length < 2) {
-    setResultados([])
-    return
-  }
-
-  const lista = buscarDoadores(nome)
-  setResultados(lista)
-}
 
   function selecionarDoador(doador) {
     setDoadorSelecionado(doador)
@@ -55,14 +60,47 @@ function PainelDoador() {
     }
   }
 
+  function limparBuscaExistente() {
+    setBusca('')
+    setResultados([])
+    setDoadorSelecionado(null)
+    setMostrarHistoricoDoador(false)
+  }
+
   function handleNovaDoacao() {
+    let doadorFinal = doadorSelecionado
+
+    if (modoDoador === 'novo') {
+      if (!novoNome.trim()) {
+        alert('Digite o nome do novo doador.')
+        return
+      }
+
+      doadorFinal = salvarNovoDoador({
+        nome: novoNome,
+        tipo: novoTipo,
+        telefone: novoTelefone,
+        obs: novoObs
+      })
+
+      setDoadorSelecionado(doadorFinal)
+      setBusca(doadorFinal.nome)
+    }
+
     const valor = prompt('Digite o valor da doação:')
 
     if (!valor) return
 
-    criarDoacao(valor, doadorSelecionado)
+    criarDoacao(valor, doadorFinal)
     setDoacoes([...listarDoacoes()])
     setMostrarHistoricoDoador(false)
+
+    if (modoDoador === 'novo') {
+      setNovoNome('')
+      setNovoTipo('Financeiro')
+      setNovoTelefone('')
+      setNovoObs('')
+    }
   }
 
   const totalDoacoes = doacoes.length
@@ -120,6 +158,10 @@ function PainelDoador() {
                   setBusca('')
                   setResultados([])
                   setMostrarHistoricoDoador(false)
+                  setNovoNome('')
+                  setNovoTipo('Financeiro')
+                  setNovoTelefone('')
+                  setNovoObs('')
                 }}
                 style={styles.buttonSec}
                 type="button"
@@ -130,13 +172,27 @@ function PainelDoador() {
 
             {modoDoador === 'existente' && (
               <div style={styles.blockArea}>
-                <input
-                  placeholder="Buscar doador..."
-                  value={busca}
-                  onChange={(e) => handleBuscar(e.target.value)}
-                  onKeyDown={handleKeyDownBusca}
-                  style={styles.input}
-                />
+                <div style={styles.searchInputWrapper}>
+                  <input
+                    placeholder="Buscar doador..."
+                    value={busca}
+                    onChange={(e) => handleBuscar(e.target.value)}
+                    onKeyDown={handleKeyDownBusca}
+                    style={styles.inputWithClear}
+                  />
+
+                  {busca && (
+                    <button
+                      type="button"
+                      onClick={limparBuscaExistente}
+                      style={styles.clearButton}
+                      aria-label="Limpar busca"
+                      title="Limpar busca"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
 
                 {resultados.length > 0 && (
                   <div style={styles.resultBox}>
@@ -184,17 +240,37 @@ function PainelDoador() {
               <div style={styles.blockArea}>
                 <input
                   placeholder="Nome do novo doador"
-                  value={busca}
-                  onChange={(e) => {
-                    setBusca(e.target.value)
-                    setDoadorSelecionado({ nome: e.target.value })
-                  }}
+                  value={novoNome}
+                  onChange={(e) => setNovoNome(e.target.value)}
                   style={styles.input}
                 />
 
-                {doadorSelecionado?.nome && (
+                <select
+                  value={novoTipo}
+                  onChange={(e) => setNovoTipo(e.target.value)}
+                  style={styles.input}
+                >
+                  <option value="Financeiro">Financeiro</option>
+                  <option value="Material">Material</option>
+                </select>
+
+                <input
+                  placeholder="Telefone"
+                  value={novoTelefone}
+                  onChange={(e) => setNovoTelefone(e.target.value)}
+                  style={styles.input}
+                />
+
+                <input
+                  placeholder="Observação"
+                  value={novoObs}
+                  onChange={(e) => setNovoObs(e.target.value)}
+                  style={styles.input}
+                />
+
+                {novoNome && (
                   <p style={styles.selectedText}>
-                    Novo doador informado: {doadorSelecionado.nome}
+                    Novo doador pronto para cadastro: {novoNome}
                   </p>
                 )}
               </div>
@@ -398,7 +474,31 @@ const styles = {
     padding: '10px',
     borderRadius: '8px',
     border: '1px solid #ccc',
+    width: '100%',
+    marginTop: '10px'
+  },
+  searchInputWrapper: {
+    position: 'relative',
     width: '100%'
+  },
+  inputWithClear: {
+    padding: '10px 42px 10px 10px',
+    borderRadius: '8px',
+    border: '1px solid #ccc',
+    width: '100%'
+  },
+  clearButton: {
+    position: 'absolute',
+    right: '10px',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    border: 'none',
+    background: 'transparent',
+    color: '#6b7280',
+    fontSize: '22px',
+    cursor: 'pointer',
+    lineHeight: 1,
+    padding: 0
   },
   resultBox: {
     background: '#fff',
