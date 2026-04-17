@@ -8,6 +8,7 @@ function PainelDoador() {
   const [resultados, setResultados] = useState([])
   const [doadorSelecionado, setDoadorSelecionado] = useState(null)
   const [modoDoador, setModoDoador] = useState(null)
+  const [mostrarHistoricoDoador, setMostrarHistoricoDoador] = useState(false)
 
   useEffect(() => {
     setDoacoes([...listarDoacoes()])
@@ -23,6 +24,7 @@ function PainelDoador() {
 
   function handleBuscar(nome) {
     setBusca(nome)
+    setMostrarHistoricoDoador(false)
 
     if (nome.length < 2) {
       setResultados([])
@@ -33,6 +35,20 @@ function PainelDoador() {
     setResultados(lista)
   }
 
+  function selecionarDoador(doador) {
+    setDoadorSelecionado(doador)
+    setBusca(doador.nome)
+    setResultados([])
+    setMostrarHistoricoDoador(false)
+  }
+
+  function handleKeyDownBusca(e) {
+    if (e.key === 'Enter' && resultados.length > 0) {
+      e.preventDefault()
+      selecionarDoador(resultados[0])
+    }
+  }
+
   function handleNovaDoacao() {
     const valor = prompt('Digite o valor da doação:')
 
@@ -40,6 +56,7 @@ function PainelDoador() {
 
     criarDoacao(valor, doadorSelecionado)
     setDoacoes([...listarDoacoes()])
+    setMostrarHistoricoDoador(false)
   }
 
   const totalDoacoes = doacoes.length
@@ -61,6 +78,10 @@ function PainelDoador() {
     currency: 'BRL'
   })
 
+  const historicoDoDoador = doadorSelecionado
+    ? doacoes.filter((doacao) => doacao.doador === doadorSelecionado.nome)
+    : []
+
   return (
     <main style={styles.page}>
       <div style={styles.container}>
@@ -78,6 +99,7 @@ function PainelDoador() {
                   setDoadorSelecionado(null)
                   setBusca('')
                   setResultados([])
+                  setMostrarHistoricoDoador(false)
                 }}
                 style={styles.buttonSec}
                 type="button"
@@ -91,6 +113,7 @@ function PainelDoador() {
                   setDoadorSelecionado(null)
                   setBusca('')
                   setResultados([])
+                  setMostrarHistoricoDoador(false)
                 }}
                 style={styles.buttonSec}
                 type="button"
@@ -105,6 +128,7 @@ function PainelDoador() {
                   placeholder="Buscar doador..."
                   value={busca}
                   onChange={(e) => handleBuscar(e.target.value)}
+                  onKeyDown={handleKeyDownBusca}
                   style={styles.input}
                 />
 
@@ -113,11 +137,7 @@ function PainelDoador() {
                     {resultados.map((d) => (
                       <div
                         key={d.id}
-                        onClick={() => {
-                          setDoadorSelecionado(d)
-                          setBusca(d.nome)
-                          setResultados([])
-                        }}
+                        onClick={() => selecionarDoador(d)}
                         style={styles.itemBusca}
                       >
                         {d.nome}
@@ -127,9 +147,29 @@ function PainelDoador() {
                 )}
 
                 {doadorSelecionado && (
-                  <p style={styles.selectedText}>
-                    Doador selecionado: {doadorSelecionado.nome}
-                  </p>
+                  <div style={styles.selectedBox}>
+                    <p style={styles.selectedText}>
+                      Doador selecionado: {doadorSelecionado.nome}
+                    </p>
+
+                    <div style={styles.actionButtons}>
+                      <button
+                        style={styles.primaryButtonSmall}
+                        onClick={handleNovaDoacao}
+                        type="button"
+                      >
+                        Cadastrar nova doação
+                      </button>
+
+                      <button
+                        style={styles.secondaryButtonSmall}
+                        onClick={() => setMostrarHistoricoDoador(true)}
+                        type="button"
+                      >
+                        Histórico de doações
+                      </button>
+                    </div>
+                  </div>
                 )}
               </div>
             )}
@@ -160,6 +200,63 @@ function PainelDoador() {
           </button>
         </section>
 
+        {mostrarHistoricoDoador && doadorSelecionado && (
+          <section style={styles.tableCard}>
+            <div style={styles.tableHeader}>
+              <h2 style={styles.tableTitle}>
+                Histórico de doações de {doadorSelecionado.nome}
+              </h2>
+              <p style={styles.tableSubtitle}>
+                Visualização filtrada do doador selecionado.
+              </p>
+            </div>
+
+            <div style={styles.tableWrapper}>
+              <table style={styles.table}>
+                <thead>
+                  <tr>
+                    <th style={styles.th}>Data</th>
+                    <th style={styles.th}>Valor</th>
+                    <th style={styles.th}>Forma</th>
+                    <th style={styles.th}>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {historicoDoDoador.length === 0 ? (
+                    <tr>
+                      <td style={styles.emptyTd} colSpan="4">
+                        Este doador ainda não possui doações registradas.
+                      </td>
+                    </tr>
+                  ) : (
+                    historicoDoDoador.map((doacao) => (
+                      <tr key={doacao.id}>
+                        <td style={styles.td}>{doacao.data}</td>
+                        <td style={styles.td}>{doacao.valor}</td>
+                        <td style={styles.td}>{doacao.forma}</td>
+                        <td style={styles.td}>
+                          <span
+                            style={{
+                              ...styles.statusBadge,
+                              ...(doacao.status === 'Confirmado'
+                                ? styles.statusConfirmed
+                                : doacao.status === 'Erro'
+                                ? styles.statusError
+                                : styles.statusPending)
+                            }}
+                          >
+                            {doacao.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        )}
+
         <section style={styles.summaryGrid}>
           <div style={styles.summaryCard}>
             <h2 style={styles.summaryNumber}>{totalDoacoes}</h2>
@@ -179,9 +276,9 @@ function PainelDoador() {
 
         <section style={styles.tableCard}>
           <div style={styles.tableHeader}>
-            <h2 style={styles.tableTitle}>Histórico de doações</h2>
+            <h2 style={styles.tableTitle}>Histórico geral de doações</h2>
             <p style={styles.tableSubtitle}>
-              Visualize suas últimas contribuições.
+              Visualize todas as contribuições registradas no sistema.
             </p>
           </div>
 
@@ -310,10 +407,37 @@ const styles = {
     borderBottom: '1px solid #eee',
     cursor: 'pointer'
   },
+  selectedBox: {
+    marginTop: '10px'
+  },
   selectedText: {
     marginTop: '8px',
     color: 'green',
     fontWeight: '600'
+  },
+  actionButtons: {
+    display: 'flex',
+    gap: '10px',
+    flexWrap: 'wrap',
+    marginTop: '10px'
+  },
+  primaryButtonSmall: {
+    border: 'none',
+    borderRadius: '10px',
+    padding: '10px 14px',
+    backgroundColor: '#166534',
+    color: '#ffffff',
+    fontWeight: '600',
+    cursor: 'pointer'
+  },
+  secondaryButtonSmall: {
+    border: 'none',
+    borderRadius: '10px',
+    padding: '10px 14px',
+    backgroundColor: '#92400e',
+    color: '#ffffff',
+    fontWeight: '600',
+    cursor: 'pointer'
   },
   primaryButton: {
     border: 'none',
@@ -350,7 +474,8 @@ const styles = {
     backgroundColor: '#ffffff',
     borderRadius: '20px',
     padding: '28px',
-    boxShadow: '0 4px 18px rgba(0,0,0,0.08)'
+    boxShadow: '0 4px 18px rgba(0,0,0,0.08)',
+    marginBottom: '24px'
   },
   tableHeader: {
     marginBottom: '20px'
