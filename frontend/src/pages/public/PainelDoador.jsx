@@ -1,9 +1,23 @@
 import React, { useState, useEffect } from "react"
 import { criarDoacao, listarDoacoes } from "../../services/doacoesService"
+import { buscarDoadores } from '../../services/doadoresService'
 
 function PainelDoador() {
   const [doacoes, setDoacoes] = useState([])
+  const [busca, setBusca] = useState('')
+  const [resultados, setResultados] = useState([])
+  const [doadorSelecionado, setDoadorSelecionado] = useState(null)
+  function handleBuscar(nome) {
+  setBusca(nome)
 
+  if (nome.length < 2) {
+    setResultados([])
+    return
+  }
+
+  const lista = buscarDoadores(nome)
+  setResultados(lista)
+}
   useEffect(() => {
     setDoacoes([...listarDoacoes()])
   }, [])
@@ -21,7 +35,7 @@ function PainelDoador() {
 
     if (!valor) return
 
-    criarDoacao(valor)
+    criarDoacao(valor, doadorSelecionado)
     setDoacoes([...listarDoacoes()])
   }
 
@@ -54,7 +68,48 @@ function PainelDoador() {
               Acompanhe aqui seu histórico de contribuições e seu relacionamento com a instituição.
             </p>
           </div>
+          <div style={{ marginBottom: '20px' }}>
+  <input
+    placeholder="Buscar doador..."
+    value={busca}
+    onChange={(e) => handleBuscar(e.target.value)}
+    style={{
+      padding: '10px',
+      borderRadius: '8px',
+      border: '1px solid #ccc',
+      width: '100%'
+    }}
+  />
 
+  {resultados.length > 0 && (
+    <div style={{
+      background: '#fff',
+      border: '1px solid #ddd',
+      borderRadius: '8px',
+      marginTop: '5px'
+    }}>
+      {resultados.map((d) => (
+        <div
+          key={d.id}
+          style={{ padding: '8px', cursor: 'pointer' }}
+          onClick={() => {
+            setDoadorSelecionado(d)
+            setBusca(d.nome)
+            setResultados([])
+          }}
+        >
+          {d.nome}
+        </div>
+      ))}
+    </div>
+  )}
+
+  {doadorSelecionado && (
+    <p style={{ marginTop: '5px', color: 'green' }}>
+      Doador selecionado: {doadorSelecionado.nome}
+    </p>
+  )}
+</div>
           <button style={styles.primaryButton} onClick={handleNovaDoacao}>
             Nova doação
           </button>

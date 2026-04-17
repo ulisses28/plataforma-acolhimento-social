@@ -1,6 +1,6 @@
 const STORAGE_KEY = 'doacoes_lar_batista'
 
-export function criarDoacao(valor) {
+export function criarDoacao(valor, doador) {
   const doacoes = listarDoacoes()
 
   const valorFormatado = formatarValor(valor)
@@ -10,7 +10,8 @@ export function criarDoacao(valor) {
     valor: valorFormatado,
     data: new Date().toLocaleDateString('pt-BR'),
     forma: 'Pix',
-    status: 'Pendente'
+    status: 'Pendente',
+    doador: doador ? doador.nome : 'Anônimo'
   }
 
   doacoes.push(nova)
