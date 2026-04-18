@@ -11,7 +11,6 @@ function PainelDoador() {
   const [mostrarHistoricoDoador, setMostrarHistoricoDoador] = useState(false)
 
   const [novoNome, setNovoNome] = useState('')
-  const [novoTipo, setNovoTipo] = useState('Financeiro')
   const [novoTelefone, setNovoTelefone] = useState('')
   const [novoObs, setNovoObs] = useState('')
 
@@ -86,7 +85,6 @@ function PainelDoador() {
 
   function resetFormularioNovoDoador() {
     setNovoNome('')
-    setNovoTipo('Financeiro')
     setNovoTelefone('')
     setNovoObs('')
     setDesejaDoacao('nao')
@@ -109,7 +107,6 @@ function PainelDoador() {
 
     const doadorSalvo = salvarNovoDoador({
       nome: novoNome,
-      tipo: novoTipo,
       telefone: novoTelefone,
       obs: novoObs
     })
@@ -126,9 +123,10 @@ function PainelDoador() {
           tipoDoacao: 'Financeira',
           valor: valorNovaDoacao,
           forma: formaPagamento,
-          comprovante: formaPagamento === 'TED' && comprovanteArquivo
-            ? comprovanteArquivo.name
-            : ''
+          comprovante:
+            formaPagamento === 'TED' && comprovanteArquivo
+              ? comprovanteArquivo.name
+              : ''
         })
       } else {
         if (!descricaoMaterial.trim()) {
@@ -159,9 +157,7 @@ function PainelDoador() {
     return total + (isNaN(valorNumerico) ? 0 : valorNumerico)
   }, 0)
 
-  const totalConfirmadas = doacoes.filter(
-    (doacao) => doacao.status === 'Confirmado'
-  ).length
+  const totalConfirmadas = doacoes.filter((doacao) => doacao.status === 'Confirmado').length
 
   const valorTotalFormatado = valorTotal.toLocaleString('pt-BR', {
     style: 'currency',
@@ -283,15 +279,6 @@ function PainelDoador() {
                   onChange={(e) => setNovoNome(e.target.value)}
                   style={styles.input}
                 />
-
-                <select
-                  value={novoTipo}
-                  onChange={(e) => setNovoTipo(e.target.value)}
-                  style={styles.input}
-                >
-                  <option value="Financeiro">Financeiro</option>
-                  <option value="Material">Material</option>
-                </select>
 
                 <input
                   placeholder="Telefone"
@@ -554,7 +541,7 @@ function PainelDoador() {
 
 const styles = {
   page: {
-    backgroundColor: '#F1F5F9',
+    background: 'linear-gradient(180deg, #eaf4ff 0%, #f1f5f9 35%, #f8fbff 100%)',
     minHeight: '100vh',
     padding: '40px 20px'
   },

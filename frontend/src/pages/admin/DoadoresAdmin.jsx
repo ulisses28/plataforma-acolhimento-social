@@ -1,20 +1,39 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { listarDoadores } from '../../services/doadoresService'
+import { listarDoacoes } from '../../services/doacoesService'
 
 function DoadoresAdmin() {
   const [doadores, setDoadores] = useState([])
+  const [doacoes, setDoacoes] = useState([])
 
   useEffect(() => {
     setDoadores(listarDoadores())
+    setDoacoes(listarDoacoes())
   }, [])
 
   useEffect(() => {
     const intervalo = setInterval(() => {
       setDoadores(listarDoadores())
+      setDoacoes(listarDoacoes())
     }, 2000)
 
     return () => clearInterval(intervalo)
   }, [])
+
+  const listaComResumo = useMemo(() => {
+    return doadores.map((doador) => {
+      const historico = doacoes
+        .filter((item) => item.doador === doador.nome)
+        .sort((a, b) => converterDataBR(b.data) - converterDataBR(a.data))
+
+      return {
+        ...doador,
+        ultimaDoacao: historico[0]?.data || '-',
+        totalDoacoes: historico.length
+      }
+    })
+  }, [doadores, doacoes])
 
   return (
     <main style={styles.page}>
@@ -27,7 +46,7 @@ function DoadoresAdmin() {
         </header>
 
         <section style={styles.summaryCard}>
-          <h2 style={styles.summaryNumber}>{doadores.length}</h2>
+          <h2 style={styles.summaryNumber}>{listaComResumo.length}</h2>
           <p style={styles.summaryLabel}>Doadores cadastrados</p>
         </section>
 
@@ -35,7 +54,7 @@ function DoadoresAdmin() {
           <div style={styles.tableHeader}>
             <h2 style={styles.tableTitle}>Lista de doadores</h2>
             <p style={styles.tableSubtitle}>
-              Cadastro consolidado de doadores financeiros e materiais.
+              Clique no nome do doador para acessar a ficha completa e o histórico detalhado.
             </p>
           </div>
 
@@ -44,26 +63,32 @@ function DoadoresAdmin() {
               <thead>
                 <tr>
                   <th style={styles.th}>Nome</th>
-                  <th style={styles.th}>Tipo</th>
                   <th style={styles.th}>Telefone</th>
                   <th style={styles.th}>Observação</th>
+                  <th style={styles.th}>Última doação</th>
+                  <th style={styles.th}>Qtd. de doações</th>
                 </tr>
               </thead>
 
               <tbody>
-                {doadores.length === 0 ? (
+                {listaComResumo.length === 0 ? (
                   <tr>
-                    <td style={styles.emptyTd} colSpan="4">
+                    <td style={styles.emptyTd} colSpan="5">
                       Nenhum doador cadastrado até o momento.
                     </td>
                   </tr>
                 ) : (
-                  doadores.map((doador) => (
+                  listaComResumo.map((doador) => (
                     <tr key={doador.id}>
-                      <td style={styles.td}>{doador.nome}</td>
-                      <td style={styles.td}>{doador.tipo || '-'}</td>
+                      <td style={styles.td}>
+                        <Link to={`/admin/doadores/${doador.id}`} style={styles.linkNome}>
+                          {doador.nome}
+                        </Link>
+                      </td>
                       <td style={styles.td}>{doador.telefone || '-'}</td>
                       <td style={styles.td}>{doador.obs || '-'}</td>
+                      <td style={styles.td}>{doador.ultimaDoacao}</td>
+                      <td style={styles.td}>{doador.totalDoacoes}</td>
                     </tr>
                   ))
                 )}
@@ -76,10 +101,16 @@ function DoadoresAdmin() {
   )
 }
 
+function converterDataBR(dataBR) {
+  if (!dataBR || dataBR === '-') return new Date(0)
+  const [dia, mes, ano] = dataBR.split('/')
+  return new Date(`${ano}-${mes}-${dia}T00:00:00`)
+}
+
 const styles = {
   page: {
     minHeight: '100vh',
-    backgroundColor: '#F1F5F9',
+    background: 'linear-gradient(180deg, #eaf4ff 0%, #f1f5f9 35%, #f8fbff 100%)',
     padding: '40px 20px'
   },
   container: {
@@ -157,6 +188,11 @@ const styles = {
     padding: '20px 14px',
     textAlign: 'center',
     color: '#6b7280'
+  },
+  linkNome: {
+    color: '#0B3D91',
+    textDecoration: 'none',
+    fontWeight: '700'
   }
 }
 

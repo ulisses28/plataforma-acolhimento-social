@@ -17,6 +17,8 @@ import DoadoresAdmin from './pages/admin/DoadoresAdmin'
 import PrestacaoContasAdmin from './pages/admin/PrestacaoContasAdmin'
 import RelatoriosAdmin from './pages/admin/RelatoriosAdmin'
 import PendentesAdmin from './pages/admin/PendentesAdmin'
+import DoadorDetalheAdmin from './pages/admin/DoadorDetalheAdmin'
+
 function App() {
   return (
     <BrowserRouter>
@@ -40,6 +42,8 @@ function App() {
         <Route path="/admin/prestacao-contas" element={<PrestacaoContasAdmin />} />
         <Route path="/admin/relatorios" element={<RelatoriosAdmin />} />
         <Route path="/admin/pendentes" element={<PendentesAdmin />} />
+      
+        <Route path="/admin/doadores/:id" element={<DoadorDetalheAdmin />} />
       </Routes>
 
       <Footer />
