@@ -27,7 +27,7 @@ export function salvarNovoDoador(doador) {
   const novo = {
     id: Date.now(),
     nome: doador.nome,
-    tipo: doador.tipo || 'Financeiro',
+    categoria: doador.categoria || 'Pessoa Física',
     telefone: doador.telefone || '',
     obs: doador.obs || ''
   }

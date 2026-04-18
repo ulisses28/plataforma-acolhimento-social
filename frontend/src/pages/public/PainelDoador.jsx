@@ -11,6 +11,7 @@ function PainelDoador() {
   const [mostrarHistoricoDoador, setMostrarHistoricoDoador] = useState(false)
 
   const [novoNome, setNovoNome] = useState('')
+  const [novoCategoria, setNovoCategoria] = useState('Pessoa Física')
   const [novoTelefone, setNovoTelefone] = useState('')
   const [novoObs, setNovoObs] = useState('')
 
@@ -20,6 +21,7 @@ function PainelDoador() {
   const [formaPagamento, setFormaPagamento] = useState('Pix')
   const [comprovanteArquivo, setComprovanteArquivo] = useState(null)
   const [descricaoMaterial, setDescricaoMaterial] = useState('')
+  const [valorEstimadoMaterial, setValorEstimadoMaterial] = useState('')
 
   useEffect(() => {
     setDoacoes([...listarDoacoes()])
@@ -85,6 +87,7 @@ function PainelDoador() {
 
   function resetFormularioNovoDoador() {
     setNovoNome('')
+    setNovoCategoria('Pessoa Física')
     setNovoTelefone('')
     setNovoObs('')
     setDesejaDoacao('nao')
@@ -93,6 +96,7 @@ function PainelDoador() {
     setFormaPagamento('Pix')
     setComprovanteArquivo(null)
     setDescricaoMaterial('')
+    setValorEstimadoMaterial('')
     setDoadorSelecionado(null)
     setBusca('')
     setResultados([])
@@ -107,6 +111,7 @@ function PainelDoador() {
 
     const doadorSalvo = salvarNovoDoador({
       nome: novoNome,
+      categoria: novoCategoria,
       telefone: novoTelefone,
       obs: novoObs
     })
@@ -137,7 +142,8 @@ function PainelDoador() {
         criarDoacao({
           doador: doadorSalvo,
           tipoDoacao: 'Material',
-          descricaoMaterial
+          descricaoMaterial,
+          valorEstimadoMaterial
         })
       }
     }
@@ -280,6 +286,16 @@ function PainelDoador() {
                   style={styles.input}
                 />
 
+                <select
+                  value={novoCategoria}
+                  onChange={(e) => setNovoCategoria(e.target.value)}
+                  style={styles.input}
+                >
+                  <option value="Pessoa Física">Pessoa Física</option>
+                  <option value="Pessoa Jurídica">Pessoa Jurídica</option>
+                  <option value="Parceiro">Parceiro</option>
+                </select>
+
                 <input
                   placeholder="Telefone"
                   value={novoTelefone}
@@ -367,12 +383,21 @@ function PainelDoador() {
                     )}
 
                     {tipoNovaDoacao === 'Material' && (
-                      <input
-                        placeholder="Descrição da doação material"
-                        value={descricaoMaterial}
-                        onChange={(e) => setDescricaoMaterial(e.target.value)}
-                        style={styles.input}
-                      />
+                      <>
+                        <input
+                          placeholder="Descrição da doação material"
+                          value={descricaoMaterial}
+                          onChange={(e) => setDescricaoMaterial(e.target.value)}
+                          style={styles.input}
+                        />
+
+                        <input
+                          placeholder="Valor estimado da doação material"
+                          value={valorEstimadoMaterial}
+                          onChange={(e) => setValorEstimadoMaterial(e.target.value)}
+                          style={styles.input}
+                        />
+                      </>
                     )}
                   </div>
                 )}
@@ -431,7 +456,14 @@ function PainelDoador() {
                     historicoDoDoador.map((doacao) => (
                       <tr key={doacao.id}>
                         <td style={styles.td}>{doacao.data}</td>
-                        <td style={styles.td}>{doacao.valor}</td>
+                        <td style={styles.td}>
+                          {doacao.forma === 'Material'
+                            ? `Estimado: ${Number(doacao.valorEstimadoMaterial || 0).toLocaleString('pt-BR', {
+                                style: 'currency',
+                                currency: 'BRL'
+                              })}`
+                            : doacao.valor}
+                        </td>
                         <td style={styles.td}>
                           {doacao.forma}
                           {doacao.comprovante ? ` (${doacao.comprovante})` : ''}
@@ -508,7 +540,14 @@ function PainelDoador() {
                     <tr key={doacao.id}>
                       <td style={styles.td}>{doacao.data}</td>
                       <td style={styles.td}>{doacao.doador || 'Anônimo'}</td>
-                      <td style={styles.td}>{doacao.valor}</td>
+                      <td style={styles.td}>
+                        {doacao.forma === 'Material'
+                          ? Number(doacao.valorEstimadoMaterial || 0).toLocaleString('pt-BR', {
+                              style: 'currency',
+                              currency: 'BRL'
+                            })
+                          : doacao.valor}
+                      </td>
                       <td style={styles.td}>
                         {doacao.forma}
                         {doacao.comprovante ? ` (${doacao.comprovante})` : ''}

@@ -3,7 +3,6 @@ const STORAGE_KEY = 'doacoes_lar_batista'
 export function criarDoacao(valorOuDados, doadorAntigo = null) {
   const doacoes = listarDoacoes()
 
-  // compatibilidade com a versão antiga: criarDoacao(valor, doador)
   if (typeof valorOuDados !== 'object' || valorOuDados === null) {
     const valorFormatado = formatarValor(valorOuDados)
 
@@ -15,7 +14,9 @@ export function criarDoacao(valorOuDados, doadorAntigo = null) {
       status: 'Pendente',
       doador: doadorAntigo ? doadorAntigo.nome : 'Anônimo',
       tipoDoacao: 'Financeira',
-      comprovante: ''
+      comprovante: '',
+      valorEstimadoMaterial: 0,
+      categoriaDoador: doadorAntigo?.categoria || 'Pessoa Física'
     }
 
     doacoes.push(nova)
@@ -25,17 +26,18 @@ export function criarDoacao(valorOuDados, doadorAntigo = null) {
     return nova
   }
 
-  // nova versão com objeto
   const {
     doador,
     tipoDoacao,
     valor,
     forma,
     comprovante,
-    descricaoMaterial
+    descricaoMaterial,
+    valorEstimadoMaterial
   } = valorOuDados
 
   const nomeDoador = doador ? doador.nome : 'Anônimo'
+  const categoriaDoador = doador?.categoria || 'Pessoa Física'
 
   if (tipoDoacao === 'Material') {
     const nova = {
@@ -47,7 +49,9 @@ export function criarDoacao(valorOuDados, doadorAntigo = null) {
       doador: nomeDoador,
       tipoDoacao: 'Material',
       comprovante: '',
-      descricaoMaterial: descricaoMaterial || ''
+      descricaoMaterial: descricaoMaterial || '',
+      valorEstimadoMaterial: Number(valorEstimadoMaterial || 0),
+      categoriaDoador
     }
 
     doacoes.push(nova)
@@ -63,7 +67,10 @@ export function criarDoacao(valorOuDados, doadorAntigo = null) {
     status: 'Pendente',
     doador: nomeDoador,
     tipoDoacao: 'Financeira',
-    comprovante: comprovante || ''
+    comprovante: comprovante || '',
+    descricaoMaterial: '',
+    valorEstimadoMaterial: 0,
+    categoriaDoador
   }
 
   doacoes.push(nova)
