@@ -15,6 +15,13 @@ function PainelDoador() {
   const [novoTelefone, setNovoTelefone] = useState('')
   const [novoObs, setNovoObs] = useState('')
 
+  const [desejaDoacao, setDesejaDoacao] = useState('nao')
+  const [tipoNovaDoacao, setTipoNovaDoacao] = useState('Financeira')
+  const [valorNovaDoacao, setValorNovaDoacao] = useState('')
+  const [formaPagamento, setFormaPagamento] = useState('Pix')
+  const [comprovanteArquivo, setComprovanteArquivo] = useState(null)
+  const [descricaoMaterial, setDescricaoMaterial] = useState('')
+
   useEffect(() => {
     setDoacoes([...listarDoacoes()])
   }, [])
@@ -67,40 +74,79 @@ function PainelDoador() {
     setMostrarHistoricoDoador(false)
   }
 
-  function handleNovaDoacao() {
-    let doadorFinal = doadorSelecionado
-
-    if (modoDoador === 'novo') {
-      if (!novoNome.trim()) {
-        alert('Digite o nome do novo doador.')
-        return
-      }
-
-      doadorFinal = salvarNovoDoador({
-        nome: novoNome,
-        tipo: novoTipo,
-        telefone: novoTelefone,
-        obs: novoObs
-      })
-
-      setDoadorSelecionado(doadorFinal)
-      setBusca(doadorFinal.nome)
-    }
-
+  function handleNovaDoacaoExistente() {
     const valor = prompt('Digite o valor da doação:')
 
     if (!valor) return
 
-    criarDoacao(valor, doadorFinal)
+    criarDoacao(valor, doadorSelecionado)
     setDoacoes([...listarDoacoes()])
     setMostrarHistoricoDoador(false)
+  }
 
-    if (modoDoador === 'novo') {
-      setNovoNome('')
-      setNovoTipo('Financeiro')
-      setNovoTelefone('')
-      setNovoObs('')
+  function resetFormularioNovoDoador() {
+    setNovoNome('')
+    setNovoTipo('Financeiro')
+    setNovoTelefone('')
+    setNovoObs('')
+    setDesejaDoacao('nao')
+    setTipoNovaDoacao('Financeira')
+    setValorNovaDoacao('')
+    setFormaPagamento('Pix')
+    setComprovanteArquivo(null)
+    setDescricaoMaterial('')
+    setDoadorSelecionado(null)
+    setBusca('')
+    setResultados([])
+    setMostrarHistoricoDoador(false)
+  }
+
+  function handleConfirmarNovoDoador() {
+    if (!novoNome.trim()) {
+      alert('Digite o nome do novo doador.')
+      return
     }
+
+    const doadorSalvo = salvarNovoDoador({
+      nome: novoNome,
+      tipo: novoTipo,
+      telefone: novoTelefone,
+      obs: novoObs
+    })
+
+    if (desejaDoacao === 'sim') {
+      if (tipoNovaDoacao === 'Financeira') {
+        if (!valorNovaDoacao.trim()) {
+          alert('Digite o valor da doação financeira.')
+          return
+        }
+
+        criarDoacao({
+          doador: doadorSalvo,
+          tipoDoacao: 'Financeira',
+          valor: valorNovaDoacao,
+          forma: formaPagamento,
+          comprovante: formaPagamento === 'TED' && comprovanteArquivo
+            ? comprovanteArquivo.name
+            : ''
+        })
+      } else {
+        if (!descricaoMaterial.trim()) {
+          alert('Descreva a doação material.')
+          return
+        }
+
+        criarDoacao({
+          doador: doadorSalvo,
+          tipoDoacao: 'Material',
+          descricaoMaterial
+        })
+      }
+    }
+
+    setDoacoes([...listarDoacoes()])
+    alert('Cadastro confirmado com sucesso.')
+    resetFormularioNovoDoador()
   }
 
   const totalDoacoes = doacoes.length
@@ -154,14 +200,7 @@ function PainelDoador() {
               <button
                 onClick={() => {
                   setModoDoador('novo')
-                  setDoadorSelecionado(null)
-                  setBusca('')
-                  setResultados([])
-                  setMostrarHistoricoDoador(false)
-                  setNovoNome('')
-                  setNovoTipo('Financeiro')
-                  setNovoTelefone('')
-                  setNovoObs('')
+                  resetFormularioNovoDoador()
                 }}
                 style={styles.buttonSec}
                 type="button"
@@ -217,7 +256,7 @@ function PainelDoador() {
                     <div style={styles.actionButtons}>
                       <button
                         style={styles.primaryButtonSmall}
-                        onClick={handleNovaDoacao}
+                        onClick={handleNovaDoacaoExistente}
                         type="button"
                       >
                         Cadastrar nova doação
@@ -268,18 +307,109 @@ function PainelDoador() {
                   style={styles.input}
                 />
 
-                {novoNome && (
-                  <p style={styles.selectedText}>
-                    Novo doador pronto para cadastro: {novoNome}
-                  </p>
+                <div style={styles.radioBox}>
+                  <label style={styles.radioLabel}>Deseja realizar uma doação agora?</label>
+
+                  <div style={styles.radioGroup}>
+                    <label>
+                      <input
+                        type="radio"
+                        name="desejaDoacao"
+                        value="sim"
+                        checked={desejaDoacao === 'sim'}
+                        onChange={(e) => setDesejaDoacao(e.target.value)}
+                      />{' '}
+                      Sim
+                    </label>
+
+                    <label>
+                      <input
+                        type="radio"
+                        name="desejaDoacao"
+                        value="nao"
+                        checked={desejaDoacao === 'nao'}
+                        onChange={(e) => setDesejaDoacao(e.target.value)}
+                      />{' '}
+                      Não
+                    </label>
+                  </div>
+                </div>
+
+                {desejaDoacao === 'sim' && (
+                  <div style={styles.blockArea}>
+                    <select
+                      value={tipoNovaDoacao}
+                      onChange={(e) => setTipoNovaDoacao(e.target.value)}
+                      style={styles.input}
+                    >
+                      <option value="Financeira">Financeira</option>
+                      <option value="Material">Material</option>
+                    </select>
+
+                    {tipoNovaDoacao === 'Financeira' && (
+                      <>
+                        <input
+                          placeholder="Valor da doação"
+                          value={valorNovaDoacao}
+                          onChange={(e) => setValorNovaDoacao(e.target.value)}
+                          style={styles.input}
+                        />
+
+                        <select
+                          value={formaPagamento}
+                          onChange={(e) => setFormaPagamento(e.target.value)}
+                          style={styles.input}
+                        >
+                          <option value="Pix">Pix</option>
+                          <option value="TED">TED</option>
+                        </select>
+
+                        {formaPagamento === 'TED' && (
+                          <div style={styles.fileBox}>
+                            <label style={styles.fileLabel}>
+                              Anexar comprovante (opcional)
+                            </label>
+                            <input
+                              type="file"
+                              onChange={(e) => setComprovanteArquivo(e.target.files[0] || null)}
+                              style={styles.input}
+                            />
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    {tipoNovaDoacao === 'Material' && (
+                      <input
+                        placeholder="Descrição da doação material"
+                        value={descricaoMaterial}
+                        onChange={(e) => setDescricaoMaterial(e.target.value)}
+                        style={styles.input}
+                      />
+                    )}
+                  </div>
                 )}
+
+                <div style={styles.actionButtonsBottom}>
+                  <button
+                    type="button"
+                    style={styles.confirmButton}
+                    onClick={handleConfirmarNovoDoador}
+                  >
+                    Confirmar
+                  </button>
+
+                  <button
+                    type="button"
+                    style={styles.cancelButton}
+                    onClick={resetFormularioNovoDoador}
+                  >
+                    Cancelar
+                  </button>
+                </div>
               </div>
             )}
           </div>
-
-          <button style={styles.primaryButton} onClick={handleNovaDoacao} type="button">
-            Nova doação
-          </button>
         </section>
 
         {mostrarHistoricoDoador && doadorSelecionado && (
@@ -315,7 +445,10 @@ function PainelDoador() {
                       <tr key={doacao.id}>
                         <td style={styles.td}>{doacao.data}</td>
                         <td style={styles.td}>{doacao.valor}</td>
-                        <td style={styles.td}>{doacao.forma}</td>
+                        <td style={styles.td}>
+                          {doacao.forma}
+                          {doacao.comprovante ? ` (${doacao.comprovante})` : ''}
+                        </td>
                         <td style={styles.td}>
                           <span
                             style={{
@@ -389,7 +522,10 @@ function PainelDoador() {
                       <td style={styles.td}>{doacao.data}</td>
                       <td style={styles.td}>{doacao.doador || 'Anônimo'}</td>
                       <td style={styles.td}>{doacao.valor}</td>
-                      <td style={styles.td}>{doacao.forma}</td>
+                      <td style={styles.td}>
+                        {doacao.forma}
+                        {doacao.comprovante ? ` (${doacao.comprovante})` : ''}
+                      </td>
                       <td style={styles.td}>
                         <span
                           style={{
@@ -431,16 +567,10 @@ const styles = {
     borderRadius: '20px',
     padding: '28px',
     boxShadow: '0 4px 18px rgba(0,0,0,0.08)',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: '20px',
-    flexWrap: 'wrap',
     marginBottom: '24px'
   },
   headerTextArea: {
-    flex: 1,
-    minWidth: '320px'
+    width: '100%'
   },
   title: {
     margin: 0,
@@ -471,8 +601,8 @@ const styles = {
     fontWeight: '600'
   },
   input: {
-    padding: '10px',
-    borderRadius: '8px',
+    padding: '12px',
+    borderRadius: '10px',
     border: '1px solid #ccc',
     width: '100%',
     marginTop: '10px'
@@ -482,8 +612,8 @@ const styles = {
     width: '100%'
   },
   inputWithClear: {
-    padding: '10px 42px 10px 10px',
-    borderRadius: '8px',
+    padding: '12px 42px 12px 12px',
+    borderRadius: '10px',
     border: '1px solid #ccc',
     width: '100%'
   },
@@ -545,15 +675,52 @@ const styles = {
     fontWeight: '600',
     cursor: 'pointer'
   },
-  primaryButton: {
-    border: 'none',
-    borderRadius: '999px',
-    padding: '14px 22px',
-    backgroundColor: '#0B3D91',
-    color: '#ffffff',
+  radioBox: {
+    marginTop: '12px'
+  },
+  radioLabel: {
+    display: 'block',
     fontWeight: '600',
-    cursor: 'pointer',
-    alignSelf: 'center'
+    marginBottom: '8px',
+    color: '#374151'
+  },
+  radioGroup: {
+    display: 'flex',
+    gap: '18px',
+    flexWrap: 'wrap'
+  },
+  fileBox: {
+    marginTop: '10px'
+  },
+  fileLabel: {
+    display: 'block',
+    marginBottom: '6px',
+    color: '#4b5563',
+    fontWeight: '600'
+  },
+  actionButtonsBottom: {
+    display: 'flex',
+    gap: '12px',
+    flexWrap: 'wrap',
+    marginTop: '18px'
+  },
+  confirmButton: {
+    border: 'none',
+    borderRadius: '10px',
+    padding: '12px 18px',
+    backgroundColor: '#166534',
+    color: '#ffffff',
+    fontWeight: '700',
+    cursor: 'pointer'
+  },
+  cancelButton: {
+    border: 'none',
+    borderRadius: '10px',
+    padding: '12px 18px',
+    backgroundColor: '#991b1b',
+    color: '#ffffff',
+    fontWeight: '700',
+    cursor: 'pointer'
   },
   summaryGrid: {
     display: 'grid',

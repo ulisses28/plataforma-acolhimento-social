@@ -1,22 +1,73 @@
 const STORAGE_KEY = 'doacoes_lar_batista'
 
-export function criarDoacao(valor, doador) {
+export function criarDoacao(valorOuDados, doadorAntigo = null) {
   const doacoes = listarDoacoes()
 
-  const valorFormatado = formatarValor(valor)
+  // compatibilidade com a versão antiga: criarDoacao(valor, doador)
+  if (typeof valorOuDados !== 'object' || valorOuDados === null) {
+    const valorFormatado = formatarValor(valorOuDados)
+
+    const nova = {
+      id: Date.now(),
+      valor: valorFormatado,
+      data: new Date().toLocaleDateString('pt-BR'),
+      forma: 'Pix',
+      status: 'Pendente',
+      doador: doadorAntigo ? doadorAntigo.nome : 'Anônimo',
+      tipoDoacao: 'Financeira',
+      comprovante: ''
+    }
+
+    doacoes.push(nova)
+    salvarDoacoes(doacoes)
+    simularRetornoBanco(nova.id)
+
+    return nova
+  }
+
+  // nova versão com objeto
+  const {
+    doador,
+    tipoDoacao,
+    valor,
+    forma,
+    comprovante,
+    descricaoMaterial
+  } = valorOuDados
+
+  const nomeDoador = doador ? doador.nome : 'Anônimo'
+
+  if (tipoDoacao === 'Material') {
+    const nova = {
+      id: Date.now(),
+      valor: '-',
+      data: new Date().toLocaleDateString('pt-BR'),
+      forma: 'Material',
+      status: 'Confirmado',
+      doador: nomeDoador,
+      tipoDoacao: 'Material',
+      comprovante: '',
+      descricaoMaterial: descricaoMaterial || ''
+    }
+
+    doacoes.push(nova)
+    salvarDoacoes(doacoes)
+    return nova
+  }
 
   const nova = {
     id: Date.now(),
-    valor: valorFormatado,
+    valor: formatarValor(valor),
     data: new Date().toLocaleDateString('pt-BR'),
-    forma: 'Pix',
+    forma: forma || 'Pix',
     status: 'Pendente',
-    doador: doador ? doador.nome : 'Anônimo'
+    doador: nomeDoador,
+    tipoDoacao: 'Financeira',
+    comprovante: comprovante || ''
   }
 
   doacoes.push(nova)
   salvarDoacoes(doacoes)
-
   simularRetornoBanco(nova.id)
 
   return nova
@@ -25,6 +76,19 @@ export function criarDoacao(valor, doador) {
 export function listarDoacoes() {
   const dados = localStorage.getItem(STORAGE_KEY)
   return dados ? JSON.parse(dados) : []
+}
+
+export function atualizarStatusDoacao(id, novoStatus) {
+  const doacoes = listarDoacoes()
+
+  const indice = doacoes.findIndex((d) => d.id === id)
+
+  if (indice !== -1) {
+    doacoes[indice].status = novoStatus
+    salvarDoacoes(doacoes)
+  }
+
+  return doacoes
 }
 
 function salvarDoacoes(doacoes) {
@@ -70,16 +134,4 @@ function formatarValor(valor) {
     style: 'currency',
     currency: 'BRL'
   })
-}
-export function atualizarStatusDoacao(id, novoStatus) {
-  const doacoes = listarDoacoes()
-
-  const indice = doacoes.findIndex((d) => d.id === id)
-
-  if (indice !== -1) {
-    doacoes[indice].status = novoStatus
-    salvarDoacoes(doacoes)
-  }
-
-  return doacoes
 }
