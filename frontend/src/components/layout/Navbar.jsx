@@ -12,16 +12,19 @@ function Navbar() {
       </div>
 
       <div style={styles.searchArea}>
-  <div style={styles.searchBox}>
-    <span style={styles.searchIcon} aria-hidden="true">🔍</span>
-    <input
-      type="text"
-      placeholder="Pesquisar no site..."
-      style={styles.searchInput}
-      aria-label="Pesquisar no site"
-    />
-  </div>
-</div>
+        <div style={styles.searchBox}>
+          <span style={styles.searchIcon} aria-hidden="true">
+            🔍
+          </span>
+          <input
+            type="text"
+            placeholder="Pesquisar no site..."
+            style={styles.searchInput}
+            aria-label="Pesquisar no site"
+          />
+        </div>
+      </div>
+
       <nav style={styles.nav}>
         <Link style={styles.link} to="/">Home</Link>
         <Link style={styles.link} to="/quem-somos">Quem Somos</Link>
@@ -37,47 +40,16 @@ function Navbar() {
 
 const styles = {
   header: {
-  display: 'grid',
-  gridTemplateColumns: '160px 1fr auto',
-  alignItems: 'center',
-  gap: '16px',
-  padding: '6px 24px', // 🔥 reduz altura
-  backgroundColor: '#ffffff',
-  borderBottom: '1px solid #e5e7eb',
-  minHeight: '80px' // 🔥 menor e mais profissional
-},
-  searchArea: {
-  display: 'flex',
-  justifyContent: 'center',
-  width: '100%'
-},
+    display: 'grid',
+    gridTemplateColumns: '160px 1fr auto',
+    alignItems: 'center',
+    gap: '16px',
+    padding: '6px 24px',
+    backgroundColor: '#ffffff',
+    borderBottom: '1px solid #e5e7eb',
+    minHeight: '80px'
+  },
 
-searchWrapper: {
-  position: 'relative',
-  width: '100%',
-  maxWidth: '300px' // 🔥 menor para não empurrar layout
-},
-
-searchIcon: {
-  position: 'absolute',
-  left: '14px',
-  top: '50%',
-  transform: 'translateY(-50%)',
-  fontSize: '16px',
-  color: '#6b7280',
-  pointerEvents: 'none' // importante!
-},
-
-searchInput: {
-  width: '100%',
-  height: '36px', // 🔥 menor
-  padding: '0 14px 0 40px',
-  borderRadius: '999px',
-  border: '1px solid #d1d5db',
-  outline: 'none',
-  fontSize: '13px',
-  backgroundColor: '#ffffff'
-},
   logoArea: {
     display: 'flex',
     alignItems: 'center',
@@ -85,35 +57,52 @@ searchInput: {
   },
 
   logo: {
-  height: '78px', // 🔥 ocupa melhor o header
-  width: 'auto',
-  objectFit: 'contain',
-  display: 'block'
-},
+    height: '78px',
+    width: 'auto',
+    objectFit: 'contain',
+    display: 'block'
+  },
+
   searchArea: {
     display: 'flex',
     justifyContent: 'center',
     width: '100%'
   },
 
+  searchBox: {
+    position: 'relative',
+    width: '100%',
+    maxWidth: '300px'
+  },
+
+  searchIcon: {
+    position: 'absolute',
+    left: '14px',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    fontSize: '16px',
+    color: '#6b7280',
+    pointerEvents: 'none'
+  },
+
   searchInput: {
     width: '100%',
-    maxWidth: '300px',
-    padding: '12px 18px',
+    height: '36px',
+    padding: '0 14px 0 40px',
     borderRadius: '999px',
     border: '1px solid #d1d5db',
     outline: 'none',
-    fontSize: '14px',
+    fontSize: '13px',
     color: '#1f2937',
-    backgroundColor: '#f9fafb'
+    backgroundColor: '#ffffff'
   },
 
   nav: {
-  display: 'flex',
-  gap: '14px', // 🔥 mais compacto
-  alignItems: 'center',
-  justifyContent: 'flex-end'
-},
+    display: 'flex',
+    gap: '14px',
+    alignItems: 'center',
+    justifyContent: 'flex-end'
+  },
 
   link: {
     textDecoration: 'none',

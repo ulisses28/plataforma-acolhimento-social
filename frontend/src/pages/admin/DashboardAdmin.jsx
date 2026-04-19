@@ -87,7 +87,7 @@ function DashboardAdmin() {
           <Link to="/admin/doadores" style={styles.card}>
             <h2 style={styles.cardTitle}>Doadores</h2>
             <p style={styles.cardText}>
-              Organize doadores de materiais, contribuições presenciais e registros internos.
+              Organize doadores, dados cadastrais, histórico individual e acessos administrativos.
             </p>
           </Link>
 
@@ -101,7 +101,7 @@ function DashboardAdmin() {
           <Link to="/admin/relatorios" style={styles.card}>
             <h2 style={styles.cardTitle}>Relatórios</h2>
             <p style={styles.cardText}>
-              Visualize informações consolidadas e indicadores administrativos.
+              Visualize informações consolidadas, indicadores e relatórios administrativos.
             </p>
           </Link>
 
@@ -109,6 +109,13 @@ function DashboardAdmin() {
             <h2 style={styles.cardTitle}>Pendentes e Não Concluídas</h2>
             <p style={styles.cardText}>
               Acompanhe falhas, pendências e transações que não devem entrar nos totais oficiais.
+            </p>
+          </Link>
+
+          <Link to="/admin/graficos" style={styles.card}>
+            <h2 style={styles.cardTitle}>Central de Gráficos</h2>
+            <p style={styles.cardText}>
+              Acesse o painel visual com percentuais, comparativos, visitas e evolução mensal.
             </p>
           </Link>
         </section>
@@ -126,6 +133,7 @@ function DashboardAdmin() {
               <thead>
                 <tr>
                   <th style={styles.th}>Data</th>
+                  <th style={styles.th}>Doador</th>
                   <th style={styles.th}>Valor</th>
                   <th style={styles.th}>Forma</th>
                   <th style={styles.th}>Status</th>
@@ -135,7 +143,7 @@ function DashboardAdmin() {
               <tbody>
                 {ultimasDoacoes.length === 0 ? (
                   <tr>
-                    <td style={styles.emptyTd} colSpan="4">
+                    <td style={styles.emptyTd} colSpan="5">
                       Nenhuma doação registrada até o momento.
                     </td>
                   </tr>
@@ -143,8 +151,19 @@ function DashboardAdmin() {
                   ultimasDoacoes.map((doacao) => (
                     <tr key={doacao.id}>
                       <td style={styles.td}>{doacao.data}</td>
-                      <td style={styles.td}>{doacao.valor}</td>
-                      <td style={styles.td}>{doacao.forma}</td>
+                      <td style={styles.td}>{doacao.doador || 'Anônimo'}</td>
+                      <td style={styles.td}>
+                        {doacao.forma === 'Material'
+                          ? Number(doacao.valorEstimadoMaterial || 0).toLocaleString('pt-BR', {
+                              style: 'currency',
+                              currency: 'BRL'
+                            })
+                          : doacao.valor}
+                      </td>
+                      <td style={styles.td}>
+                        {doacao.forma}
+                        {doacao.comprovante ? ` (${doacao.comprovante})` : ''}
+                      </td>
                       <td style={styles.td}>
                         <span
                           style={{
@@ -174,7 +193,7 @@ function DashboardAdmin() {
 const styles = {
   page: {
     minHeight: '100vh',
-    backgroundColor: '#F1F5F9',
+    background: 'linear-gradient(180deg, #eaf4ff 0%, #f1f5f9 35%, #f8fbff 100%)',
     padding: '40px 20px'
   },
   container: {

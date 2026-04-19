@@ -18,6 +18,7 @@ import PrestacaoContasAdmin from './pages/admin/PrestacaoContasAdmin'
 import RelatoriosAdmin from './pages/admin/RelatoriosAdmin'
 import PendentesAdmin from './pages/admin/PendentesAdmin'
 import DoadorDetalheAdmin from './pages/admin/DoadorDetalheAdmin'
+import GraficosAdmin from './pages/admin/GraficosAdmin'
 
 function App() {
   return (
@@ -35,15 +36,14 @@ function App() {
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/doador/login" element={<DoadorLogin />} />
         <Route path="/doador/painel" element={<PainelDoador />} />
-        <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin/dashboard" element={<DashboardAdmin />} />
         <Route path="/admin/parceiros" element={<ParceirosAdmin />} />
         <Route path="/admin/doadores" element={<DoadoresAdmin />} />
+        <Route path="/admin/doadores/:id" element={<DoadorDetalheAdmin />} />
         <Route path="/admin/prestacao-contas" element={<PrestacaoContasAdmin />} />
         <Route path="/admin/relatorios" element={<RelatoriosAdmin />} />
         <Route path="/admin/pendentes" element={<PendentesAdmin />} />
-      
-        <Route path="/admin/doadores/:id" element={<DoadorDetalheAdmin />} />
+        <Route path="/admin/graficos" element={<GraficosAdmin />} />
       </Routes>
 
       <Footer />
