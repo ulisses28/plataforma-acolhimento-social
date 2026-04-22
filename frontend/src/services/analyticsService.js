@@ -1,51 +1,87 @@
-const STORAGE_KEY = 'analytics_data'
+const KEY = 'analytics_visitas'
 
-function getHoje() {
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+function getData() {
+  const data = JSON.parse(localStorage.getItem(KEY)) || {}
+  return data
 }
 
+function salvar(data) {
+  localStorage.setItem(KEY, JSON.stringify(data))
+}
+
+function getHojeKey() {
+  const hoje = new Date()
+  return `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`
+}
+
+// REGISTRAR VISITA
 export function registrarVisita() {
-  const data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}
-  const hoje = getHoje()
+  const data = getData()
+  const key = getHojeKey()
 
-  if (!data[hoje]) {
-    data[hoje] = {
+  if (!data[key]) {
+    data[key] = {
       visitas: 0,
-      tempo: 0
+      tempoTotal: 0,
+      interacoes: 0
     }
   }
 
-  data[hoje].visitas += 1
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+  data[key].visitas += 1
+
+  salvar(data)
 }
 
+// REGISTRAR TEMPO
 export function registrarTempo(segundos) {
-  const data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}
-  const hoje = getHoje()
+  const data = getData()
+  const key = getHojeKey()
 
-  if (!data[hoje]) {
-    data[hoje] = {
-      visitas: 0,
-      tempo: 0
-    }
-  }
+  if (!data[key]) return
 
-  data[hoje].tempo += segundos
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+  data[key].tempoTotal += segundos
+
+  salvar(data)
 }
 
-export function obterAnalyticsMes(mes, ano) {
-  const data = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}
+// 🔥 NOVO: registrar interação
+export function registrarInteracao() {
+  const data = getData()
+  const key = getHojeKey()
 
-  return Object.entries(data)
-    .filter(([dia]) => {
-      const [a, m] = dia.split('-')
-      return a === String(ano) && m === String(mes)
-    })
-    .map(([dia, valores]) => ({
-      dia,
-      visitas: valores.visitas || 0,
-      tempo: valores.tempo || 0
-    }))
+  if (!data[key]) return
+
+  data[key].interacoes += 1
+
+  salvar(data)
+}
+
+// OBTER DADOS DO MÊS
+export function obterAnalyticsMes(mes, ano) {
+  const data = getData()
+
+  let totalVisitas = 0
+  let tempoTotal = 0
+  let totalInteracoes = 0
+
+  Object.keys(data).forEach((dataKey) => {
+    const [y, m] = dataKey.split('-')
+
+    if (y === ano && m === mes) {
+      totalVisitas += data[dataKey].visitas
+      tempoTotal += data[dataKey].tempoTotal
+      totalInteracoes += data[dataKey].interacoes
+    }
+  })
+
+  const tempoMedio = totalVisitas > 0 ? tempoTotal / totalVisitas : 0
+  const interacoesPorUsuario = totalVisitas > 0 ? totalInteracoes / totalVisitas : 0
+
+  return {
+    totalVisitas,
+    tempoTotal,
+    tempoMedio,
+    totalInteracoes,
+    interacoesPorUsuario
+  }
 }
