@@ -17,7 +17,7 @@ import {
 import { listarDoacoes } from '../../services/doacoesService'
 import { obterAnalyticsMes } from '../../services/analyticsService'
 import { exportarPDF, exportarExcel } from '../../utils/exportService'
-
+import { gerarRelatorioPDF } from '../../utils/pdfService'
 
 function GraficosAdmin() {
     const hoje = new Date()
@@ -193,52 +193,49 @@ function GraficosAdmin() {
         <main style={styles.page}>
             <div style={styles.container}>
                 <header style={styles.header}>
-                    <div>
-                        <h1 style={styles.title}>Central de Gráficos</h1>
-                        <p style={styles.subtitle}>
-                            Indicadores visuais do sistema de doações com foco financeiro e administrativo.
-                        </p>
-                    </div>
+  <div>
+    <h1 style={styles.title}>Central de Gráficos</h1>
+    <p style={styles.subtitle}>
+      Indicadores visuais do sistema de doações com foco financeiro e administrativo.
+    </p>
+  </div>
 
-                    <div style={styles.filters}>
-                        <select
-                            value={mesSelecionado}
-                            onChange={(e) => setMesSelecionado(e.target.value)}
-                            style={styles.select}
-                        >
-                            <option value="01">Janeiro</option>
-                            <option value="02">Fevereiro</option>
-                            <option value="03">Março</option>
-                            <option value="04">Abril</option>
-                            <option value="05">Maio</option>
-                            <option value="06">Junho</option>
-                            <option value="07">Julho</option>
-                            <option value="08">Agosto</option>
-                            <option value="09">Setembro</option>
-                            <option value="10">Outubro</option>
-                            <option value="11">Novembro</option>
-                            <option value="12">Dezembro</option>
-                        </select>
-                        <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                            <button style={styles.btnExport} onClick={() => exportarPDF('area-graficos')}>
-                                Exportar PDF
-                            </button>
+  <div style={styles.filters}>
+    <select
+      value={mesSelecionado}
+      onChange={(e) => setMesSelecionado(e.target.value)}
+      style={styles.select}
+    >
+      <option value="01">Janeiro</option>
+      <option value="02">Fevereiro</option>
+      <option value="03">Março</option>
+      <option value="04">Abril</option>
+      <option value="05">Maio</option>
+      <option value="06">Junho</option>
+      <option value="07">Julho</option>
+      <option value="08">Agosto</option>
+      <option value="09">Setembro</option>
+      <option value="10">Outubro</option>
+      <option value="11">Novembro</option>
+      <option value="12">Dezembro</option>
+    </select>
 
-                            <button
-                                style={styles.btnExport}
-                                onClick={() => exportarExcel(doacoes)}
-                            >
-                                Exportar Excel
-                            </button>
-                        </div>
-                        <input
-                            value={anoSelecionado}
-                            onChange={(e) => setAnoSelecionado(e.target.value)}
-                            style={styles.select}
-                            placeholder="Ano"
-                        />
-                    </div>
-                </header>
+    <input
+      value={anoSelecionado}
+      onChange={(e) => setAnoSelecionado(e.target.value)}
+      style={styles.select}
+      placeholder="Ano"
+    />
+
+    <button
+      style={styles.btnExport}
+      onClick={() => gerarRelatorioPDF({ resumo, doacoes })}
+      type="button"
+    >
+      Gerar PDF Profissional
+    </button>
+  </div>
+</header>
 
                 <section style={styles.summaryGrid}>
                     <SummaryCard
@@ -447,6 +444,15 @@ const styles = {
     gap: '10px',
     flexWrap: 'wrap'
   },
+  btnExport: {
+  background: 'linear-gradient(135deg, #16a34a, #166534)',
+  color: '#fff',
+  border: 'none',
+  padding: '10px 16px',
+  borderRadius: '10px',
+  cursor: 'pointer',
+  fontWeight: '600'
+},
   select: {
     background: '#111827',
     color: '#fff',
