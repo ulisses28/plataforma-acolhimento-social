@@ -73,14 +73,8 @@ function GraficosAdmin() {
 
   const dadosTipoDoacao = useMemo(() => {
     return [
-      {
-        name: 'Financeiras',
-        value: resumo.quantidadeFinanceiras
-      },
-      {
-        name: 'Materiais',
-        value: resumo.quantidadeMateriais
-      }
+      { name: 'Financeiras', value: resumo.quantidadeFinanceiras },
+      { name: 'Materiais', value: resumo.quantidadeMateriais }
     ]
   }, [resumo])
 
@@ -161,23 +155,46 @@ function GraficosAdmin() {
   const interacoesPorUsuario = analytics.interacoesPorUsuario || 0
 
   const dadosMetricasSite = [
-    {
-      name: 'Visitas',
-      valor: totalVisitasMes
-    },
-    {
-      name: 'Tempo médio (s)',
-      valor: Number(tempoMedioVisita.toFixed(1))
-    },
-    {
-      name: 'Interações',
-      valor: totalInteracoes
-    },
-    {
-      name: 'Interações/usuário',
-      valor: Number(interacoesPorUsuario.toFixed(1))
-    }
+    { name: 'Visitas', valor: totalVisitasMes },
+    { name: 'Tempo médio (s)', valor: Number(tempoMedioVisita.toFixed(1)) },
+    { name: 'Interações', valor: totalInteracoes },
+    { name: 'Interações/usuário', valor: Number(interacoesPorUsuario.toFixed(1)) }
   ]
+
+  const insights = useMemo(() => {
+    let nivelEngajamento = 'Baixo'
+    if (interacoesPorUsuario >= 3) nivelEngajamento = 'Alto'
+    else if (interacoesPorUsuario >= 1.5) nivelEngajamento = 'Médio'
+
+    let leituraTempo = 'Tempo médio baixo'
+    if (tempoMedioVisita >= 120) leituraTempo = 'Tempo médio alto'
+    else if (tempoMedioVisita >= 45) leituraTempo = 'Tempo médio moderado'
+
+    let eficiencia = 'Eficiência baixa'
+    if (tempoMedioVisita >= 60 && interacoesPorUsuario >= 2) {
+      eficiencia = 'Eficiência alta'
+    } else if (tempoMedioVisita >= 30 && interacoesPorUsuario >= 1) {
+      eficiencia = 'Eficiência moderada'
+    }
+
+    let resumoTexto =
+      'A plataforma ainda apresenta sinais iniciais de uso e pode evoluir com melhorias de navegação e incentivo à interação.'
+
+    if (eficiencia === 'Eficiência alta') {
+      resumoTexto =
+        'A plataforma demonstra bom desempenho de uso, com permanência consistente e interação relevante dos visitantes.'
+    } else if (eficiencia === 'Eficiência moderada') {
+      resumoTexto =
+        'A plataforma apresenta desempenho intermediário, indicando bom potencial de conversão com ajustes de experiência do usuário.'
+    }
+
+    return {
+      nivelEngajamento,
+      leituraTempo,
+      eficiencia,
+      resumoTexto
+    }
+  }, [tempoMedioVisita, interacoesPorUsuario])
 
   return (
     <main style={styles.page}>
@@ -278,6 +295,28 @@ function GraficosAdmin() {
             label="Interações por usuário"
             value={interacoesPorUsuario.toFixed(1)}
           />
+        </section>
+
+        <section style={styles.insightsGrid}>
+          <InsightCard
+            label="Nível de engajamento"
+            value={insights.nivelEngajamento}
+          />
+          <InsightCard
+            label="Leitura do tempo médio"
+            value={insights.leituraTempo}
+          />
+          <InsightCard
+            label="Eficiência da plataforma"
+            value={insights.eficiencia}
+          />
+        </section>
+
+        <section style={styles.textInsightCard}>
+          <h2 style={styles.chartTitle}>Insight automático</h2>
+          <p style={styles.textInsight}>
+            {insights.resumoTexto}
+          </p>
         </section>
 
         <section id="area-graficos" style={styles.chartGrid}>
@@ -420,6 +459,15 @@ function SummaryCard({ label, value }) {
   )
 }
 
+function InsightCard({ label, value }) {
+  return (
+    <div style={styles.insightCard}>
+      <div style={styles.insightLabel}>{label}</div>
+      <div style={styles.insightValue}>{value}</div>
+    </div>
+  )
+}
+
 function converterDataBR(dataBR) {
   if (!dataBR || dataBR === '-') return null
   const [dia, mes, ano] = dataBR.split('/')
@@ -498,7 +546,7 @@ const styles = {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(200px,1fr))',
     gap: '16px',
-    marginBottom: '24px'
+    marginBottom: '20px'
   },
   summaryCard: {
     background: '#0f172a',
@@ -514,6 +562,39 @@ const styles = {
   summaryLabel: {
     color: '#94a3b8',
     marginTop: '8px'
+  },
+  insightsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(240px,1fr))',
+    gap: '16px',
+    marginBottom: '20px'
+  },
+  insightCard: {
+    background: 'linear-gradient(180deg, #111827 0%, #0f172a 100%)',
+    padding: '20px',
+    borderRadius: '12px',
+    border: '1px solid #334155'
+  },
+  insightLabel: {
+    color: '#94a3b8'
+  },
+  insightValue: {
+    color: '#fff',
+    fontSize: '1.25rem',
+    fontWeight: '700',
+    marginTop: '8px'
+  },
+  textInsightCard: {
+    background: '#0f172a',
+    padding: '20px',
+    borderRadius: '12px',
+    border: '1px solid #334155',
+    marginBottom: '20px'
+  },
+  textInsight: {
+    color: '#cbd5e1',
+    lineHeight: '1.7',
+    marginTop: '10px'
   },
   chartGrid: {
     display: 'grid',
