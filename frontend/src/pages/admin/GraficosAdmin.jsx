@@ -29,9 +29,11 @@ function GraficosAdmin() {
     totalInteracoes: 0,
     interacoesPorUsuario: 0
   })
+
   const [mesSelecionado, setMesSelecionado] = useState(
     String(hoje.getMonth() + 1).padStart(2, '0')
   )
+
   const [anoSelecionado, setAnoSelecionado] = useState(
     String(hoje.getFullYear())
   )
@@ -87,6 +89,7 @@ function GraficosAdmin() {
 
     doacoes.forEach((d) => {
       const categoria = d.categoriaDoador || 'Pessoa Física'
+
       if (contagem[categoria] !== undefined) {
         contagem[categoria] += 1
       } else {
@@ -163,14 +166,23 @@ function GraficosAdmin() {
 
   const insights = useMemo(() => {
     let nivelEngajamento = 'Baixo'
-    if (interacoesPorUsuario >= 3) nivelEngajamento = 'Alto'
-    else if (interacoesPorUsuario >= 1.5) nivelEngajamento = 'Médio'
+
+    if (interacoesPorUsuario >= 3) {
+      nivelEngajamento = 'Alto'
+    } else if (interacoesPorUsuario >= 1.5) {
+      nivelEngajamento = 'Médio'
+    }
 
     let leituraTempo = 'Tempo médio baixo'
-    if (tempoMedioVisita >= 120) leituraTempo = 'Tempo médio alto'
-    else if (tempoMedioVisita >= 45) leituraTempo = 'Tempo médio moderado'
+
+    if (tempoMedioVisita >= 120) {
+      leituraTempo = 'Tempo médio alto'
+    } else if (tempoMedioVisita >= 45) {
+      leituraTempo = 'Tempo médio moderado'
+    }
 
     let eficiencia = 'Eficiência baixa'
+
     if (tempoMedioVisita >= 60 && interacoesPorUsuario >= 2) {
       eficiencia = 'Eficiência alta'
     } else if (tempoMedioVisita >= 30 && interacoesPorUsuario >= 1) {
@@ -236,7 +248,14 @@ function GraficosAdmin() {
 
             <button
               style={styles.btnExport}
-              onClick={() => gerarRelatorioPDF({ resumo, doacoes })}
+              onClick={() =>
+                gerarRelatorioPDF({
+                  resumo,
+                  doacoes,
+                  analytics,
+                  insights
+                })
+              }
               type="button"
             >
               Gerar PDF Profissional
@@ -302,10 +321,12 @@ function GraficosAdmin() {
             label="Nível de engajamento"
             value={insights.nivelEngajamento}
           />
+
           <InsightCard
             label="Leitura do tempo médio"
             value={insights.leituraTempo}
           />
+
           <InsightCard
             label="Eficiência da plataforma"
             value={insights.eficiencia}
@@ -314,9 +335,7 @@ function GraficosAdmin() {
 
         <section style={styles.textInsightCard}>
           <h2 style={styles.chartTitle}>Insight automático</h2>
-          <p style={styles.textInsight}>
-            {insights.resumoTexto}
-          </p>
+          <p style={styles.textInsight}>{insights.resumoTexto}</p>
         </section>
 
         <section id="area-graficos" style={styles.chartGrid}>
@@ -325,6 +344,7 @@ function GraficosAdmin() {
             <p style={styles.chartSubtitle}>
               Distribuição percentual por tipo de doação.
             </p>
+
             <div style={styles.chartArea}>
               <ResponsiveContainer width="100%" height={320}>
                 <PieChart>
@@ -350,6 +370,7 @@ function GraficosAdmin() {
             <p style={styles.chartSubtitle}>
               Pessoa Física, Pessoa Jurídica e Parceiros.
             </p>
+
             <div style={styles.chartArea}>
               <ResponsiveContainer width="100%" height={320}>
                 <PieChart>
@@ -376,6 +397,7 @@ function GraficosAdmin() {
             <p style={styles.chartSubtitle}>
               Evolução do volume diário do dia 1 até o último dia do mês selecionado.
             </p>
+
             <div style={styles.chartAreaLarge}>
               <ResponsiveContainer width="100%" height={360}>
                 <LineChart data={dadosLinhaMensal}>
@@ -402,6 +424,7 @@ function GraficosAdmin() {
             <p style={styles.chartSubtitle}>
               Valor financeiro confirmado versus valor estimado de doações materiais.
             </p>
+
             <div style={styles.chartAreaLarge}>
               <ResponsiveContainer width="100%" height={340}>
                 <BarChart data={dadosBarrasTotais}>
@@ -426,6 +449,7 @@ function GraficosAdmin() {
             <p style={styles.chartSubtitle}>
               Visitas, tempo médio de permanência e interações para medir a eficiência da plataforma.
             </p>
+
             <div style={styles.chartAreaLarge}>
               <ResponsiveContainer width="100%" height={360}>
                 <BarChart data={dadosMetricasSite}>
