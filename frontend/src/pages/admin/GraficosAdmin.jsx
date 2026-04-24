@@ -38,6 +38,9 @@ function GraficosAdmin() {
     String(hoje.getFullYear())
   )
 
+  const [secoesRelatorio, setSecoesRelatorio] = useState([])
+  const [erroRelatorio, setErroRelatorio] = useState('')
+
   useEffect(() => {
     setDoacoes(listarDoacoes())
     setAnalytics(obterAnalyticsMes(mesSelecionado, anoSelecionado))
@@ -208,6 +211,53 @@ function GraficosAdmin() {
     }
   }, [tempoMedioVisita, interacoesPorUsuario])
 
+  const opcoesRelatorio = [
+    { id: 'resumo', label: 'Resumo de doações' },
+    { id: 'uso', label: 'Indicadores de uso da plataforma' },
+    { id: 'insights', label: 'Insights automáticos' },
+    { id: 'doacoes', label: 'Últimas doações registradas' },
+    { id: 'grafico-financeiras-materiais', label: 'Gráfico: Financeiras x Materiais' },
+    { id: 'grafico-origem-doacoes', label: 'Gráfico: Origem das doações' },
+    { id: 'grafico-variacao-diaria', label: 'Gráfico: Variação diária do mês' },
+    { id: 'grafico-comparativo-valores', label: 'Gráfico: Comparativo de valores' },
+    { id: 'grafico-eficiencia-site', label: 'Gráfico: Eficiência e engajamento do site' }
+  ]
+
+  function alternarSecao(id) {
+    setErroRelatorio('')
+
+    if (secoesRelatorio.includes(id)) {
+      setSecoesRelatorio(secoesRelatorio.filter((item) => item !== id))
+    } else {
+      setSecoesRelatorio([...secoesRelatorio, id])
+    }
+  }
+
+  function selecionarTodosRelatorios() {
+    setErroRelatorio('')
+
+    if (secoesRelatorio.length === opcoesRelatorio.length) {
+      setSecoesRelatorio([])
+    } else {
+      setSecoesRelatorio(opcoesRelatorio.map((opcao) => opcao.id))
+    }
+  }
+
+  async function handleGerarRelatorioPDF() {
+    if (secoesRelatorio.length === 0) {
+      setErroRelatorio('Você deve selecionar pelo menos uma opção.')
+      return
+    }
+
+    await gerarRelatorioPDF({
+      resumo,
+      doacoes,
+      analytics,
+      insights,
+      secoes: secoesRelatorio
+    })
+  }
+
   return (
     <main style={styles.page}>
       <div style={styles.container}>
@@ -245,23 +295,51 @@ function GraficosAdmin() {
               style={styles.select}
               placeholder="Ano"
             />
-
-            <button
-              style={styles.btnExport}
-              onClick={() =>
-                gerarRelatorioPDF({
-                  resumo,
-                  doacoes,
-                  analytics,
-                  insights
-                })
-              }
-              type="button"
-            >
-              Gerar PDF Profissional
-            </button>
           </div>
         </header>
+
+        <section style={styles.reportPanel}>
+          <div style={styles.reportBox}>
+            <div style={styles.reportTitle}>Dados do relatório</div>
+            <p style={styles.reportSubtitle}>
+              Selecione quais informações deseja incluir no PDF.
+            </p>
+
+            <div style={styles.optionsGrid}>
+              {opcoesRelatorio.map((opcao) => (
+                <label key={opcao.id} style={styles.checkItem}>
+                  <input
+                    type="checkbox"
+                    checked={secoesRelatorio.includes(opcao.id)}
+                    onChange={() => alternarSecao(opcao.id)}
+                  />
+                  {opcao.label}
+                </label>
+              ))}
+
+              <label style={styles.checkItemStrong}>
+                <input
+                  type="checkbox"
+                  checked={secoesRelatorio.length === opcoesRelatorio.length}
+                  onChange={selecionarTodosRelatorios}
+                />
+                Todos - gerar relatório completo
+              </label>
+            </div>
+
+            {erroRelatorio && (
+              <p style={styles.errorText}>{erroRelatorio}</p>
+            )}
+          </div>
+
+          <button
+            style={styles.btnExport}
+            onClick={handleGerarRelatorioPDF}
+            type="button"
+          >
+            Gerar PDF Profissional
+          </button>
+        </section>
 
         <section style={styles.summaryGrid}>
           <SummaryCard
@@ -339,7 +417,7 @@ function GraficosAdmin() {
         </section>
 
         <section id="area-graficos" style={styles.chartGrid}>
-          <div style={styles.chartCard}>
+          <div id="grafico-financeiras-materiais" style={styles.chartCard}>
             <h2 style={styles.chartTitle}>Financeiras x Materiais</h2>
             <p style={styles.chartSubtitle}>
               Distribuição percentual por tipo de doação.
@@ -365,7 +443,7 @@ function GraficosAdmin() {
             </div>
           </div>
 
-          <div style={styles.chartCard}>
+          <div id="grafico-origem-doacoes" style={styles.chartCard}>
             <h2 style={styles.chartTitle}>Origem das doações</h2>
             <p style={styles.chartSubtitle}>
               Pessoa Física, Pessoa Jurídica e Parceiros.
@@ -392,7 +470,10 @@ function GraficosAdmin() {
             </div>
           </div>
 
-          <div style={{ ...styles.chartCard, gridColumn: '1 / -1' }}>
+          <div
+            id="grafico-variacao-diaria"
+            style={{ ...styles.chartCard, gridColumn: '1 / -1' }}
+          >
             <h2 style={styles.chartTitle}>Variação diária do mês</h2>
             <p style={styles.chartSubtitle}>
               Evolução do volume diário do dia 1 até o último dia do mês selecionado.
@@ -419,7 +500,10 @@ function GraficosAdmin() {
             </div>
           </div>
 
-          <div style={{ ...styles.chartCard, gridColumn: '1 / -1' }}>
+          <div
+            id="grafico-comparativo-valores"
+            style={{ ...styles.chartCard, gridColumn: '1 / -1' }}
+          >
             <h2 style={styles.chartTitle}>Comparativo de valores</h2>
             <p style={styles.chartSubtitle}>
               Valor financeiro confirmado versus valor estimado de doações materiais.
@@ -444,7 +528,10 @@ function GraficosAdmin() {
             </div>
           </div>
 
-          <div style={{ ...styles.chartCard, gridColumn: '1 / -1' }}>
+          <div
+            id="grafico-eficiencia-site"
+            style={{ ...styles.chartCard, gridColumn: '1 / -1' }}
+          >
             <h2 style={styles.chartTitle}>Eficiência e engajamento do site</h2>
             <p style={styles.chartSubtitle}>
               Visitas, tempo médio de permanência e interações para medir a eficiência da plataforma.
@@ -532,7 +619,7 @@ const styles = {
     justifyContent: 'space-between',
     gap: '16px',
     flexWrap: 'wrap',
-    marginBottom: '24px'
+    marginBottom: '18px'
   },
   title: {
     color: '#fff',
@@ -557,14 +644,63 @@ const styles = {
     borderRadius: '8px',
     border: '1px solid #334155'
   },
+  reportPanel: {
+    background: '#0f172a',
+    border: '1px solid #334155',
+    borderRadius: '14px',
+    padding: '16px',
+    marginBottom: '22px'
+  },
+  reportBox: {
+    marginBottom: '14px'
+  },
+  reportTitle: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: '1rem',
+    marginBottom: '4px'
+  },
+  reportSubtitle: {
+    color: '#94a3b8',
+    margin: '0 0 12px 0',
+    fontSize: '14px'
+  },
+  optionsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+    gap: '10px'
+  },
+  checkItem: {
+    color: '#cbd5e1',
+    fontSize: '14px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    cursor: 'pointer'
+  },
+  checkItemStrong: {
+    color: '#fff',
+    fontSize: '14px',
+    fontWeight: '700',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    cursor: 'pointer'
+  },
+  errorText: {
+    color: '#f87171',
+    fontSize: '13px',
+    fontWeight: '700',
+    margin: '10px 0 0 0'
+  },
   btnExport: {
     background: 'linear-gradient(135deg, #16a34a, #166534)',
     color: '#fff',
     border: 'none',
-    padding: '10px 16px',
+    padding: '11px 18px',
     borderRadius: '10px',
     cursor: 'pointer',
-    fontWeight: '600'
+    fontWeight: '700'
   },
   summaryGrid: {
     display: 'grid',
