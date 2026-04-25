@@ -1,32 +1,52 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { listarDoacoes } from '../../services/doacoesService'
+import { obterTopDoadores } from '../../services/rankingService'
+import BackButton from '../../components/ui/BackButton'
+
+/*
+  DASHBOARD ADMINISTRATIVO
+  - Painel principal da instituição
+  - Exibe métricas, ranking e últimas doações
+*/
 
 function DashboardAdmin() {
   const [doacoes, setDoacoes] = useState([])
+  const [topDoadores, setTopDoadores] = useState([])
 
+  /*
+    Carregamento inicial
+  */
   useEffect(() => {
     setDoacoes([...listarDoacoes()])
+    setTopDoadores(obterTopDoadores(3))
   }, [])
 
+  /*
+    Atualização em tempo real (simulada)
+  */
   useEffect(() => {
     const intervalo = setInterval(() => {
       setDoacoes([...listarDoacoes()])
+      setTopDoadores(obterTopDoadores(3))
     }, 2000)
 
     return () => clearInterval(intervalo)
   }, [])
 
   const totalDoacoes = doacoes.length
-  const confirmadas = doacoes.filter((doacao) => doacao.status === 'Confirmado')
-  const pendentes = doacoes.filter((doacao) => doacao.status === 'Pendente')
-  const falhas = doacoes.filter((doacao) => doacao.status === 'Erro')
+  const confirmadas = doacoes.filter((d) => d.status === 'Confirmado')
+  const pendentes = doacoes.filter((d) => d.status === 'Pendente')
+  const falhas = doacoes.filter((d) => d.status === 'Erro')
 
-  const valorTotalConfirmado = confirmadas.reduce((total, doacao) => {
+  const valorTotalConfirmado = confirmadas.reduce((total, d) => {
     const valorNumerico = Number(
-      String(doacao.valor).replace('R$', '').replace(/\./g, '').replace(',', '.').trim()
+      String(d.valor)
+        .replace('R$', '')
+        .replace(/\./g, '')
+        .replace(',', '.')
+        .trim()
     )
-
     return total + (isNaN(valorNumerico) ? 0 : valorNumerico)
   }, 0)
 
@@ -40,6 +60,15 @@ function DashboardAdmin() {
   return (
     <main style={styles.page}>
       <div style={styles.container}>
+
+        {/* ================= BOTÃO VOLTAR ================= */}
+        {/*
+          Mantém padrão UX do sistema
+          Sempre no topo da página interna
+        */}
+        <BackButton />
+
+        {/* ================= HEADER ================= */}
         <header style={styles.header}>
           <div>
             <h1 style={styles.title}>Dashboard Administrativo</h1>
@@ -49,273 +78,179 @@ function DashboardAdmin() {
           </div>
         </header>
 
+        {/* ================= RESUMO ================= */}
         <section style={styles.summaryGrid}>
-          <div style={styles.summaryCard}>
-            <h2 style={styles.summaryNumber}>{totalDoacoes}</h2>
-            <p style={styles.summaryLabel}>Doações registradas</p>
-          </div>
-
-          <div style={styles.summaryCard}>
-            <h2 style={styles.summaryNumber}>{confirmadas.length}</h2>
-            <p style={styles.summaryLabel}>Confirmadas</p>
-          </div>
-
-          <div style={styles.summaryCard}>
-            <h2 style={styles.summaryNumber}>{pendentes.length}</h2>
-            <p style={styles.summaryLabel}>Pendentes</p>
-          </div>
-
-          <div style={styles.summaryCard}>
-            <h2 style={styles.summaryNumber}>{falhas.length}</h2>
-            <p style={styles.summaryLabel}>Falhas</p>
-          </div>
-
-          <div style={styles.summaryCard}>
-            <h2 style={styles.summaryNumber}>{valorTotalFormatado}</h2>
-            <p style={styles.summaryLabel}>Total confirmado</p>
-          </div>
+          <SummaryCard label="Doações registradas" value={totalDoacoes} />
+          <SummaryCard label="Confirmadas" value={confirmadas.length} />
+          <SummaryCard label="Pendentes" value={pendentes.length} />
+          <SummaryCard label="Falhas" value={falhas.length} />
+          <SummaryCard label="Total confirmado" value={valorTotalFormatado} />
         </section>
 
+        {/* ================= LINKS ================= */}
         <section style={styles.grid}>
-          <Link to="/admin/parceiros" style={styles.card}>
-            <h2 style={styles.cardTitle}>Parceiros</h2>
-            <p style={styles.cardText}>
-              Cadastre e acompanhe empresas, igrejas, prefeitura e apoiadores institucionais.
-            </p>
-          </Link>
-
-          <Link to="/admin/doadores" style={styles.card}>
-            <h2 style={styles.cardTitle}>Doadores</h2>
-            <p style={styles.cardText}>
-              Organize doadores, dados cadastrais, histórico individual e acessos administrativos.
-            </p>
-          </Link>
-
-          <Link to="/admin/prestacao-contas" style={styles.card}>
-            <h2 style={styles.cardTitle}>Prestação de Contas</h2>
-            <p style={styles.cardText}>
-              Consolide dados mensais para prestação de contas e transparência institucional.
-            </p>
-          </Link>
-
-          <Link to="/admin/relatorios" style={styles.card}>
-            <h2 style={styles.cardTitle}>Relatórios</h2>
-            <p style={styles.cardText}>
-              Visualize informações consolidadas, indicadores e relatórios administrativos.
-            </p>
-          </Link>
-
-          <Link to="/admin/pendentes" style={styles.card}>
-            <h2 style={styles.cardTitle}>Pendentes e Não Concluídas</h2>
-            <p style={styles.cardText}>
-              Acompanhe falhas, pendências e transações que não devem entrar nos totais oficiais.
-            </p>
-          </Link>
-
-          <Link to="/admin/graficos" style={styles.card}>
-            <h2 style={styles.cardTitle}>Central de Gráficos</h2>
-            <p style={styles.cardText}>
-              Acesse o painel visual com percentuais, comparativos, visitas e evolução mensal.
-            </p>
-          </Link>
+          <CardLink to="/admin/parceiros" title="Parceiros" />
+          <CardLink to="/admin/doadores" title="Doadores" />
+          <CardLink to="/admin/prestacao-contas" title="Prestação de Contas" />
+          <CardLink to="/admin/relatorios" title="Relatórios" />
+          <CardLink to="/admin/pendentes" title="Pendentes" />
+          <CardLink to="/admin/graficos" title="Central de Gráficos" />
         </section>
 
+        {/* ================= RANKING ================= */}
+        <section style={styles.rankingCard}>
+          <h2 style={styles.tableTitle}>Top 3 doadores</h2>
+
+          <div style={styles.rankingGrid}>
+            {topDoadores.map((d, i) => (
+              <div key={d.nome} style={styles.rankingItem}>
+                <div style={styles.rankingPosition}>
+                  {getMedalha(i)} {i + 1}º lugar
+                </div>
+
+                <h3 style={styles.rankingName}>{d.nome}</h3>
+
+                <p style={styles.rankingText}>
+                  {d.total.toLocaleString('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL'
+                  })}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ================= TABELA ================= */}
         <section style={styles.tableCard}>
-          <div style={styles.tableHeader}>
-            <h2 style={styles.tableTitle}>Últimas doações registradas</h2>
-            <p style={styles.tableSubtitle}>
-              Visão rápida das movimentações mais recentes do sistema.
-            </p>
-          </div>
+          <h2 style={styles.tableTitle}>Últimas doações</h2>
 
-          <div style={styles.tableWrapper}>
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th style={styles.th}>Data</th>
-                  <th style={styles.th}>Doador</th>
-                  <th style={styles.th}>Valor</th>
-                  <th style={styles.th}>Forma</th>
-                  <th style={styles.th}>Status</th>
+          <table style={styles.table}>
+            <thead>
+              <tr>
+                <th style={styles.th}>Data</th>
+                <th style={styles.th}>Doador</th>
+                <th style={styles.th}>Valor</th>
+                <th style={styles.th}>Status</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {ultimasDoacoes.map((d) => (
+                <tr key={d.id}>
+                  <td style={styles.td}>{d.data}</td>
+                  <td style={styles.td}>{d.doador}</td>
+                  <td style={styles.td}>{d.valor}</td>
+                  <td style={styles.td}>{d.status}</td>
                 </tr>
-              </thead>
-
-              <tbody>
-                {ultimasDoacoes.length === 0 ? (
-                  <tr>
-                    <td style={styles.emptyTd} colSpan="5">
-                      Nenhuma doação registrada até o momento.
-                    </td>
-                  </tr>
-                ) : (
-                  ultimasDoacoes.map((doacao) => (
-                    <tr key={doacao.id}>
-                      <td style={styles.td}>{doacao.data}</td>
-                      <td style={styles.td}>{doacao.doador || 'Anônimo'}</td>
-                      <td style={styles.td}>
-                        {doacao.forma === 'Material'
-                          ? Number(doacao.valorEstimadoMaterial || 0).toLocaleString('pt-BR', {
-                              style: 'currency',
-                              currency: 'BRL'
-                            })
-                          : doacao.valor}
-                      </td>
-                      <td style={styles.td}>
-                        {doacao.forma}
-                        {doacao.comprovante ? ` (${doacao.comprovante})` : ''}
-                      </td>
-                      <td style={styles.td}>
-                        <span
-                          style={{
-                            ...styles.statusBadge,
-                            ...(doacao.status === 'Confirmado'
-                              ? styles.statusConfirmed
-                              : doacao.status === 'Pendente'
-                              ? styles.statusPending
-                              : styles.statusError)
-                          }}
-                        >
-                          {doacao.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
         </section>
+
       </div>
     </main>
   )
 }
 
+/* ================= COMPONENTES AUXILIARES ================= */
+
+function SummaryCard({ label, value }) {
+  return (
+    <div style={styles.summaryCard}>
+      <h2 style={styles.summaryNumber}>{value}</h2>
+      <p style={styles.summaryLabel}>{label}</p>
+    </div>
+  )
+}
+
+function CardLink({ to, title }) {
+  return (
+    <Link to={to} style={styles.card}>
+      <h2 style={styles.cardTitle}>{title}</h2>
+    </Link>
+  )
+}
+
+function getMedalha(i) {
+  if (i === 0) return '🥇'
+  if (i === 1) return '🥈'
+  if (i === 2) return '🥉'
+  return ''
+}
+
+/* ================= ESTILOS ================= */
+
 const styles = {
   page: {
     minHeight: '100vh',
-    background: 'linear-gradient(180deg, #eaf4ff 0%, #f1f5f9 35%, #f8fbff 100%)',
+    background: '#f8fbff',
     padding: '40px 20px'
   },
   container: {
     maxWidth: '1200px',
     margin: '0 auto'
   },
-  header: {
-    marginBottom: '28px'
-  },
-  title: {
-    margin: 0,
-    color: '#0B3D91',
-    fontSize: '2.2rem'
-  },
-  subtitle: {
-    marginTop: '10px',
-    color: '#4b5563',
-    lineHeight: '1.6'
-  },
+  header: { marginBottom: '20px' },
+  title: { color: '#0B3D91' },
+  subtitle: { color: '#4b5563' },
+
   summaryGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-    gap: '20px',
-    marginBottom: '24px'
+    gap: '20px'
   },
   summaryCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: '20px',
-    padding: '24px',
-    boxShadow: '0 4px 18px rgba(0,0,0,0.08)'
+    background: '#fff',
+    padding: '20px',
+    borderRadius: '16px'
   },
-  summaryNumber: {
-    margin: 0,
-    fontSize: '1.8rem',
-    color: '#0B3D91'
-  },
-  summaryLabel: {
-    marginTop: '10px',
-    color: '#4b5563'
-  },
+  summaryNumber: { color: '#0B3D91' },
+  summaryLabel: { color: '#6b7280' },
+
   grid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-    gap: '22px',
-    marginBottom: '24px'
+    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+    gap: '20px',
+    marginTop: '20px'
   },
   card: {
-    textDecoration: 'none',
-    backgroundColor: '#ffffff',
-    borderRadius: '20px',
-    padding: '26px',
-    boxShadow: '0 4px 18px rgba(0,0,0,0.08)',
-    color: 'inherit'
+    background: '#fff',
+    padding: '20px',
+    borderRadius: '16px',
+    textDecoration: 'none'
   },
-  cardTitle: {
-    marginTop: 0,
-    color: '#0B3D91'
+  cardTitle: { color: '#0B3D91' },
+
+  rankingCard: {
+    marginTop: '30px',
+    background: '#fff',
+    padding: '20px',
+    borderRadius: '16px'
   },
-  cardText: {
-    color: '#374151',
-    lineHeight: '1.7'
+  rankingGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+    gap: '20px'
   },
+  rankingItem: {
+    background: '#f1f5f9',
+    padding: '16px',
+    borderRadius: '12px'
+  },
+  rankingPosition: { fontWeight: 'bold' },
+  rankingName: { margin: 0 },
+  rankingText: { color: '#4b5563' },
+
   tableCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: '20px',
-    padding: '28px',
-    boxShadow: '0 4px 18px rgba(0,0,0,0.08)'
+    marginTop: '30px',
+    background: '#fff',
+    padding: '20px',
+    borderRadius: '16px'
   },
-  tableHeader: {
-    marginBottom: '20px'
-  },
-  tableTitle: {
-    margin: 0,
-    color: '#0B3D91'
-  },
-  tableSubtitle: {
-    marginTop: '8px',
-    color: '#6b7280'
-  },
-  tableWrapper: {
-    overflowX: 'auto'
-  },
-  table: {
-    width: '100%',
-    borderCollapse: 'collapse'
-  },
-  th: {
-    textAlign: 'left',
-    padding: '14px',
-    borderBottom: '1px solid #e5e7eb',
-    color: '#374151',
-    fontSize: '14px'
-  },
-  td: {
-    padding: '14px',
-    borderBottom: '1px solid #f1f5f9',
-    color: '#1f2937'
-  },
-  emptyTd: {
-    padding: '20px 14px',
-    textAlign: 'center',
-    color: '#6b7280'
-  },
-  statusBadge: {
-    display: 'inline-block',
-    padding: '6px 12px',
-    borderRadius: '999px',
-    fontSize: '12px',
-    fontWeight: '600'
-  },
-  statusConfirmed: {
-    backgroundColor: '#dcfce7',
-    color: '#166534'
-  },
-  statusPending: {
-    backgroundColor: '#fef3c7',
-    color: '#92400e'
-  },
-  statusError: {
-    backgroundColor: '#fee2e2',
-    color: '#991b1b'
-  }
+  table: { width: '100%' },
+  th: { textAlign: 'left' },
+  td: { padding: '8px 0' }
 }
 
 export default DashboardAdmin

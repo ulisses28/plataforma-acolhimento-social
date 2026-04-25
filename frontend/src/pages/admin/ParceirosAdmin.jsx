@@ -1,3 +1,5 @@
+import BackButton from '../../components/ui/BackButton'
+import AdminHeader from '../../components/ui/AdminHeader'
 function ParceirosAdmin() {
   return (
     <main style={{ padding: '40px' }}>

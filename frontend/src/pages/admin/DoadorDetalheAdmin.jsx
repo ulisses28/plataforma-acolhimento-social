@@ -2,22 +2,38 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { listarDoadores } from '../../services/doadoresService'
 import { listarDoacoes } from '../../services/doacoesService'
+import BackButton from '../../components/ui/BackButton'
+import AdminHeader from '../../components/ui/AdminHeader'
+/*
+  DETALHE DO DOADOR (ADMIN)
+  - Exibe dados completos do doador
+  - Histórico completo de doações
+  - Filtros por data e status
+*/
 
 function DoadorDetalheAdmin() {
   const { id } = useParams()
+
   const [doador, setDoador] = useState(null)
   const [doacoes, setDoacoes] = useState([])
   const [dataInicio, setDataInicio] = useState('')
   const [dataFim, setDataFim] = useState('')
   const [statusFiltro, setStatusFiltro] = useState('Todos')
 
+  /*
+    Carregar dados iniciais
+  */
   useEffect(() => {
     const listaDoadores = listarDoadores()
     const encontrado = listaDoadores.find((item) => String(item.id) === String(id))
+
     setDoador(encontrado || null)
     setDoacoes(listarDoacoes())
   }, [id])
 
+  /*
+    Filtro e ordenação do histórico
+  */
   const historico = useMemo(() => {
     if (!doador) return []
 
@@ -28,31 +44,48 @@ function DoadorDetalheAdmin() {
     }
 
     if (dataInicio) {
-      lista = lista.filter((item) => converterDataBR(item.data) >= new Date(`${dataInicio}T00:00:00`))
+      lista = lista.filter(
+        (item) => converterDataBR(item.data) >= new Date(`${dataInicio}T00:00:00`)
+      )
     }
 
     if (dataFim) {
-      lista = lista.filter((item) => converterDataBR(item.data) <= new Date(`${dataFim}T23:59:59`))
+      lista = lista.filter(
+        (item) => converterDataBR(item.data) <= new Date(`${dataFim}T23:59:59`)
+      )
     }
 
     return lista.sort((a, b) => converterDataBR(b.data) - converterDataBR(a.data))
   }, [doador, doacoes, dataInicio, dataFim, statusFiltro])
 
+  /*
+    Soma total confirmado
+  */
   const totalConfirmado = historico
     .filter((item) => item.status === 'Confirmado')
     .reduce((acc, item) => {
       const valor = Number(
-        String(item.valor).replace('R$', '').replace(/\./g, '').replace(',', '.').trim()
+        String(item.valor)
+          .replace('R$', '')
+          .replace(/\./g, '')
+          .replace(',', '.')
+          .trim()
       )
       return acc + (isNaN(valor) ? 0 : valor)
     }, 0)
 
+  /*
+    Caso não encontre o doador
+  */
   if (!doador) {
     return (
       <main style={styles.page}>
         <div style={styles.container}>
+          <BackButton />
           <h1 style={styles.title}>Doador não encontrado</h1>
-          <Link to="/admin/doadores" style={styles.backLink}>Voltar para doadores</Link>
+          <Link to="/admin/doadores" style={styles.backLink}>
+            Voltar para lista
+          </Link>
         </div>
       </main>
     )
@@ -61,65 +94,54 @@ function DoadorDetalheAdmin() {
   return (
     <main style={styles.page}>
       <div style={styles.container}>
-        <div style={styles.topBar}>
-          <div>
-            <h1 style={styles.title}>{doador.nome}</h1>
-            <p style={styles.subtitle}>Ficha completa do doador e histórico desde a primeira doação.</p>
-          </div>
-          <Link to="/admin/doadores" style={styles.backButton}>Voltar</Link>
-        </div>
 
+        {/* ================= BOTÃO PADRÃO ================= */}
+        <BackButton label="Voltar para doadores" />
+
+        {/* ================= HEADER ================= */}
+        <header style={styles.header}>
+          <h1 style={styles.title}>{doador.nome}</h1>
+          <p style={styles.subtitle}>
+            Ficha completa do doador e histórico desde a primeira doação.
+          </p>
+        </header>
+
+        {/* ================= INFORMAÇÕES ================= */}
         <section style={styles.infoGrid}>
-          <div style={styles.infoCard}>
-            <h3 style={styles.cardTitle}>Telefone</h3>
-            <p style={styles.cardText}>{doador.telefone || '-'}</p>
-          </div>
-
-          <div style={styles.infoCard}>
-            <h3 style={styles.cardTitle}>Observação</h3>
-            <p style={styles.cardText}>{doador.obs || '-'}</p>
-          </div>
-
-          <div style={styles.infoCard}>
-            <h3 style={styles.cardTitle}>Última doação</h3>
-            <p style={styles.cardText}>{historico[0]?.data || '-'}</p>
-          </div>
-
-          <div style={styles.infoCard}>
-            <h3 style={styles.cardTitle}>Total confirmado</h3>
-            <p style={styles.cardText}>
-              {totalConfirmado.toLocaleString('pt-BR', {
-                style: 'currency',
-                currency: 'BRL'
-              })}
-            </p>
-          </div>
+          <InfoCard title="Telefone" value={doador.telefone} />
+          <InfoCard title="Observação" value={doador.obs} />
+          <InfoCard title="Última doação" value={historico[0]?.data} />
+          <InfoCard
+            title="Total confirmado"
+            value={totalConfirmado.toLocaleString('pt-BR', {
+              style: 'currency',
+              currency: 'BRL'
+            })}
+          />
         </section>
 
+        {/* ================= FILTROS ================= */}
         <section style={styles.tableCard}>
           <div style={styles.filtersRow}>
-            <div style={styles.filterItem}>
-              <label style={styles.filterLabel}>Data inicial</label>
+            <Filter label="Data inicial">
               <input
                 type="date"
                 value={dataInicio}
                 onChange={(e) => setDataInicio(e.target.value)}
                 style={styles.input}
               />
-            </div>
+            </Filter>
 
-            <div style={styles.filterItem}>
-              <label style={styles.filterLabel}>Data final</label>
+            <Filter label="Data final">
               <input
                 type="date"
                 value={dataFim}
                 onChange={(e) => setDataFim(e.target.value)}
                 style={styles.input}
               />
-            </div>
+            </Filter>
 
-            <div style={styles.filterItem}>
-              <label style={styles.filterLabel}>Status</label>
+            <Filter label="Status">
               <select
                 value={statusFiltro}
                 onChange={(e) => setStatusFiltro(e.target.value)}
@@ -130,66 +152,69 @@ function DoadorDetalheAdmin() {
                 <option value="Pendente">Pendente</option>
                 <option value="Erro">Erro</option>
               </select>
-            </div>
+            </Filter>
           </div>
 
-          <div style={styles.tableHeader}>
-            <h2 style={styles.tableTitle}>Histórico completo</h2>
-            <p style={styles.tableSubtitle}>
-              Filtre por período e status para análise administrativa.
-            </p>
-          </div>
+          {/* ================= TABELA ================= */}
+          <h2 style={styles.tableTitle}>Histórico completo</h2>
 
-          <div style={styles.tableWrapper}>
-            <table style={styles.table}>
-              <thead>
+          <table style={styles.table}>
+            <thead>
+              <tr>
+                <th style={styles.th}>Data</th>
+                <th style={styles.th}>Valor</th>
+                <th style={styles.th}>Forma</th>
+                <th style={styles.th}>Status</th>
+                <th style={styles.th}>Detalhe</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {historico.length === 0 ? (
                 <tr>
-                  <th style={styles.th}>Data</th>
-                  <th style={styles.th}>Valor</th>
-                  <th style={styles.th}>Forma</th>
-                  <th style={styles.th}>Status</th>
-                  <th style={styles.th}>Detalhe</th>
+                  <td colSpan="5" style={styles.emptyTd}>
+                    Nenhuma doação encontrada.
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {historico.length === 0 ? (
-                  <tr>
-                    <td style={styles.emptyTd} colSpan="5">
-                      Nenhuma doação encontrada para esse filtro.
+              ) : (
+                historico.map((item) => (
+                  <tr key={item.id}>
+                    <td style={styles.td}>{item.data}</td>
+                    <td style={styles.td}>{item.valor}</td>
+                    <td style={styles.td}>{item.forma}</td>
+                    <td style={styles.td}>{item.status}</td>
+                    <td style={styles.td}>
+                      {item.descricaoMaterial || item.comprovante || '-'}
                     </td>
                   </tr>
-                ) : (
-                  historico.map((item) => (
-                    <tr key={item.id}>
-                      <td style={styles.td}>{item.data}</td>
-                      <td style={styles.td}>{item.valor}</td>
-                      <td style={styles.td}>{item.forma}</td>
-                      <td style={styles.td}>
-                        <span
-                          style={{
-                            ...styles.statusBadge,
-                            ...(item.status === 'Confirmado'
-                              ? styles.statusConfirmed
-                              : item.status === 'Erro'
-                              ? styles.statusError
-                              : styles.statusPending)
-                          }}
-                        >
-                          {item.status}
-                        </span>
-                      </td>
-                      <td style={styles.td}>
-                        {item.descricaoMaterial || item.comprovante || '-'}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                ))
+              )}
+            </tbody>
+          </table>
         </section>
+
       </div>
     </main>
+  )
+}
+
+/* ================= COMPONENTES AUX ================= */
+
+function InfoCard({ title, value }) {
+  return (
+    <div style={styles.infoCard}>
+      <h3 style={styles.cardTitle}>{title}</h3>
+      <p style={styles.cardText}>{value || '-'}</p>
+    </div>
+  )
+}
+
+function Filter({ label, children }) {
+  return (
+    <div style={styles.filterItem}>
+      <label style={styles.filterLabel}>{label}</label>
+      {children}
+    </div>
   )
 }
 
@@ -199,147 +224,42 @@ function converterDataBR(dataBR) {
   return new Date(`${ano}-${mes}-${dia}T00:00:00`)
 }
 
+/* ================= ESTILOS ================= */
+
 const styles = {
-  page: {
-    minHeight: '100vh',
-    background: 'linear-gradient(180deg, #eaf4ff 0%, #f1f5f9 35%, #f8fbff 100%)',
-    padding: '40px 20px'
-  },
-  container: {
-    maxWidth: '1200px',
-    margin: '0 auto'
-  },
-  topBar: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    gap: '16px',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    marginBottom: '24px'
-  },
-  title: {
-    margin: 0,
-    color: '#0B3D91',
-    fontSize: '2.2rem'
-  },
-  subtitle: {
-    marginTop: '8px',
-    color: '#4b5563'
-  },
-  backButton: {
-    textDecoration: 'none',
-    backgroundColor: '#0B3D91',
-    color: '#fff',
-    padding: '12px 18px',
-    borderRadius: '10px',
-    fontWeight: '600'
-  },
-  backLink: {
-    color: '#0B3D91',
-    textDecoration: 'none',
-    fontWeight: '600'
-  },
+  page: { padding: '40px 20px' },
+  container: { maxWidth: '1200px', margin: '0 auto' },
+  header: { marginBottom: '20px' },
+  title: { color: '#0B3D91' },
+  subtitle: { color: '#6b7280' },
+
   infoGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-    gap: '18px',
-    marginBottom: '24px'
+    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+    gap: '16px'
   },
-  infoCard: {
-    backgroundColor: '#fff',
-    borderRadius: '18px',
-    padding: '22px',
-    boxShadow: '0 4px 18px rgba(0,0,0,0.08)'
-  },
-  cardTitle: {
-    margin: 0,
-    color: '#0B3D91',
-    fontSize: '1rem'
-  },
-  cardText: {
-    marginTop: '10px',
-    color: '#1f2937'
-  },
-  tableCard: {
-    backgroundColor: '#fff',
-    borderRadius: '20px',
-    padding: '28px',
-    boxShadow: '0 4px 18px rgba(0,0,0,0.08)'
-  },
+
+  infoCard: { background: '#fff', padding: '20px', borderRadius: '12px' },
+  cardTitle: { margin: 0 },
+  cardText: { color: '#374151' },
+
+  tableCard: { marginTop: '20px', background: '#fff', padding: '20px' },
+
   filtersRow: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-    gap: '14px',
-    marginBottom: '20px'
+    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+    gap: '12px'
   },
-  filterItem: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px'
-  },
-  filterLabel: {
-    color: '#374151',
-    fontWeight: '600'
-  },
-  input: {
-    padding: '12px',
-    borderRadius: '10px',
-    border: '1px solid #d1d5db'
-  },
-  tableHeader: {
-    marginBottom: '18px'
-  },
-  tableTitle: {
-    margin: 0,
-    color: '#0B3D91'
-  },
-  tableSubtitle: {
-    marginTop: '8px',
-    color: '#6b7280'
-  },
-  tableWrapper: {
-    overflowX: 'auto'
-  },
-  table: {
-    width: '100%',
-    borderCollapse: 'collapse'
-  },
-  th: {
-    textAlign: 'left',
-    padding: '14px',
-    borderBottom: '1px solid #e5e7eb',
-    color: '#374151',
-    fontSize: '14px'
-  },
-  td: {
-    padding: '14px',
-    borderBottom: '1px solid #f1f5f9',
-    color: '#1f2937'
-  },
-  emptyTd: {
-    padding: '20px 14px',
-    textAlign: 'center',
-    color: '#6b7280'
-  },
-  statusBadge: {
-    display: 'inline-block',
-    padding: '6px 12px',
-    borderRadius: '999px',
-    fontSize: '12px',
-    fontWeight: '600'
-  },
-  statusConfirmed: {
-    backgroundColor: '#dcfce7',
-    color: '#166534'
-  },
-  statusPending: {
-    backgroundColor: '#fef3c7',
-    color: '#92400e'
-  },
-  statusError: {
-    backgroundColor: '#fee2e2',
-    color: '#991b1b'
-  }
+
+  filterItem: { display: 'flex', flexDirection: 'column' },
+  filterLabel: { fontWeight: '600' },
+
+  input: { padding: '10px', borderRadius: '8px' },
+
+  table: { width: '100%', marginTop: '20px' },
+  th: { textAlign: 'left' },
+  td: { padding: '8px 0' },
+  emptyTd: { textAlign: 'center', padding: '20px' }
 }
 
 export default DoadorDetalheAdmin

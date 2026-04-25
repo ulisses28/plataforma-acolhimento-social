@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
+import AdminHeader from '../../components/ui/AdminHeader'
 import {
   ResponsiveContainer,
   PieChart,
@@ -261,42 +262,38 @@ function GraficosAdmin() {
   return (
     <main style={styles.page}>
       <div style={styles.container}>
-        <header style={styles.header}>
-          <div>
-            <h1 style={styles.title}>Central de Gráficos</h1>
-            <p style={styles.subtitle}>
-              Indicadores visuais do sistema de doações, eficiência da plataforma e engajamento dos usuários.
-            </p>
-          </div>
+        <AdminHeader
+          title="Central de Gráficos"
+          subtitle="Indicadores visuais do sistema de doações, eficiência da plataforma e engajamento dos usuários."
+        />
 
-          <div style={styles.filters}>
-            <select
-              value={mesSelecionado}
-              onChange={(e) => setMesSelecionado(e.target.value)}
-              style={styles.select}
-            >
-              <option value="01">Janeiro</option>
-              <option value="02">Fevereiro</option>
-              <option value="03">Março</option>
-              <option value="04">Abril</option>
-              <option value="05">Maio</option>
-              <option value="06">Junho</option>
-              <option value="07">Julho</option>
-              <option value="08">Agosto</option>
-              <option value="09">Setembro</option>
-              <option value="10">Outubro</option>
-              <option value="11">Novembro</option>
-              <option value="12">Dezembro</option>
-            </select>
+        <section style={styles.filtersPanel}>
+          <select
+            value={mesSelecionado}
+            onChange={(e) => setMesSelecionado(e.target.value)}
+            style={styles.select}
+          >
+            <option value="01">Janeiro</option>
+            <option value="02">Fevereiro</option>
+            <option value="03">Março</option>
+            <option value="04">Abril</option>
+            <option value="05">Maio</option>
+            <option value="06">Junho</option>
+            <option value="07">Julho</option>
+            <option value="08">Agosto</option>
+            <option value="09">Setembro</option>
+            <option value="10">Outubro</option>
+            <option value="11">Novembro</option>
+            <option value="12">Dezembro</option>
+          </select>
 
-            <input
-              value={anoSelecionado}
-              onChange={(e) => setAnoSelecionado(e.target.value)}
-              style={styles.select}
-              placeholder="Ano"
-            />
-          </div>
-        </header>
+          <input
+            value={anoSelecionado}
+            onChange={(e) => setAnoSelecionado(e.target.value)}
+            style={styles.select}
+            placeholder="Ano"
+          />
+        </section>
 
         <section style={styles.reportPanel}>
           <div style={styles.reportBox}>
@@ -327,9 +324,7 @@ function GraficosAdmin() {
               </label>
             </div>
 
-            {erroRelatorio && (
-              <p style={styles.errorText}>{erroRelatorio}</p>
-            )}
+            {erroRelatorio && <p style={styles.errorText}>{erroRelatorio}</p>}
           </div>
 
           <button
@@ -358,57 +353,19 @@ function GraficosAdmin() {
             })}
           />
 
-          <SummaryCard
-            label="Doações financeiras"
-            value={resumo.quantidadeFinanceiras}
-          />
-
-          <SummaryCard
-            label="Doações materiais"
-            value={resumo.quantidadeMateriais}
-          />
-
-          <SummaryCard
-            label="Visitas no mês"
-            value={totalVisitasMes}
-          />
-
-          <SummaryCard
-            label="Tempo total (min)"
-            value={(totalTempoMes / 60).toFixed(1)}
-          />
-
-          <SummaryCard
-            label="Tempo médio por usuário"
-            value={`${tempoMedioVisita.toFixed(1)} s`}
-          />
-
-          <SummaryCard
-            label="Total de interações"
-            value={totalInteracoes}
-          />
-
-          <SummaryCard
-            label="Interações por usuário"
-            value={interacoesPorUsuario.toFixed(1)}
-          />
+          <SummaryCard label="Doações financeiras" value={resumo.quantidadeFinanceiras} />
+          <SummaryCard label="Doações materiais" value={resumo.quantidadeMateriais} />
+          <SummaryCard label="Visitas no mês" value={totalVisitasMes} />
+          <SummaryCard label="Tempo total (min)" value={(totalTempoMes / 60).toFixed(1)} />
+          <SummaryCard label="Tempo médio por usuário" value={`${tempoMedioVisita.toFixed(1)} s`} />
+          <SummaryCard label="Total de interações" value={totalInteracoes} />
+          <SummaryCard label="Interações por usuário" value={interacoesPorUsuario.toFixed(1)} />
         </section>
 
         <section style={styles.insightsGrid}>
-          <InsightCard
-            label="Nível de engajamento"
-            value={insights.nivelEngajamento}
-          />
-
-          <InsightCard
-            label="Leitura do tempo médio"
-            value={insights.leituraTempo}
-          />
-
-          <InsightCard
-            label="Eficiência da plataforma"
-            value={insights.eficiencia}
-          />
+          <InsightCard label="Nível de engajamento" value={insights.nivelEngajamento} />
+          <InsightCard label="Leitura do tempo médio" value={insights.leituraTempo} />
+          <InsightCard label="Eficiência da plataforma" value={insights.eficiencia} />
         </section>
 
         <section style={styles.textInsightCard}>
@@ -614,28 +571,11 @@ const styles = {
     maxWidth: '1400px',
     margin: '0 auto'
   },
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    gap: '16px',
-    flexWrap: 'wrap',
-    marginBottom: '18px'
-  },
-  title: {
-    color: '#fff',
-    fontSize: '2rem',
-    margin: 0
-  },
-  subtitle: {
-    color: '#94a3b8',
-    marginTop: '8px',
-    lineHeight: '1.6'
-  },
-  filters: {
+  filtersPanel: {
     display: 'flex',
     gap: '10px',
     flexWrap: 'wrap',
-    alignItems: 'center'
+    marginBottom: '18px'
   },
   select: {
     background: '#111827',

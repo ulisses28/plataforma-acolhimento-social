@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from 'react'
 import { listarDoacoes } from '../../services/doacoesService'
+import AdminHeader from '../../components/ui/AdminHeader'
+
+/*
+  RELATÓRIOS ADMIN
+  - Exibe ranking por doador
+  - Considera apenas doações confirmadas
+  - Usa AdminHeader para manter botão voltar e padrão visual
+*/
 
 function RelatoriosAdmin() {
   const [ranking, setRanking] = useState([])
@@ -11,9 +19,7 @@ function RelatoriosAdmin() {
   function gerarRelatorio() {
     const doacoes = listarDoacoes()
 
-    // pegar só confirmadas
-    const confirmadas = doacoes.filter(d => d.status === 'Confirmado')
-
+    const confirmadas = doacoes.filter((d) => d.status === 'Confirmado')
     const mapa = {}
 
     confirmadas.forEach((d) => {
@@ -39,10 +45,7 @@ function RelatoriosAdmin() {
       mapa[nome].quantidade += 1
     })
 
-    const lista = Object.values(mapa)
-
-    // ordenar por maior valor
-    lista.sort((a, b) => b.total - a.total)
+    const lista = Object.values(mapa).sort((a, b) => b.total - a.total)
 
     setRanking(lista)
   }
@@ -50,43 +53,45 @@ function RelatoriosAdmin() {
   return (
     <main style={styles.page}>
       <div style={styles.container}>
-        <h1 style={styles.title}>Relatório por Doador</h1>
-        <p style={styles.subtitle}>
-          Ranking baseado apenas em doações confirmadas.
-        </p>
+        <AdminHeader
+          title="Relatório por Doador"
+          subtitle="Ranking baseado apenas em doações confirmadas."
+        />
 
-        <div style={styles.card}>
+        <section style={styles.card}>
           {ranking.length === 0 ? (
-            <p>Nenhuma doação confirmada ainda.</p>
+            <p style={styles.emptyText}>Nenhuma doação confirmada ainda.</p>
           ) : (
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th style={styles.th}>#</th>
-                  <th style={styles.th}>Doador</th>
-                  <th style={styles.th}>Quantidade</th>
-                  <th style={styles.th}>Total</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {ranking.map((d, index) => (
-                  <tr key={d.nome}>
-                    <td style={styles.td}>{index + 1}</td>
-                    <td style={styles.td}>{d.nome}</td>
-                    <td style={styles.td}>{d.quantidade}</td>
-                    <td style={styles.td}>
-                      {d.total.toLocaleString('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL'
-                      })}
-                    </td>
+            <div style={styles.tableWrapper}>
+              <table style={styles.table}>
+                <thead>
+                  <tr>
+                    <th style={styles.th}>#</th>
+                    <th style={styles.th}>Doador</th>
+                    <th style={styles.th}>Quantidade</th>
+                    <th style={styles.th}>Total</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+
+                <tbody>
+                  {ranking.map((d, index) => (
+                    <tr key={d.nome}>
+                      <td style={styles.td}>{index + 1}</td>
+                      <td style={styles.td}>{d.nome}</td>
+                      <td style={styles.td}>{d.quantidade}</td>
+                      <td style={styles.td}>
+                        {d.total.toLocaleString('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL'
+                        })}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
-        </div>
+        </section>
       </div>
     </main>
   )
@@ -95,25 +100,21 @@ function RelatoriosAdmin() {
 const styles = {
   page: {
     minHeight: '100vh',
-    backgroundColor: '#F1F5F9',
-    padding: '40px'
+    background: 'linear-gradient(180deg, #eaf4ff 0%, #f1f5f9 35%, #f8fbff 100%)',
+    padding: '40px 20px'
   },
   container: {
-    maxWidth: '900px',
+    maxWidth: '1000px',
     margin: '0 auto'
   },
-  title: {
-    color: '#0B3D91'
-  },
-  subtitle: {
-    marginBottom: '20px',
-    color: '#555'
-  },
   card: {
-    background: '#fff',
-    padding: '20px',
-    borderRadius: '12px',
-    boxShadow: '0 2px 10px rgba(0,0,0,0.08)'
+    backgroundColor: '#ffffff',
+    borderRadius: '20px',
+    padding: '28px',
+    boxShadow: '0 4px 18px rgba(0,0,0,0.08)'
+  },
+  tableWrapper: {
+    overflowX: 'auto'
   },
   table: {
     width: '100%',
@@ -121,12 +122,19 @@ const styles = {
   },
   th: {
     textAlign: 'left',
-    padding: '10px',
-    borderBottom: '2px solid #ddd'
+    padding: '14px',
+    borderBottom: '1px solid #e5e7eb',
+    color: '#374151',
+    fontSize: '14px'
   },
   td: {
-    padding: '10px',
-    borderBottom: '1px solid #eee'
+    padding: '14px',
+    borderBottom: '1px solid #f1f5f9',
+    color: '#1f2937'
+  },
+  emptyText: {
+    color: '#6b7280',
+    margin: 0
   }
 }
 

@@ -1,13 +1,27 @@
 import React, { useEffect, useState } from 'react'
 import { listarDoacoes, atualizarStatusDoacao } from '../../services/doacoesService'
+import AdminHeader from '../../components/ui/AdminHeader'
+
+/*
+  PENDENTES ADMIN
+  - Controle de doações não concluídas
+  - Permite alterar status manualmente
+  - Usa AdminHeader (já inclui botão voltar)
+*/
 
 function PendentesAdmin() {
   const [doacoes, setDoacoes] = useState([])
 
+  /*
+    Carregamento inicial
+  */
   useEffect(() => {
     setDoacoes([...listarDoacoes()])
   }, [])
 
+  /*
+    Atualização automática (simulação tempo real)
+  */
   useEffect(() => {
     const intervalo = setInterval(() => {
       setDoacoes([...listarDoacoes()])
@@ -16,49 +30,43 @@ function PendentesAdmin() {
     return () => clearInterval(intervalo)
   }, [])
 
+  /*
+    Atualiza status manualmente
+  */
   function handleAtualizarStatus(id, novoStatus) {
     atualizarStatusDoacao(id, novoStatus)
     setDoacoes([...listarDoacoes()])
   }
 
-  const pendentes = doacoes.filter((doacao) => doacao.status === 'Pendente')
-  const falhas = doacoes.filter((doacao) => doacao.status === 'Erro')
+  const pendentes = doacoes.filter((d) => d.status === 'Pendente')
+  const falhas = doacoes.filter((d) => d.status === 'Erro')
   const naoConcluidas = doacoes.filter(
-    (doacao) => doacao.status === 'Pendente' || doacao.status === 'Erro'
+    (d) => d.status === 'Pendente' || d.status === 'Erro'
   )
 
   return (
     <main style={styles.page}>
       <div style={styles.container}>
-        <header style={styles.header}>
-          <h1 style={styles.title}>Pendentes e Não Concluídas</h1>
-          <p style={styles.subtitle}>
-            Acompanhe doações que ainda não foram confirmadas ou que apresentaram falha no processamento.
-          </p>
-        </header>
 
+        {/* HEADER PADRÃO DO SISTEMA */}
+        <AdminHeader
+          title="Pendentes e Não Concluídas"
+          subtitle="Acompanhe doações que ainda não foram confirmadas ou que apresentaram falha."
+        />
+
+        {/* RESUMO */}
         <section style={styles.summaryGrid}>
-          <div style={styles.summaryCard}>
-            <h2 style={styles.summaryNumber}>{pendentes.length}</h2>
-            <p style={styles.summaryLabel}>Pendentes</p>
-          </div>
-
-          <div style={styles.summaryCard}>
-            <h2 style={styles.summaryNumber}>{falhas.length}</h2>
-            <p style={styles.summaryLabel}>Falhas</p>
-          </div>
-
-          <div style={styles.summaryCard}>
-            <h2 style={styles.summaryNumber}>{naoConcluidas.length}</h2>
-            <p style={styles.summaryLabel}>Não concluídas</p>
-          </div>
+          <SummaryCard label="Pendentes" value={pendentes.length} />
+          <SummaryCard label="Falhas" value={falhas.length} />
+          <SummaryCard label="Não concluídas" value={naoConcluidas.length} />
         </section>
 
+        {/* TABELA */}
         <section style={styles.tableCard}>
           <div style={styles.tableHeader}>
             <h2 style={styles.tableTitle}>Controle de pendências</h2>
             <p style={styles.tableSubtitle}>
-              Somente doações confirmadas devem compor os relatórios e totais financeiros.
+              Apenas doações confirmadas devem entrar nos relatórios oficiais.
             </p>
           </div>
 
@@ -73,50 +81,53 @@ function PendentesAdmin() {
                   <th style={styles.th}>Ações</th>
                 </tr>
               </thead>
+
               <tbody>
                 {naoConcluidas.length === 0 ? (
                   <tr>
                     <td style={styles.emptyTd} colSpan="5">
-                      Nenhuma doação pendente ou com falha no momento.
+                      Nenhuma pendência no momento.
                     </td>
                   </tr>
                 ) : (
-                  naoConcluidas.map((doacao) => (
-                    <tr key={doacao.id}>
-                      <td style={styles.td}>{doacao.data}</td>
-                      <td style={styles.td}>{doacao.valor}</td>
-                      <td style={styles.td}>{doacao.forma}</td>
+                  naoConcluidas.map((d) => (
+                    <tr key={d.id}>
+                      <td style={styles.td}>{d.data}</td>
+                      <td style={styles.td}>{d.valor}</td>
+                      <td style={styles.td}>{d.forma}</td>
+
                       <td style={styles.td}>
                         <span
                           style={{
                             ...styles.statusBadge,
-                            ...(doacao.status === 'Pendente'
+                            ...(d.status === 'Pendente'
                               ? styles.statusPending
                               : styles.statusError)
                           }}
                         >
-                          {doacao.status}
+                          {d.status}
                         </span>
                       </td>
+
                       <td style={styles.td}>
                         <div style={styles.actions}>
                           <button
                             style={styles.confirmButton}
-                            onClick={() => handleAtualizarStatus(doacao.id, 'Confirmado')}
+                            onClick={() => handleAtualizarStatus(d.id, 'Confirmado')}
                           >
                             Confirmar
                           </button>
 
                           <button
                             style={styles.pendingButton}
-                            onClick={() => handleAtualizarStatus(doacao.id, 'Pendente')}
+                            onClick={() => handleAtualizarStatus(d.id, 'Pendente')}
                           >
                             Pendente
                           </button>
 
                           <button
                             style={styles.errorButton}
-                            onClick={() => handleAtualizarStatus(doacao.id, 'Erro')}
+                            onClick={() => handleAtualizarStatus(d.id, 'Erro')}
                           >
                             Erro
                           </button>
@@ -129,11 +140,27 @@ function PendentesAdmin() {
             </table>
           </div>
         </section>
+
       </div>
     </main>
   )
 }
 
+/*
+  COMPONENTE AUXILIAR
+*/
+function SummaryCard({ label, value }) {
+  return (
+    <div style={styles.summaryCard}>
+      <h2 style={styles.summaryNumber}>{value}</h2>
+      <p style={styles.summaryLabel}>{label}</p>
+    </div>
+  )
+}
+
+/*
+  ESTILOS
+*/
 const styles = {
   page: {
     minHeight: '100vh',
@@ -143,19 +170,6 @@ const styles = {
   container: {
     maxWidth: '1200px',
     margin: '0 auto'
-  },
-  header: {
-    marginBottom: '24px'
-  },
-  title: {
-    margin: 0,
-    fontSize: '2.2rem',
-    color: '#0B3D91'
-  },
-  subtitle: {
-    marginTop: '10px',
-    color: '#4b5563',
-    lineHeight: '1.6'
   },
   summaryGrid: {
     display: 'grid',
@@ -205,23 +219,17 @@ const styles = {
   th: {
     textAlign: 'left',
     padding: '14px',
-    borderBottom: '1px solid #e5e7eb',
-    color: '#374151',
-    fontSize: '14px'
+    borderBottom: '1px solid #e5e7eb'
   },
   td: {
     padding: '14px',
-    borderBottom: '1px solid #f1f5f9',
-    color: '#1f2937',
-    verticalAlign: 'middle'
+    borderBottom: '1px solid #f1f5f9'
   },
   emptyTd: {
-    padding: '20px 14px',
     textAlign: 'center',
-    color: '#6b7280'
+    padding: '20px'
   },
   statusBadge: {
-    display: 'inline-block',
     padding: '6px 12px',
     borderRadius: '999px',
     fontSize: '12px',
@@ -241,34 +249,25 @@ const styles = {
     flexWrap: 'wrap'
   },
   confirmButton: {
-    border: 'none',
     backgroundColor: '#166534',
-    color: '#ffffff',
-    padding: '8px 12px',
-    borderRadius: '10px',
-    cursor: 'pointer',
-    fontSize: '12px',
-    fontWeight: '600'
+    color: '#fff',
+    border: 'none',
+    padding: '8px',
+    borderRadius: '8px'
   },
   pendingButton: {
-    border: 'none',
     backgroundColor: '#92400e',
-    color: '#ffffff',
-    padding: '8px 12px',
-    borderRadius: '10px',
-    cursor: 'pointer',
-    fontSize: '12px',
-    fontWeight: '600'
+    color: '#fff',
+    border: 'none',
+    padding: '8px',
+    borderRadius: '8px'
   },
   errorButton: {
-    border: 'none',
     backgroundColor: '#991b1b',
-    color: '#ffffff',
-    padding: '8px 12px',
-    borderRadius: '10px',
-    cursor: 'pointer',
-    fontSize: '12px',
-    fontWeight: '600'
+    color: '#fff',
+    border: 'none',
+    padding: '8px',
+    borderRadius: '8px'
   }
 }
 

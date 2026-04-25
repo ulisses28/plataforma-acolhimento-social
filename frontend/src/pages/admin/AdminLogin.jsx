@@ -1,22 +1,35 @@
 import { Link } from 'react-router-dom'
+import BackButton from '../../components/ui/BackButton'
+
+/*
+  Página de Login Administrativo
+  - Tela de acesso ao painel interno
+  - Mantém botão voltar no topo do card
+*/
 
 function AdminLogin() {
   return (
     <main style={styles.page}>
-      <div style={styles.card}>
-        <h1 style={styles.title}>Login do Administrador</h1>
-        <p style={styles.subtitle}>
-          Acesso exclusivo da instituição para gerenciamento interno do sistema.
-        </p>
+      <div style={styles.wrapper}>
+        <BackButton />
 
-        <form style={styles.form}>
-          <input type="email" placeholder="E-mail" style={styles.input} />
-          <input type="password" placeholder="Senha" style={styles.input} />
+        <div style={styles.card}>
+          <h1 style={styles.title}>Login do Administrador</h1>
 
-          <Link to="/admin/dashboard" style={styles.button}>
-            Entrar no painel
-          </Link>
-        </form>
+          <p style={styles.subtitle}>
+            Acesso exclusivo da instituição para gerenciamento interno do sistema.
+          </p>
+
+          <form style={styles.form}>
+            <input type="email" placeholder="E-mail" style={styles.input} />
+            <input type="password" placeholder="Senha" style={styles.input} />
+
+            {/* Futuramente substituir por autenticação real */}
+            <Link to="/admin/dashboard" style={styles.button}>
+              Entrar no painel
+            </Link>
+          </form>
+        </div>
       </div>
     </main>
   )
@@ -31,9 +44,12 @@ const styles = {
     backgroundColor: '#F1F5F9',
     padding: '20px'
   },
+  wrapper: {
+    width: '100%',
+    maxWidth: '460px'
+  },
   card: {
     width: '100%',
-    maxWidth: '460px',
     backgroundColor: '#ffffff',
     borderRadius: '20px',
     padding: '32px',

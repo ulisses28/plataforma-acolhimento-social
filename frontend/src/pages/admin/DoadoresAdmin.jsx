@@ -2,16 +2,30 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { listarDoadores } from '../../services/doadoresService'
 import { listarDoacoes } from '../../services/doacoesService'
+import BackButton from '../../components/ui/BackButton'
+import AdminHeader from '../../components/ui/AdminHeader'
+/*
+  LISTAGEM DE DOADORES (ADMIN)
+  - Mostra todos os doadores cadastrados
+  - Exibe última doação e quantidade
+  - Permite acessar ficha completa
+*/
 
 function DoadoresAdmin() {
   const [doadores, setDoadores] = useState([])
   const [doacoes, setDoacoes] = useState([])
 
+  /*
+    Carregamento inicial
+  */
   useEffect(() => {
     setDoadores(listarDoadores())
     setDoacoes(listarDoacoes())
   }, [])
 
+  /*
+    Atualização automática (simulação tempo real)
+  */
   useEffect(() => {
     const intervalo = setInterval(() => {
       setDoadores(listarDoadores())
@@ -21,6 +35,9 @@ function DoadoresAdmin() {
     return () => clearInterval(intervalo)
   }, [])
 
+  /*
+    Monta resumo por doador
+  */
   const listaComResumo = useMemo(() => {
     return doadores.map((doador) => {
       const historico = doacoes
@@ -38,6 +55,11 @@ function DoadoresAdmin() {
   return (
     <main style={styles.page}>
       <div style={styles.container}>
+
+        {/* ================= BOTÃO VOLTAR ================= */}
+        <BackButton />
+
+        {/* ================= HEADER ================= */}
         <header style={styles.header}>
           <h1 style={styles.title}>Doadores</h1>
           <p style={styles.subtitle}>
@@ -45,11 +67,13 @@ function DoadoresAdmin() {
           </p>
         </header>
 
+        {/* ================= RESUMO ================= */}
         <section style={styles.summaryCard}>
           <h2 style={styles.summaryNumber}>{listaComResumo.length}</h2>
           <p style={styles.summaryLabel}>Doadores cadastrados</p>
         </section>
 
+        {/* ================= TABELA ================= */}
         <section style={styles.tableCard}>
           <div style={styles.tableHeader}>
             <h2 style={styles.tableTitle}>Lista de doadores</h2>
@@ -81,10 +105,15 @@ function DoadoresAdmin() {
                   listaComResumo.map((doador) => (
                     <tr key={doador.id}>
                       <td style={styles.td}>
-                        <Link to={`/admin/doadores/${doador.id}`} style={styles.linkNome}>
+                        {/* LINK PARA DETALHE */}
+                        <Link
+                          to={`/admin/doadores/${doador.id}`}
+                          style={styles.linkNome}
+                        >
                           {doador.nome}
                         </Link>
                       </td>
+
                       <td style={styles.td}>{doador.telefone || '-'}</td>
                       <td style={styles.td}>{doador.obs || '-'}</td>
                       <td style={styles.td}>{doador.ultimaDoacao}</td>
@@ -96,16 +125,22 @@ function DoadoresAdmin() {
             </table>
           </div>
         </section>
+
       </div>
     </main>
   )
 }
 
+/*
+  Conversão de data BR para objeto Date
+*/
 function converterDataBR(dataBR) {
   if (!dataBR || dataBR === '-') return new Date(0)
   const [dia, mes, ano] = dataBR.split('/')
   return new Date(`${ano}-${mes}-${dia}T00:00:00`)
 }
+
+/* ================= ESTILOS ================= */
 
 const styles = {
   page: {
@@ -127,16 +162,13 @@ const styles = {
   },
   subtitle: {
     marginTop: '10px',
-    color: '#4b5563',
-    lineHeight: '1.6'
+    color: '#4b5563'
   },
   summaryCard: {
     backgroundColor: '#ffffff',
     borderRadius: '20px',
     padding: '24px',
-    boxShadow: '0 4px 18px rgba(0,0,0,0.08)',
-    marginBottom: '24px',
-    maxWidth: '260px'
+    marginBottom: '24px'
   },
   summaryNumber: {
     margin: 0,
@@ -150,8 +182,7 @@ const styles = {
   tableCard: {
     backgroundColor: '#ffffff',
     borderRadius: '20px',
-    padding: '28px',
-    boxShadow: '0 4px 18px rgba(0,0,0,0.08)'
+    padding: '28px'
   },
   tableHeader: {
     marginBottom: '20px'
@@ -174,25 +205,20 @@ const styles = {
   th: {
     textAlign: 'left',
     padding: '14px',
-    borderBottom: '1px solid #e5e7eb',
-    color: '#374151',
-    fontSize: '14px'
+    borderBottom: '1px solid #e5e7eb'
   },
   td: {
     padding: '14px',
-    borderBottom: '1px solid #f1f5f9',
-    color: '#1f2937',
-    verticalAlign: 'top'
+    borderBottom: '1px solid #f1f5f9'
   },
   emptyTd: {
-    padding: '20px 14px',
-    textAlign: 'center',
-    color: '#6b7280'
+    padding: '20px',
+    textAlign: 'center'
   },
   linkNome: {
     color: '#0B3D91',
-    textDecoration: 'none',
-    fontWeight: '700'
+    fontWeight: '700',
+    textDecoration: 'none'
   }
 }
 
