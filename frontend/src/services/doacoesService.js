@@ -1,8 +1,19 @@
 const STORAGE_KEY = 'doacoes_lar_batista'
 
+/*
+  Serviço de doações
+  - Salva doações no localStorage
+  - Admin pode registrar material, dinheiro, cheque etc.
+  - Público pode registrar Pix ou TED
+*/
+
 export function criarDoacao(valorOuDados, doadorAntigo = null) {
   const doacoes = listarDoacoes()
 
+  /*
+    Compatibilidade com versões antigas:
+    quando vinha apenas um valor simples, o sistema criava Pix.
+  */
   if (typeof valorOuDados !== 'object' || valorOuDados === null) {
     const valorFormatado = formatarValor(valorOuDados)
 
@@ -11,7 +22,7 @@ export function criarDoacao(valorOuDados, doadorAntigo = null) {
       valor: valorFormatado,
       data: new Date().toLocaleDateString('pt-BR'),
       forma: 'Pix',
-      status: 'Pendente',
+      status: 'Confirmado',
       doador: doadorAntigo ? doadorAntigo.nome : 'Anônimo',
       tipoDoacao: 'Financeira',
       comprovante: '',
@@ -21,7 +32,6 @@ export function criarDoacao(valorOuDados, doadorAntigo = null) {
 
     doacoes.push(nova)
     salvarDoacoes(doacoes)
-    simularRetornoBanco(nova.id)
 
     return nova
   }
@@ -39,6 +49,11 @@ export function criarDoacao(valorOuDados, doadorAntigo = null) {
   const nomeDoador = doador ? doador.nome : 'Anônimo'
   const categoriaDoador = doador?.categoria || 'Pessoa Física'
 
+  /*
+    Doação material:
+    já entra como confirmada porque normalmente é registrada
+    manualmente pelo administrador após recebimento.
+  */
   if (tipoDoacao === 'Material') {
     const nova = {
       id: Date.now(),
@@ -56,15 +71,27 @@ export function criarDoacao(valorOuDados, doadorAntigo = null) {
 
     doacoes.push(nova)
     salvarDoacoes(doacoes)
+
     return nova
   }
 
+  /*
+    Doação financeira:
+    - Pix: confirmado automaticamente, pois o usuário escaneia o QR Code
+      e doa diretamente pelo banco.
+    - TED: fica pendente para o administrador validar o comprovante.
+  */
+  const formaPagamento = forma || 'Pix'
+
   const nova = {
     id: Date.now(),
-    valor: formatarValor(valor),
+    valor:
+      formaPagamento === 'Pix' && !valor
+        ? 'Valor informado no banco'
+        : formatarValor(valor),
     data: new Date().toLocaleDateString('pt-BR'),
-    forma: forma || 'Pix',
-    status: 'Pendente',
+    forma: formaPagamento,
+    status: formaPagamento === 'Pix' ? 'Confirmado' : 'Pendente',
     doador: nomeDoador,
     tipoDoacao: 'Financeira',
     comprovante: comprovante || '',
@@ -75,7 +102,6 @@ export function criarDoacao(valorOuDados, doadorAntigo = null) {
 
   doacoes.push(nova)
   salvarDoacoes(doacoes)
-  simularRetornoBanco(nova.id)
 
   return nova
 }
@@ -102,38 +128,8 @@ function salvarDoacoes(doacoes) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(doacoes))
 }
 
-function simularRetornoBanco(id) {
-  setTimeout(() => {
-    const doacoes = listarDoacoes()
-
-    const sorteio = Math.random()
-    let status = 'Pendente'
-
-    if (sorteio < 0.7) {
-      status = 'Confirmado'
-    } else if (sorteio < 0.9) {
-      status = 'Pendente'
-    } else {
-      status = 'Erro'
-    }
-
-    const indice = doacoes.findIndex((d) => d.id === id)
-
-    if (indice !== -1) {
-      doacoes[indice].status = status
-      salvarDoacoes(doacoes)
-
-      if (status === 'Confirmado') {
-        alert(`Doação confirmada com sucesso: ${doacoes[indice].valor}`)
-      } else if (status === 'Erro') {
-        alert(`Houve uma falha no processamento da doação: ${doacoes[indice].valor}`)
-      }
-    }
-  }, 3000)
-}
-
 function formatarValor(valor) {
-  const numero = Number(String(valor).replace(',', '.'))
+  const numero = Number(String(valor || 0).replace(',', '.'))
 
   if (isNaN(numero)) return 'R$ 0,00'
 
