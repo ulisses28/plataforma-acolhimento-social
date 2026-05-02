@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import Navbar from './components/layout/Navbar'
 import Footer from './components/layout/Footer'
 
@@ -10,10 +10,10 @@ import Voluntario from './pages/public/Voluntario'
 import Parceiros from './pages/public/Parceiros'
 import Login from './pages/public/Login'
 import DoarAgora from './pages/public/DoarAgora'
+import AdminLogin from './pages/admin/AdminLogin'
 import DoadorLogin from './pages/public/DoadorLogin'
 import PainelDoadorPublico from './pages/public/PainelDoadorPublico'
 
-import AdminLogin from './pages/admin/AdminLogin'
 import DashboardAdmin from './pages/admin/DashboardAdmin'
 import ParceirosAdmin from './pages/admin/ParceirosAdmin'
 import DoadoresAdmin from './pages/admin/DoadoresAdmin'
@@ -23,13 +23,19 @@ import PendentesAdmin from './pages/admin/PendentesAdmin'
 import DoadorDetalheAdmin from './pages/admin/DoadorDetalheAdmin'
 import GraficosAdmin from './pages/admin/GraficosAdmin'
 
-function App() {
+function Layout() {
+  const location = useLocation()
+
+  const isHome = location.pathname === '/'
+  const isAdmin = location.pathname.startsWith('/admin')
+
+  const mostrarLayoutPublico = !isHome && !isAdmin
+
   return (
-    <BrowserRouter>
-      <Navbar />
+    <>
+      {mostrarLayoutPublico && <Navbar />}
 
       <Routes>
-        {/* Páginas públicas */}
         <Route path="/" element={<Home />} />
         <Route path="/quem-somos" element={<QuemSomos />} />
         <Route path="/projetos" element={<Projetos />} />
@@ -37,16 +43,12 @@ function App() {
         <Route path="/voluntario" element={<Voluntario />} />
         <Route path="/parceiros" element={<Parceiros />} />
         <Route path="/login" element={<Login />} />
-
-        {/* Doação pública independente */}
         <Route path="/doar-agora" element={<DoarAgora />} />
 
-        {/* Área pública do doador */}
+        <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/doador/login" element={<DoadorLogin />} />
         <Route path="/doador/painel" element={<PainelDoadorPublico />} />
 
-        {/* Área administrativa */}
-        <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin/dashboard" element={<DashboardAdmin />} />
         <Route path="/admin/parceiros" element={<ParceirosAdmin />} />
         <Route path="/admin/doadores" element={<DoadoresAdmin />} />
@@ -57,7 +59,15 @@ function App() {
         <Route path="/admin/graficos" element={<GraficosAdmin />} />
       </Routes>
 
-      <Footer />
+      {mostrarLayoutPublico && <Footer />}
+    </>
+  )
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Layout />
     </BrowserRouter>
   )
 }

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
+import MapaImpacto from '../../components/ui/MapaImpacto'
 import AdminHeader from '../../components/ui/AdminHeader'
 import {
   ResponsiveContainer,
@@ -15,7 +16,9 @@ import {
   BarChart,
   Bar
 } from 'recharts'
+
 import { listarDoacoes } from '../../services/doacoesService'
+import { listarDoadores } from '../../services/doadoresService'
 import { obterAnalyticsMes } from '../../services/analyticsService'
 import { gerarRelatorioPDF } from '../../utils/pdfService'
 
@@ -23,6 +26,8 @@ function GraficosAdmin() {
   const hoje = new Date()
 
   const [doacoes, setDoacoes] = useState([])
+  const [doadores, setDoadores] = useState([])
+
   const [analytics, setAnalytics] = useState({
     totalVisitas: 0,
     tempoTotal: 0,
@@ -42,23 +47,71 @@ function GraficosAdmin() {
   const [secoesRelatorio, setSecoesRelatorio] = useState([])
   const [erroRelatorio, setErroRelatorio] = useState('')
 
+  /*
+    Carrega doações, doadores e métricas do site
+  */
   useEffect(() => {
     setDoacoes(listarDoacoes())
+    setDoadores(listarDoadores())
     setAnalytics(obterAnalyticsMes(mesSelecionado, anoSelecionado))
   }, [mesSelecionado, anoSelecionado])
 
+  /*
+    Atualização automática simulada
+  */
   useEffect(() => {
     const intervalo = setInterval(() => {
       setDoacoes(listarDoacoes())
+      setDoadores(listarDoadores())
       setAnalytics(obterAnalyticsMes(mesSelecionado, anoSelecionado))
     }, 2000)
 
     return () => clearInterval(intervalo)
   }, [mesSelecionado, anoSelecionado])
 
+  /*
+    Enriquecimento das doações com localização do doador.
+    Se a doação antiga não tiver país/estado/município, busca pelo nome do doador.
+  */
+  const doacoesComLocalizacao = useMemo(() => {
+    return doacoes.map((doacao) => {
+      const doadorRelacionado = doadores.find(
+        (doador) => doador.nome === doacao.doador
+      )
+
+      return {
+        ...doacao,
+        pais:
+          doacao.pais ||
+          doadorRelacionado?.pais ||
+          'Não informado',
+        paisCodigo:
+          doacao.paisCodigo ||
+          doadorRelacionado?.paisCodigo ||
+          '',
+        estado:
+          doacao.estado ||
+          doadorRelacionado?.estado ||
+          'Não informado',
+        municipio:
+          doacao.municipio ||
+          doadorRelacionado?.municipio ||
+          'Não informado'
+      }
+    })
+  }, [doacoes, doadores])
+
+  /*
+    Resumo principal
+  */
   const resumo = useMemo(() => {
-    const financeiras = doacoes.filter((d) => d.tipoDoacao === 'Financeira')
-    const materiais = doacoes.filter((d) => d.tipoDoacao === 'Material')
+    const financeiras = doacoesComLocalizacao.filter(
+      (d) => d.tipoDoacao === 'Financeira'
+    )
+
+    const materiais = doacoesComLocalizacao.filter(
+      (d) => d.tipoDoacao === 'Material'
+    )
 
     const totalFinanceiroConfirmado = financeiras
       .filter((d) => d.status === 'Confirmado')
@@ -75,8 +128,11 @@ function GraficosAdmin() {
       totalFinanceiroConfirmado,
       totalEstimadoMaterial
     }
-  }, [doacoes])
+  }, [doacoesComLocalizacao])
 
+  /*
+    Gráfico: Financeiras x Materiais
+  */
   const dadosTipoDoacao = useMemo(() => {
     return [
       { name: 'Financeiras', value: resumo.quantidadeFinanceiras },
@@ -84,6 +140,9 @@ function GraficosAdmin() {
     ]
   }, [resumo])
 
+  /*
+    Gráfico: categoria do doador
+  */
   const dadosCategoriaDoador = useMemo(() => {
     const contagem = {
       'Pessoa Física': 0,
@@ -91,7 +150,7 @@ function GraficosAdmin() {
       Parceiro: 0
     }
 
-    doacoes.forEach((d) => {
+    doacoesComLocalizacao.forEach((d) => {
       const categoria = d.categoriaDoador || 'Pessoa Física'
 
       if (contagem[categoria] !== undefined) {
@@ -104,10 +163,13 @@ function GraficosAdmin() {
     return [
       { name: 'Pessoa Física', value: contagem['Pessoa Física'] },
       { name: 'Pessoa Jurídica', value: contagem['Pessoa Jurídica'] },
-      { name: 'Parceiro', value: contagem['Parceiro'] }
+      { name: 'Parceiro', value: contagem.Parceiro }
     ]
-  }, [doacoes])
+  }, [doacoesComLocalizacao])
 
+  /*
+    Gráfico: linha mensal
+  */
   const dadosLinhaMensal = useMemo(() => {
     const ano = Number(anoSelecionado)
     const mes = Number(mesSelecionado)
@@ -118,7 +180,7 @@ function GraficosAdmin() {
       total: 0
     }))
 
-    doacoes.forEach((d) => {
+    doacoesComLocalizacao.forEach((d) => {
       const data = converterDataBR(d.data)
       if (!data) return
 
@@ -140,8 +202,11 @@ function GraficosAdmin() {
     })
 
     return base
-  }, [doacoes, mesSelecionado, anoSelecionado])
+  }, [doacoesComLocalizacao, mesSelecionado, anoSelecionado])
 
+  /*
+    Gráfico: comparativo financeiro/material
+  */
   const dadosBarrasTotais = useMemo(() => {
     return [
       {
@@ -155,6 +220,77 @@ function GraficosAdmin() {
     ]
   }, [resumo])
 
+  /*
+    NOVO: gráfico por país
+  */
+  const dadosPorPais = useMemo(() => {
+    const mapa = {}
+
+    doacoesComLocalizacao.forEach((d) => {
+      const pais = d.pais || 'Não informado'
+      mapa[pais] = (mapa[pais] || 0) + 1
+    })
+
+    return Object.keys(mapa).map((pais) => ({
+      name: pais,
+      value: mapa[pais]
+    }))
+  }, [doacoesComLocalizacao])
+
+  /*
+    NOVO: gráfico por estado brasileiro
+  */
+  const dadosPorEstado = useMemo(() => {
+    const mapa = {}
+
+    doacoesComLocalizacao.forEach((d) => {
+      const pais = String(d.pais || '').toLowerCase()
+      const paisCodigo = String(d.paisCodigo || '').toUpperCase()
+      const estado = d.estado || 'Não informado'
+
+      if (pais === 'brazil' || pais === 'brasil' || paisCodigo === 'BR') {
+        mapa[estado] = (mapa[estado] || 0) + 1
+      }
+    })
+
+    return Object.keys(mapa).map((estado) => ({
+      name: estado,
+      value: mapa[estado]
+    }))
+  }, [doacoesComLocalizacao])
+
+  /*
+    NOVO: ranking por município
+  */
+  const dadosPorMunicipio = useMemo(() => {
+    const mapa = {}
+
+    doacoesComLocalizacao.forEach((d) => {
+      const municipio = d.municipio || 'Não informado'
+      mapa[municipio] = (mapa[municipio] || 0) + 1
+    })
+
+    return Object.keys(mapa)
+      .map((municipio) => ({
+        name: municipio,
+        value: mapa[municipio]
+      }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 10)
+  }, [doacoesComLocalizacao])
+
+  /*
+    Cards geográficos
+  */
+  const resumoGeografico = {
+    paises: dadosPorPais.length,
+    estados: dadosPorEstado.length,
+    municipios: dadosPorMunicipio.length
+  }
+
+  /*
+    Analytics do site
+  */
   const totalVisitasMes = analytics.totalVisitas || 0
   const totalTempoMes = analytics.tempoTotal || 0
   const tempoMedioVisita = analytics.tempoMedio || 0
@@ -168,6 +304,9 @@ function GraficosAdmin() {
     { name: 'Interações/usuário', valor: Number(interacoesPorUsuario.toFixed(1)) }
   ]
 
+  /*
+    Insights automáticos
+  */
   const insights = useMemo(() => {
     let nivelEngajamento = 'Baixo'
 
@@ -193,25 +332,22 @@ function GraficosAdmin() {
       eficiencia = 'Eficiência moderada'
     }
 
-    let resumoTexto =
-      'A plataforma ainda apresenta sinais iniciais de uso e pode evoluir com melhorias de navegação e incentivo à interação.'
-
-    if (eficiencia === 'Eficiência alta') {
-      resumoTexto =
-        'A plataforma demonstra bom desempenho de uso, com permanência consistente e interação relevante dos visitantes.'
-    } else if (eficiencia === 'Eficiência moderada') {
-      resumoTexto =
-        'A plataforma apresenta desempenho intermediário, indicando bom potencial de conversão com ajustes de experiência do usuário.'
-    }
-
     return {
       nivelEngajamento,
       leituraTempo,
       eficiencia,
-      resumoTexto
+      resumoTexto:
+        eficiencia === 'Eficiência alta'
+          ? 'A plataforma demonstra bom desempenho de uso, com permanência consistente e interação relevante dos visitantes.'
+          : eficiencia === 'Eficiência moderada'
+          ? 'A plataforma apresenta desempenho intermediário, indicando bom potencial de conversão com ajustes de experiência do usuário.'
+          : 'A plataforma ainda apresenta sinais iniciais de uso e pode evoluir com melhorias de navegação e incentivo à interação.'
     }
   }, [tempoMedioVisita, interacoesPorUsuario])
 
+  /*
+    Opções do relatório
+  */
   const opcoesRelatorio = [
     { id: 'resumo', label: 'Resumo de doações' },
     { id: 'uso', label: 'Indicadores de uso da plataforma' },
@@ -219,6 +355,9 @@ function GraficosAdmin() {
     { id: 'doacoes', label: 'Últimas doações registradas' },
     { id: 'grafico-financeiras-materiais', label: 'Gráfico: Financeiras x Materiais' },
     { id: 'grafico-origem-doacoes', label: 'Gráfico: Origem das doações' },
+    { id: 'grafico-pais', label: 'Gráfico: Doações por país' },
+    { id: 'grafico-estado', label: 'Gráfico: Doações por estado' },
+    { id: 'grafico-municipio', label: 'Ranking: Doações por município' },
     { id: 'grafico-variacao-diaria', label: 'Gráfico: Variação diária do mês' },
     { id: 'grafico-comparativo-valores', label: 'Gráfico: Comparativo de valores' },
     { id: 'grafico-eficiencia-site', label: 'Gráfico: Eficiência e engajamento do site' }
@@ -252,7 +391,7 @@ function GraficosAdmin() {
 
     await gerarRelatorioPDF({
       resumo,
-      doacoes,
+      doacoes: doacoesComLocalizacao,
       analytics,
       insights,
       secoes: secoesRelatorio
@@ -262,10 +401,15 @@ function GraficosAdmin() {
   return (
     <main style={styles.page}>
       <div style={styles.container}>
-        <AdminHeader
-          title="Central de Gráficos"
-          subtitle="Indicadores visuais do sistema de doações, eficiência da plataforma e engajamento dos usuários."
-        />
+        <AdminHeader />
+
+        <section style={styles.headerBox}>
+          <h1 style={styles.mainTitle}>Central de Gráficos</h1>
+          <p style={styles.mainSubtitle}>
+            Indicadores visuais do sistema de doações, eficiência da plataforma,
+            engajamento dos usuários e impacto geográfico.
+          </p>
+        </section>
 
         <section style={styles.filtersPanel}>
           <select
@@ -344,7 +488,6 @@ function GraficosAdmin() {
               currency: 'BRL'
             })}
           />
-
           <SummaryCard
             label="Total estimado material"
             value={resumo.totalEstimadoMaterial.toLocaleString('pt-BR', {
@@ -352,7 +495,6 @@ function GraficosAdmin() {
               currency: 'BRL'
             })}
           />
-
           <SummaryCard label="Doações financeiras" value={resumo.quantidadeFinanceiras} />
           <SummaryCard label="Doações materiais" value={resumo.quantidadeMateriais} />
           <SummaryCard label="Visitas no mês" value={totalVisitasMes} />
@@ -360,6 +502,9 @@ function GraficosAdmin() {
           <SummaryCard label="Tempo médio por usuário" value={`${tempoMedioVisita.toFixed(1)} s`} />
           <SummaryCard label="Total de interações" value={totalInteracoes} />
           <SummaryCard label="Interações por usuário" value={interacoesPorUsuario.toFixed(1)} />
+          <SummaryCard label="Países alcançados" value={resumoGeografico.paises} />
+          <SummaryCard label="Estados brasileiros" value={resumoGeografico.estados} />
+          <SummaryCard label="Municípios no ranking" value={resumoGeografico.municipios} />
         </section>
 
         <section style={styles.insightsGrid}>
@@ -372,24 +517,15 @@ function GraficosAdmin() {
           <h2 style={styles.chartTitle}>Insight automático</h2>
           <p style={styles.textInsight}>{insights.resumoTexto}</p>
         </section>
-
-        <section id="area-graficos" style={styles.chartGrid}>
-          <div id="grafico-financeiras-materiais" style={styles.chartCard}>
+        <MapaImpacto dadosPorPais={dadosPorPais} />
+        <section style={styles.chartGrid}>
+          <div style={styles.chartCard}>
             <h2 style={styles.chartTitle}>Financeiras x Materiais</h2>
-            <p style={styles.chartSubtitle}>
-              Distribuição percentual por tipo de doação.
-            </p>
-
+            <p style={styles.chartSubtitle}>Distribuição percentual por tipo de doação.</p>
             <div style={styles.chartArea}>
               <ResponsiveContainer width="100%" height={320}>
                 <PieChart>
-                  <Pie
-                    data={dadosTipoDoacao}
-                    dataKey="value"
-                    nameKey="name"
-                    outerRadius={110}
-                    label
-                  >
+                  <Pie data={dadosTipoDoacao} dataKey="value" nameKey="name" outerRadius={110} label>
                     <Cell fill="#00C2FF" />
                     <Cell fill="#7CFFB2" />
                   </Pie>
@@ -400,22 +536,13 @@ function GraficosAdmin() {
             </div>
           </div>
 
-          <div id="grafico-origem-doacoes" style={styles.chartCard}>
+          <div style={styles.chartCard}>
             <h2 style={styles.chartTitle}>Origem das doações</h2>
-            <p style={styles.chartSubtitle}>
-              Pessoa Física, Pessoa Jurídica e Parceiros.
-            </p>
-
+            <p style={styles.chartSubtitle}>Pessoa Física, Pessoa Jurídica e Parceiros.</p>
             <div style={styles.chartArea}>
               <ResponsiveContainer width="100%" height={320}>
                 <PieChart>
-                  <Pie
-                    data={dadosCategoriaDoador}
-                    dataKey="value"
-                    nameKey="name"
-                    outerRadius={110}
-                    label
-                  >
+                  <Pie data={dadosCategoriaDoador} dataKey="value" nameKey="name" outerRadius={110} label>
                     <Cell fill="#FACC15" />
                     <Cell fill="#38BDF8" />
                     <Cell fill="#FB7185" />
@@ -427,15 +554,63 @@ function GraficosAdmin() {
             </div>
           </div>
 
-          <div
-            id="grafico-variacao-diaria"
-            style={{ ...styles.chartCard, gridColumn: '1 / -1' }}
-          >
+          <div style={styles.chartCard}>
+            <h2 style={styles.chartTitle}>Doações por país</h2>
+            <p style={styles.chartSubtitle}>Distribuição das doações por país informado.</p>
+            <div style={styles.chartArea}>
+              <ResponsiveContainer width="100%" height={320}>
+                <PieChart>
+                  <Pie data={dadosPorPais} dataKey="value" nameKey="name" outerRadius={110} label>
+                    {dadosPorPais.map((_, index) => (
+                      <Cell key={index} fill={coresGraficos[index % coresGraficos.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={tooltipStyle} />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div style={styles.chartCard}>
+            <h2 style={styles.chartTitle}>Doações por estado</h2>
+            <p style={styles.chartSubtitle}>Impacto das doações por estado brasileiro.</p>
+            <div style={styles.chartArea}>
+              <ResponsiveContainer width="100%" height={320}>
+                <BarChart data={dadosPorEstado}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#2a3140" />
+                  <XAxis dataKey="name" stroke="#cbd5e1" />
+                  <YAxis stroke="#cbd5e1" />
+                  <Tooltip contentStyle={tooltipStyle} />
+                  <Legend />
+                  <Bar dataKey="value" fill="#22c55e" name="Quantidade" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div style={{ ...styles.chartCard, gridColumn: '1 / -1' }}>
+            <h2 style={styles.chartTitle}>Ranking por município</h2>
+            <p style={styles.chartSubtitle}>Top 10 municípios com maior quantidade de doações.</p>
+            <div style={styles.chartAreaLarge}>
+              <ResponsiveContainer width="100%" height={360}>
+                <BarChart data={dadosPorMunicipio}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#2a3140" />
+                  <XAxis dataKey="name" stroke="#cbd5e1" />
+                  <YAxis stroke="#cbd5e1" />
+                  <Tooltip contentStyle={tooltipStyle} />
+                  <Legend />
+                  <Bar dataKey="value" fill="#38bdf8" name="Quantidade" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div style={{ ...styles.chartCard, gridColumn: '1 / -1' }}>
             <h2 style={styles.chartTitle}>Variação diária do mês</h2>
             <p style={styles.chartSubtitle}>
               Evolução do volume diário do dia 1 até o último dia do mês selecionado.
             </p>
-
             <div style={styles.chartAreaLarge}>
               <ResponsiveContainer width="100%" height={360}>
                 <LineChart data={dadosLinhaMensal}>
@@ -457,15 +632,11 @@ function GraficosAdmin() {
             </div>
           </div>
 
-          <div
-            id="grafico-comparativo-valores"
-            style={{ ...styles.chartCard, gridColumn: '1 / -1' }}
-          >
+          <div style={{ ...styles.chartCard, gridColumn: '1 / -1' }}>
             <h2 style={styles.chartTitle}>Comparativo de valores</h2>
             <p style={styles.chartSubtitle}>
               Valor financeiro confirmado versus valor estimado de doações materiais.
             </p>
-
             <div style={styles.chartAreaLarge}>
               <ResponsiveContainer width="100%" height={340}>
                 <BarChart data={dadosBarrasTotais}>
@@ -474,26 +645,17 @@ function GraficosAdmin() {
                   <YAxis stroke="#cbd5e1" />
                   <Tooltip contentStyle={tooltipStyle} />
                   <Legend />
-                  <Bar
-                    dataKey="total"
-                    fill="#60a5fa"
-                    name="Total em R$"
-                    radius={[8, 8, 0, 0]}
-                  />
+                  <Bar dataKey="total" fill="#60a5fa" name="Total em R$" radius={[8, 8, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
 
-          <div
-            id="grafico-eficiencia-site"
-            style={{ ...styles.chartCard, gridColumn: '1 / -1' }}
-          >
+          <div style={{ ...styles.chartCard, gridColumn: '1 / -1' }}>
             <h2 style={styles.chartTitle}>Eficiência e engajamento do site</h2>
             <p style={styles.chartSubtitle}>
               Visitas, tempo médio de permanência e interações para medir a eficiência da plataforma.
             </p>
-
             <div style={styles.chartAreaLarge}>
               <ResponsiveContainer width="100%" height={360}>
                 <BarChart data={dadosMetricasSite}>
@@ -502,12 +664,7 @@ function GraficosAdmin() {
                   <YAxis stroke="#cbd5e1" />
                   <Tooltip contentStyle={tooltipStyle} />
                   <Legend />
-                  <Bar
-                    dataKey="valor"
-                    fill="#22c55e"
-                    name="Métrica"
-                    radius={[8, 8, 0, 0]}
-                  />
+                  <Bar dataKey="valor" fill="#22c55e" name="Métrica" radius={[8, 8, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -545,7 +702,7 @@ function converterDataBR(dataBR) {
 function extrairNumeroMoeda(valor) {
   return (
     Number(
-      String(valor)
+      String(valor || 0)
         .replace('R$', '')
         .replace(/\./g, '')
         .replace(',', '.')
@@ -553,6 +710,17 @@ function extrairNumeroMoeda(valor) {
     ) || 0
   )
 }
+
+const coresGraficos = [
+  '#00C2FF',
+  '#7CFFB2',
+  '#FACC15',
+  '#FB7185',
+  '#A78BFA',
+  '#38BDF8',
+  '#22C55E',
+  '#F97316'
+]
 
 const tooltipStyle = {
   backgroundColor: '#111827',
@@ -570,6 +738,18 @@ const styles = {
   container: {
     maxWidth: '1400px',
     margin: '0 auto'
+  },
+  headerBox: {
+    marginBottom: '20px'
+  },
+  mainTitle: {
+    color: '#ffffff',
+    margin: 0,
+    fontSize: '2rem'
+  },
+  mainSubtitle: {
+    color: '#94a3b8',
+    lineHeight: '1.6'
   },
   filtersPanel: {
     display: 'flex',

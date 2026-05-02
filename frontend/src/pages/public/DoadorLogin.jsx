@@ -349,12 +349,15 @@ function DoadorLogin() {
                     <select
                       value={estadoId}
                       onChange={(e) => {
+                        const novoEstadoId = e.target.value
+
                         const selecionado = estados.find(
-                          (estado) => String(estado.id) === e.target.value
+                          (estado) => String(estado.id) === String(novoEstadoId)
                         )
 
-                        setEstadoId(e.target.value)
+                        setEstadoId(novoEstadoId)
                         setEstadoNome(selecionado?.nome || '')
+                        setMunicipio('')
                       }}
                       style={styles.input}
                     >
@@ -585,11 +588,14 @@ const styles = {
     fontWeight: '700'
   },
   input: {
-    minHeight: '44px',
-    borderRadius: '10px',
-    border: '1px solid #d1d5db',
-    padding: '0 12px'
-  },
+  width: '100%',
+  minHeight: '48px',
+  borderRadius: '10px',
+  border: '1px solid #bfdbfe',
+  background: '#f8fbff',
+  padding: '0 12px',
+  boxSizing: 'border-box'
+},
   radioGroup: {
     display: 'flex',
     gap: '18px',
