@@ -62,50 +62,108 @@ function Home() {
 
       <section className="impact-section">
         <h2>Juntos, fazemos a diferença</h2>
+
         <p>
           Todo apoio recebido se transforma em cuidado, acolhimento,
           alimentação, educação e oportunidades.
         </p>
 
         <div className="impact-cards">
-          <div className="impact-card">
+          {/* Card atualizado: agora leva para a página pública de necessidades */}
+          <Link to="/necessidades" className="impact-card impact-card-link">
             <div className="icon yellow">♡</div>
+
             <div>
-              <h3>Recebemos doações</h3>
-              <p>Alimentos, roupas, materiais escolares, produtos de higiene e muito mais.</p>
+              <h3>Necessidades Atuais</h3>
+
+              <p>
+                Veja alimentos, roupas, utensílios e itens prioritários que a
+                instituição precisa neste momento.
+              </p>
             </div>
-          </div>
+          </Link>
 
           <div className="impact-card">
             <div className="icon blue">👥</div>
+
             <div>
               <h3>Recebemos voluntários</h3>
-              <p>Pessoas que doam tempo, talento e amor para transformar vidas.</p>
+
+              <p>
+                Pessoas que doam tempo, talento e amor para transformar vidas.
+              </p>
             </div>
           </div>
 
           <div className="impact-card">
             <div className="icon green">🤝</div>
+
             <div>
               <h3>Apoio institucional</h3>
-              <p>Empresas e parceiros que fortalecem o impacto social da instituição.</p>
+
+              <p>
+                Empresas e parceiros que fortalecem o impacto social da
+                instituição.
+              </p>
             </div>
           </div>
         </div>
       </section>
 
       <section className="navigation-section">
-        <HomeCard image={missao1} title="Nossos projetos" text="Conheça as ações que transformam vidas todos os dias." link="/projetos" button="Saiba mais" />
-        <HomeCard image={missao2} title="Transparência" text="Acesse relatórios, prestação de contas e veja como as doações são utilizadas." link="/transparencia" button="Acessar" />
-        <HomeCard image={quemSomos} title="Quem somos" text="Conheça a história, missão, visão e valores da instituição." link="/quem-somos" button="Conhecer" />
-        <HomeCard image={heroImg} title="Como ajudar" text="Existem muitas formas de fazer parte dessa missão de amor." link="/voluntario" button="Fazer parte" />
+        <HomeCard
+          image={missao1}
+          title="Nossos projetos"
+          text="Conheça as ações que transformam vidas todos os dias."
+          link="/projetos"
+          button="Saiba mais"
+        />
+
+        <HomeCard
+          image={missao2}
+          title="Transparência"
+          text="Acesse relatórios, prestação de contas e veja como as doações são utilizadas."
+          link="/transparencia"
+          button="Acessar"
+        />
+
+        <HomeCard
+          image={quemSomos}
+          title="Quem somos"
+          text="Conheça a história, missão, visão e valores da instituição."
+          link="/quem-somos"
+          button="Conhecer"
+        />
+
+        <HomeCard
+          image={heroImg}
+          title="Como ajudar"
+          text="Existem muitas formas de fazer parte dessa missão de amor."
+          link="/voluntario"
+          button="Fazer parte"
+        />
       </section>
 
       <section className="numbers-section">
-        <div><strong>+250</strong><span>Vidas impactadas</span></div>
-        <div><strong>+10</strong><span>Anos de história</span></div>
-        <div><strong>+50</strong><span>Parceiros</span></div>
-        <div><strong>+5</strong><span>Cidades atendidas</span></div>
+        <div>
+          <strong>+250</strong>
+          <span>Vidas impactadas</span>
+        </div>
+
+        <div>
+          <strong>+10</strong>
+          <span>Anos de história</span>
+        </div>
+
+        <div>
+          <strong>+50</strong>
+          <span>Parceiros</span>
+        </div>
+
+        <div>
+          <strong>+5</strong>
+          <span>Cidades atendidas</span>
+        </div>
       </section>
 
       <section className="news-section">
@@ -115,9 +173,26 @@ function Home() {
         </div>
 
         <div className="news-grid">
-          <NewsCard image={quemSomos} date="12 Mai 2025" title="Ações que acolhem" text="Momentos de cuidado, escuta e apoio às pessoas acolhidas pela instituição." />
-          <NewsCard image={heroImg} date="10 Mai 2025" title="Doações que transformam" text="Cada contribuição ajuda a manter o acolhimento e ampliar nosso impacto social." />
-          <NewsCard image={missao1} date="05 Mai 2025" title="Atividades educativas" text="Ações que estimulam o aprendizado, a convivência e o desenvolvimento humano." />
+          <NewsCard
+            image={quemSomos}
+            date="12 Mai 2025"
+            title="Ações que acolhem"
+            text="Momentos de cuidado, escuta e apoio às pessoas acolhidas pela instituição."
+          />
+
+          <NewsCard
+            image={heroImg}
+            date="10 Mai 2025"
+            title="Doações que transformam"
+            text="Cada contribuição ajuda a manter o acolhimento e ampliar nosso impacto social."
+          />
+
+          <NewsCard
+            image={missao1}
+            date="05 Mai 2025"
+            title="Atividades educativas"
+            text="Ações que estimulam o aprendizado, a convivência e o desenvolvimento humano."
+          />
         </div>
       </section>
 
@@ -126,9 +201,11 @@ function Home() {
           <div className="footer-logo-box">
             <img src={logoLar} alt="Logo Lar Batista" />
           </div>
+
           <p>
             O Lar Batista Albertine Meador é uma instituição cristã sem fins
-            lucrativos que acolhe, cuida e transforma vidas com amor, fé e solidariedade.
+            lucrativos que acolhe, cuida e transforma vidas com amor, fé e
+            solidariedade.
           </p>
         </div>
 
@@ -159,8 +236,13 @@ function Home() {
         </div>
       </footer>
 
-      <Link to="/doar-agora" className="float-donate">❤</Link>
-      <a href="#top" className="float-top">↑</a>
+      <Link to="/doar-agora" className="float-donate">
+        ❤
+      </Link>
+
+      <a href="#top" className="float-top">
+        ↑
+      </a>
     </main>
   )
 }
@@ -169,6 +251,7 @@ function HomeCard({ image, title, text, link, button }) {
   return (
     <article className="home-card">
       <img src={image} alt={title} />
+
       <div>
         <h3>{title}</h3>
         <p>{text}</p>
@@ -182,7 +265,9 @@ function NewsCard({ image, date, title, text }) {
   return (
     <article className="news-card">
       <img src={image} alt={title} />
+
       <span>{date}</span>
+
       <div>
         <h3>{title}</h3>
         <p>{text}</p>

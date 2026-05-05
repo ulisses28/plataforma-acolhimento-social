@@ -28,8 +28,8 @@ function DoadorLogin() {
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
   const [confirmarSenha, setConfirmarSenha] = useState('')
+  const [aceitouLGPD, setAceitouLGPD] = useState(false)
 
-  // Localização do doador
   const [paises, setPaises] = useState([])
   const [estados, setEstados] = useState([])
   const [municipios, setMunicipios] = useState([])
@@ -45,11 +45,8 @@ function DoadorLogin() {
 
   useEffect(() => {
     async function carregarLocalidades() {
-      const listaPaises = await listarPaises()
-      const listaEstados = await listarEstadosBrasil()
-
-      setPaises(listaPaises)
-      setEstados(listaEstados)
+      setPaises(await listarPaises())
+      setEstados(await listarEstadosBrasil())
     }
 
     carregarLocalidades()
@@ -63,8 +60,8 @@ function DoadorLogin() {
         return
       }
 
-      const listaMunicipios = await listarMunicipiosPorEstado(estadoId)
-      setMunicipios(listaMunicipios)
+      const lista = await listarMunicipiosPorEstado(estadoId)
+      setMunicipios(lista)
       setMunicipio('')
     }
 
@@ -121,23 +118,13 @@ function DoadorLogin() {
     setMensagem('')
 
     if (!nome.trim()) return mostrarErro('Informe o nome ou razão social.')
-
-    if (tipoPessoa === 'juridica' && !documento.trim()) {
-      return mostrarErro('CNPJ obrigatório para pessoa jurídica.')
-    }
-
+    if (!documento.trim()) return mostrarErro('Informe CPF/RG ou CNPJ.')
     if (!telefone.trim()) return mostrarErro('Informe o telefone.')
     if (!email.trim()) return mostrarErro('Informe o e-mail.')
-
     if (!pais) return mostrarErro('Selecione o país.')
 
-    if (pais === 'BR' && !estadoId) {
-      return mostrarErro('Selecione o estado.')
-    }
-
-    if (pais === 'BR' && !municipio) {
-      return mostrarErro('Selecione o município.')
-    }
+    if (pais === 'BR' && !estadoId) return mostrarErro('Selecione o estado.')
+    if (pais === 'BR' && !municipio) return mostrarErro('Selecione o município.')
 
     if (!senha.trim()) return mostrarErro('Crie uma senha.')
     if (!confirmarSenha.trim()) return mostrarErro('Confirme sua senha.')
@@ -148,6 +135,10 @@ function DoadorLogin() {
 
     if (senha.trim() !== confirmarSenha.trim()) {
       return mostrarErro('As senhas não conferem.')
+    }
+
+    if (!aceitouLGPD) {
+      return mostrarErro('Você precisa aceitar os termos LGPD para continuar.')
     }
 
     if (!querDoar) {
@@ -172,8 +163,7 @@ function DoadorLogin() {
       return mostrarErro('Este e-mail já está cadastrado.')
     }
 
-    const paisSelecionado =
-      paises.find((p) => p.codigo === pais)?.nome || pais
+    const paisSelecionado = paises.find((p) => p.codigo === pais)?.nome || pais
 
     const novoDoador = {
       id: Date.now(),
@@ -184,14 +174,13 @@ function DoadorLogin() {
       telefone: telefone.trim(),
       email: email.trim().toLowerCase(),
       senha: senha.trim(),
-
-      // Dados para dashboard geográfico
       paisCodigo: pais,
       pais: paisSelecionado,
       estadoId,
       estado: estadoNome,
       municipio,
-
+      lgpdAceito: true,
+      lgpdAceitoEm: new Date().toLocaleString('pt-BR'),
       criadoEm: new Date().toLocaleDateString('pt-BR')
     }
 
@@ -204,7 +193,9 @@ function DoadorLogin() {
         tipoDoacao: 'Financeira',
         forma,
         valor: forma === 'TED' ? valorTED : '',
-        comprovante
+        comprovante,
+        lgpdAceito: true,
+        lgpdAceitoEm: new Date().toLocaleString('pt-BR')
       })
     }
 
@@ -294,13 +285,13 @@ function DoadorLogin() {
               </div>
 
               <label style={styles.label}>
-                {tipoPessoa === 'juridica' ? 'CNPJ obrigatório' : 'CPF ou RG opcional'}
+                {tipoPessoa === 'juridica' ? 'CNPJ obrigatório' : 'CPF ou RG obrigatório'}
               </label>
               <input
                 value={documento}
                 onChange={(e) => setDocumento(e.target.value)}
                 style={styles.input}
-                placeholder={tipoPessoa === 'juridica' ? 'Digite o CNPJ' : 'Digite CPF/RG se desejar'}
+                placeholder={tipoPessoa === 'juridica' ? 'Digite o CNPJ' : 'Digite CPF/RG'}
               />
 
               <label style={styles.label}>Telefone</label>
@@ -320,7 +311,6 @@ function DoadorLogin() {
                 placeholder="E-mail"
               />
 
-              {/* Localização para gráficos de impacto */}
               <section style={styles.locationBox}>
                 <h3 style={styles.smallTitle}>Localização do doador</h3>
 
@@ -343,14 +333,13 @@ function DoadorLogin() {
                   ))}
                 </select>
 
-                {pais === 'BR' ? (
+                {pais === 'BR' && (
                   <>
                     <label style={styles.label}>Estado</label>
                     <select
                       value={estadoId}
                       onChange={(e) => {
                         const novoEstadoId = e.target.value
-
                         const selecionado = estados.find(
                           (estado) => String(estado.id) === String(novoEstadoId)
                         )
@@ -384,10 +373,6 @@ function DoadorLogin() {
                       ))}
                     </select>
                   </>
-                ) : (
-                  <p style={styles.note}>
-                    Para países fora do Brasil, o detalhamento por estado e município será tratado futuramente.
-                  </p>
                 )}
               </section>
 
@@ -470,18 +455,12 @@ function DoadorLogin() {
                   {forma === 'Pix' && (
                     <div style={styles.pixCard}>
                       <h3 style={styles.smallTitle}>Dados Pix</h3>
-
                       <div style={styles.pixBox}>
                         <strong>PIX / CNPJ</strong>
                         <span>27363944000180</span>
                       </div>
-
-                      <div style={styles.qrCode}>
-                        <div style={styles.qrInner}>QR</div>
-                      </div>
-
                       <p style={styles.note}>
-                        Escaneie o QR Code ou use a chave Pix. O valor é informado diretamente no aplicativo do banco.
+                        O valor é informado diretamente no aplicativo do banco.
                       </p>
                     </div>
                   )}
@@ -517,6 +496,25 @@ function DoadorLogin() {
                 </section>
               )}
 
+              <section style={styles.lgpdBox}>
+                <h3 style={styles.smallTitle}>Termo LGPD</h3>
+
+                <p style={styles.note}>
+                  Ao continuar, você autoriza o Lar Batista Albertine Meador a armazenar seus
+                  dados para fins de cadastro, histórico de doações, comunicação institucional
+                  e prestação de contas, conforme a Lei Geral de Proteção de Dados.
+                </p>
+
+                <label style={styles.lgpdCheck}>
+                  <input
+                    type="checkbox"
+                    checked={aceitouLGPD}
+                    onChange={(e) => setAceitouLGPD(e.target.checked)}
+                  />
+                  Li e aceito os termos de uso e privacidade.
+                </label>
+              </section>
+
               <button type="submit" style={styles.button}>Criar cadastro</button>
             </form>
           )}
@@ -538,36 +536,17 @@ function DoadorLogin() {
 }
 
 const styles = {
-  page: {
-    minHeight: '100vh',
-    background: '#F1F5F9',
-    padding: '40px 20px'
-  },
-  container: {
-    maxWidth: '760px',
-    margin: '0 auto'
-  },
+  page: { minHeight: '100vh', background: '#F1F5F9', padding: '40px 20px' },
+  container: { maxWidth: '760px', margin: '0 auto' },
   card: {
     background: '#fff',
     borderRadius: '20px',
     padding: '30px',
     boxShadow: '0 4px 18px rgba(0,0,0,0.08)'
   },
-  title: {
-    color: '#0B3D91',
-    margin: 0,
-    fontSize: '2rem'
-  },
-  subtitle: {
-    color: '#4b5563',
-    lineHeight: '1.6'
-  },
-  tabs: {
-    display: 'flex',
-    gap: '12px',
-    margin: '24px 0',
-    flexWrap: 'wrap'
-  },
+  title: { color: '#0B3D91', margin: 0, fontSize: '2rem' },
+  subtitle: { color: '#4b5563', lineHeight: '1.6' },
+  tabs: { display: 'flex', gap: '12px', margin: '24px 0', flexWrap: 'wrap' },
   tabButton: {
     border: 'none',
     background: '#0B3D91',
@@ -577,32 +556,18 @@ const styles = {
     fontWeight: '800',
     cursor: 'pointer'
   },
-  form: {
-    display: 'flex',
-    flexDirection: 'column'
-  },
-  label: {
-    marginTop: '14px',
-    marginBottom: '6px',
-    color: '#374151',
-    fontWeight: '700'
-  },
+  form: { display: 'flex', flexDirection: 'column' },
+  label: { marginTop: '14px', marginBottom: '6px', color: '#374151', fontWeight: '700' },
   input: {
-  width: '100%',
-  minHeight: '48px',
-  borderRadius: '10px',
-  border: '1px solid #bfdbfe',
-  background: '#f8fbff',
-  padding: '0 12px',
-  boxSizing: 'border-box'
-},
-  radioGroup: {
-    display: 'flex',
-    gap: '18px',
-    flexWrap: 'wrap',
-    color: '#374151',
-    fontWeight: '600'
+    width: '100%',
+    minHeight: '48px',
+    borderRadius: '10px',
+    border: '1px solid #bfdbfe',
+    background: '#f8fbff',
+    padding: '0 12px',
+    boxSizing: 'border-box'
   },
+  radioGroup: { display: 'flex', gap: '18px', flexWrap: 'wrap', color: '#374151', fontWeight: '600' },
   locationBox: {
     marginTop: '16px',
     background: '#f8fbff',
@@ -617,13 +582,21 @@ const styles = {
     borderRadius: '16px',
     padding: '18px'
   },
-  smallTitle: {
-    color: '#0B3D91',
-    marginBottom: '10px'
+  lgpdBox: {
+    marginTop: '18px',
+    background: '#f8fbff',
+    border: '1px solid #dbeafe',
+    borderRadius: '16px',
+    padding: '16px'
   },
-  pixCard: {
-    marginTop: '12px'
+  lgpdCheck: {
+    display: 'flex',
+    gap: '10px',
+    alignItems: 'center',
+    color: '#374151',
+    fontWeight: '700'
   },
+  smallTitle: { color: '#0B3D91', marginBottom: '10px' },
   pixBox: {
     background: '#fff',
     border: '1px solid #dbeafe',
@@ -634,26 +607,6 @@ const styles = {
     flexDirection: 'column',
     gap: '8px'
   },
-  qrCode: {
-    width: '170px',
-    height: '170px',
-    margin: '20px auto',
-    background: 'repeating-linear-gradient(45deg, #111827 0 8px, #ffffff 8px 16px)',
-    border: '8px solid #ffffff',
-    boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  qrInner: {
-    background: '#fff',
-    color: '#111827',
-    fontWeight: '900',
-    padding: '8px'
-  },
-  tedCard: {
-    marginTop: '12px'
-  },
   bankBox: {
     background: '#fff',
     border: '1px solid #dbeafe',
@@ -661,11 +614,7 @@ const styles = {
     padding: '16px',
     color: '#374151'
   },
-  note: {
-    color: '#6b7280',
-    lineHeight: '1.6',
-    fontSize: '14px'
-  },
+  note: { color: '#6b7280', lineHeight: '1.6', fontSize: '14px' },
   button: {
     marginTop: '24px',
     background: '#0B3D91',
@@ -676,10 +625,7 @@ const styles = {
     fontWeight: '800',
     cursor: 'pointer'
   },
-  message: {
-    marginTop: '16px',
-    fontWeight: '700'
-  }
+  message: { marginTop: '16px', fontWeight: '700' }
 }
 
 export default DoadorLogin

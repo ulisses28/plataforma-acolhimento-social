@@ -48,7 +48,6 @@ function PainelDoadorPublico() {
     }
 
     const lista = JSON.parse(localStorage.getItem(DOADORES_KEY)) || []
-
     const novaLista = lista.map((item) =>
       item.id === atualizado.id ? atualizado : item
     )
@@ -59,6 +58,74 @@ function PainelDoadorPublico() {
     setDoador(atualizado)
     setEditando(false)
     setMensagem('Cadastro atualizado com sucesso.')
+  }
+
+  function gerarComprovante(doacao, doadorLogado) {
+    const janela = window.open('', '_blank')
+
+    janela.document.write(`
+      <html>
+        <head>
+          <title>Comprovante de Doação</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 40px; color: #111827; }
+            .comprovante { max-width: 800px; margin: auto; border: 2px solid #0B3D91; border-radius: 16px; padding: 30px; }
+            .header { text-align: center; border-bottom: 2px solid #0B3D91; padding-bottom: 20px; margin-bottom: 25px; }
+            .logo { width: 120px; margin-bottom: 10px; }
+            h1 { color: #0B3D91; margin-bottom: 5px; }
+            .frase { color: #475569; font-style: italic; }
+            .section { margin-top: 20px; }
+            .label { font-weight: bold; color: #0B3D91; }
+            .footer { margin-top: 30px; text-align: center; font-size: 13px; color: #64748b; }
+            button { margin-top: 25px; padding: 12px 18px; background: #0B3D91; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+            @media print { button { display: none; } }
+          </style>
+        </head>
+
+        <body>
+          <div class="comprovante">
+            <div class="header">
+              <img class="logo" src="/logo-lar.jpg" />
+              <h1>Lar Batista Albertine Meador</h1>
+              <p class="frase">Sua solidariedade ajuda a transformar vidas com amor, cuidado e esperança.</p>
+            </div>
+
+            <div class="section">
+              <h2>Comprovante de Doação</h2>
+              <p><span class="label">Recebedor:</span> Lar Batista Albertine Meador</p>
+              <p><span class="label">CNPJ:</span> 27.363.944/0001-80</p>
+              <p><span class="label">Data:</span> ${doacao.data || '-'}</p>
+              <p><span class="label">Estado:</span> ${doadorLogado.estado || '-'}</p>
+            </div>
+
+            <div class="section">
+              <h3>Dados do Doador</h3>
+              <p><span class="label">Nome/Razão Social:</span> ${doadorLogado.nome || '-'}</p>
+              <p><span class="label">CPF/CNPJ:</span> ${doadorLogado.documento || '-'}</p>
+              <p><span class="label">E-mail:</span> ${doadorLogado.email || '-'}</p>
+              <p><span class="label">Telefone:</span> ${doadorLogado.telefone || '-'}</p>
+            </div>
+
+            <div class="section">
+              <h3>Dados da Doação</h3>
+              <p><span class="label">Valor:</span> ${doacao.valor || 'Valor informado no banco'}</p>
+              <p><span class="label">Forma:</span> ${doacao.forma || '-'}</p>
+              <p><span class="label">Status:</span> ${doacao.status || '-'}</p>
+              <p><span class="label">Código:</span> ${doacao.id || '-'}</p>
+            </div>
+
+            <div class="footer">
+              <p>Este comprovante foi gerado automaticamente pelo sistema.</p>
+              <p>Obrigado por contribuir com esta missão.</p>
+            </div>
+
+            <button onclick="window.print()">Imprimir / Salvar em PDF</button>
+          </div>
+        </body>
+      </html>
+    `)
+
+    janela.document.close()
   }
 
   function sair() {
@@ -85,30 +152,15 @@ function PainelDoadorPublico() {
           </p>
 
           <div style={styles.botoes}>
-            <button
-              style={styles.botao}
-              onClick={() => navigate('/doar-agora')}
-            >
+            <button style={styles.botao} onClick={() => navigate('/doar-agora')}>
               Doar agora
             </button>
 
-            <button
-              style={styles.botao}
-              onClick={() => {
-                setAba('cadastro')
-                setMensagem('')
-              }}
-            >
+            <button style={styles.botao} onClick={() => { setAba('cadastro'); setMensagem('') }}>
               Atualizar cadastro
             </button>
 
-            <button
-              style={styles.botao}
-              onClick={() => {
-                setAba('historico')
-                setMensagem('')
-              }}
-            >
+            <button style={styles.botao} onClick={() => { setAba('historico'); setMensagem('') }}>
               Histórico de doações
             </button>
           </div>
@@ -118,48 +170,23 @@ function PainelDoadorPublico() {
               <div style={styles.sectionHeader}>
                 <h2 style={styles.sectionTitle}>Meu cadastro</h2>
 
-                <button
-                  type="button"
-                  style={styles.editButton}
-                  onClick={() => setEditando(true)}
-                  title="Editar cadastro"
-                >
+                <button type="button" style={styles.editButton} onClick={() => setEditando(true)}>
                   ✏️ Editar
                 </button>
               </div>
 
               <form onSubmit={salvarAtualizacao} style={styles.form}>
                 <label style={styles.label}>Nome ou razão social</label>
-                <input
-                  value={nome}
-                  onChange={(e) => setNome(e.target.value)}
-                  disabled={!editando}
-                  style={editando ? styles.input : styles.inputDisabled}
-                />
+                <input value={nome} onChange={(e) => setNome(e.target.value)} disabled={!editando} style={editando ? styles.input : styles.inputDisabled} />
 
                 <label style={styles.label}>Documento</label>
-                <input
-                  value={documento}
-                  onChange={(e) => setDocumento(e.target.value)}
-                  disabled={!editando}
-                  style={editando ? styles.input : styles.inputDisabled}
-                />
+                <input value={documento} onChange={(e) => setDocumento(e.target.value)} disabled={!editando} style={editando ? styles.input : styles.inputDisabled} />
 
                 <label style={styles.label}>Telefone</label>
-                <input
-                  value={telefone}
-                  onChange={(e) => setTelefone(e.target.value)}
-                  disabled={!editando}
-                  style={editando ? styles.input : styles.inputDisabled}
-                />
+                <input value={telefone} onChange={(e) => setTelefone(e.target.value)} disabled={!editando} style={editando ? styles.input : styles.inputDisabled} />
 
                 <label style={styles.label}>E-mail</label>
-                <input
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={!editando}
-                  style={editando ? styles.input : styles.inputDisabled}
-                />
+                <input value={email} onChange={(e) => setEmail(e.target.value)} disabled={!editando} style={editando ? styles.input : styles.inputDisabled} />
 
                 {editando && (
                   <button type="submit" style={styles.saveButton}>
@@ -187,6 +214,7 @@ function PainelDoadorPublico() {
                         <th style={styles.th}>Valor</th>
                         <th style={styles.th}>Forma</th>
                         <th style={styles.th}>Status</th>
+                        <th style={styles.th}>Comprovante</th>
                       </tr>
                     </thead>
 
@@ -197,6 +225,15 @@ function PainelDoadorPublico() {
                           <td style={styles.td}>{d.valor}</td>
                           <td style={styles.td}>{d.forma}</td>
                           <td style={styles.td}>{d.status}</td>
+                          <td style={styles.td}>
+                            <button
+                              type="button"
+                              style={styles.receiptButton}
+                              onClick={() => gerarComprovante(d, doador)}
+                            >
+                              Baixar comprovante
+                            </button>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -206,9 +243,7 @@ function PainelDoadorPublico() {
             </section>
           )}
 
-          <button onClick={sair} style={styles.sair}>
-            Sair
-          </button>
+          <button onClick={sair} style={styles.sair}>Sair</button>
         </section>
       </div>
     </main>
@@ -216,146 +251,30 @@ function PainelDoadorPublico() {
 }
 
 const styles = {
-  page: {
-    minHeight: '100vh',
-    background: '#f4f8ff',
-    padding: '40px 20px'
-  },
-  container: {
-    maxWidth: '820px',
-    margin: '0 auto'
-  },
-  card: {
-    background: '#ffffff',
-    padding: '34px',
-    borderRadius: '20px',
-    boxShadow: '0 4px 18px rgba(0,0,0,0.08)'
-  },
-  title: {
-    color: '#0B3D91',
-    margin: 0,
-    fontSize: '2rem'
-  },
-  welcome: {
-    marginTop: '18px',
-    color: '#111827'
-  },
-  botoes: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '14px',
-    marginTop: '24px'
-  },
-  botao: {
-    padding: '14px',
-    background: '#0B3D91',
-    color: '#ffffff',
-    border: 'none',
-    borderRadius: '10px',
-    cursor: 'pointer',
-    fontWeight: '700'
-  },
-  section: {
-    marginTop: '28px',
-    background: '#f8fbff',
-    border: '1px solid #dbeafe',
-    borderRadius: '16px',
-    padding: '22px'
-  },
-  sectionHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: '12px'
-  },
-  sectionTitle: {
-    color: '#0B3D91',
-    margin: 0
-  },
-  editButton: {
-    background: '#ffffff',
-    color: '#0B3D91',
-    border: '1px solid #0B3D91',
-    padding: '8px 12px',
-    borderRadius: '999px',
-    cursor: 'pointer',
-    fontWeight: '700'
-  },
-  form: {
-    display: 'flex',
-    flexDirection: 'column',
-    marginTop: '14px'
-  },
-  label: {
-    marginTop: '12px',
-    marginBottom: '6px',
-    color: '#374151',
-    fontWeight: '700'
-  },
-  input: {
-    minHeight: '44px',
-    borderRadius: '10px',
-    border: '1px solid #d1d5db',
-    padding: '0 12px'
-  },
-  inputDisabled: {
-    minHeight: '44px',
-    borderRadius: '10px',
-    border: '1px solid #e5e7eb',
-    padding: '0 12px',
-    background: '#f3f4f6',
-    color: '#6b7280'
-  },
-  saveButton: {
-    marginTop: '20px',
-    background: '#166534',
-    color: '#ffffff',
-    border: 'none',
-    padding: '13px',
-    borderRadius: '10px',
-    fontWeight: '800',
-    cursor: 'pointer'
-  },
-  success: {
-    color: '#166534',
-    fontWeight: '700',
-    marginTop: '12px'
-  },
-  empty: {
-    color: '#6b7280'
-  },
-  tableWrapper: {
-    overflowX: 'auto',
-    marginTop: '16px'
-  },
-  table: {
-    width: '100%',
-    borderCollapse: 'collapse',
-    background: '#ffffff',
-    borderRadius: '12px',
-    overflow: 'hidden'
-  },
-  th: {
-    textAlign: 'left',
-    padding: '12px',
-    borderBottom: '1px solid #e5e7eb',
-    color: '#374151'
-  },
-  td: {
-    padding: '12px',
-    borderBottom: '1px solid #f1f5f9',
-    color: '#1f2937'
-  },
-  sair: {
-    marginTop: '28px',
-    padding: '12px 22px',
-    background: '#c0392b',
-    color: '#ffffff',
-    border: 'none',
-    borderRadius: '10px',
-    cursor: 'pointer',
-    fontWeight: '800'
-  }
+  page: { minHeight: '100vh', background: '#f4f8ff', padding: '40px 20px' },
+  container: { maxWidth: '900px', margin: '0 auto' },
+  card: { background: '#ffffff', padding: '34px', borderRadius: '20px', boxShadow: '0 4px 18px rgba(0,0,0,0.08)' },
+  title: { color: '#0B3D91', margin: 0, fontSize: '2rem' },
+  welcome: { marginTop: '18px', color: '#111827' },
+  botoes: { display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '24px' },
+  botao: { padding: '14px', background: '#0B3D91', color: '#ffffff', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: '700' },
+  section: { marginTop: '28px', background: '#f8fbff', border: '1px solid #dbeafe', borderRadius: '16px', padding: '22px' },
+  sectionHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' },
+  sectionTitle: { color: '#0B3D91', margin: 0 },
+  editButton: { background: '#ffffff', color: '#0B3D91', border: '1px solid #0B3D91', padding: '8px 12px', borderRadius: '999px', cursor: 'pointer', fontWeight: '700' },
+  form: { display: 'flex', flexDirection: 'column', marginTop: '14px' },
+  label: { marginTop: '12px', marginBottom: '6px', color: '#374151', fontWeight: '700' },
+  input: { minHeight: '44px', borderRadius: '10px', border: '1px solid #bfdbfe', padding: '0 12px', background: '#f8fbff' },
+  inputDisabled: { minHeight: '44px', borderRadius: '10px', border: '1px solid #e5e7eb', padding: '0 12px', background: '#f3f4f6', color: '#6b7280' },
+  saveButton: { marginTop: '20px', background: '#166534', color: '#ffffff', border: 'none', padding: '13px', borderRadius: '10px', fontWeight: '800', cursor: 'pointer' },
+  success: { color: '#166534', fontWeight: '700', marginTop: '12px' },
+  empty: { color: '#6b7280' },
+  tableWrapper: { overflowX: 'auto', marginTop: '16px' },
+  table: { width: '100%', borderCollapse: 'collapse', background: '#ffffff', borderRadius: '12px', overflow: 'hidden' },
+  th: { textAlign: 'left', padding: '12px', borderBottom: '1px solid #e5e7eb', color: '#374151' },
+  td: { padding: '12px', borderBottom: '1px solid #f1f5f9', color: '#1f2937' },
+  receiptButton: { background: '#0B3D91', color: '#ffffff', border: 'none', padding: '8px 12px', borderRadius: '8px', cursor: 'pointer', fontWeight: '700' },
+  sair: { marginTop: '28px', padding: '12px 22px', background: '#c0392b', color: '#ffffff', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: '800' }
 }
 
 export default PainelDoadorPublico

@@ -22,7 +22,7 @@ import RelatoriosAdmin from './pages/admin/RelatoriosAdmin'
 import PendentesAdmin from './pages/admin/PendentesAdmin'
 import DoadorDetalheAdmin from './pages/admin/DoadorDetalheAdmin'
 import GraficosAdmin from './pages/admin/GraficosAdmin'
-
+import NossasNecessidades from './pages/public/NossasNecessidades'
 function Layout() {
   const location = useLocation()
 
@@ -44,7 +44,7 @@ function Layout() {
         <Route path="/parceiros" element={<Parceiros />} />
         <Route path="/login" element={<Login />} />
         <Route path="/doar-agora" element={<DoarAgora />} />
-
+        <Route path="/necessidades" element={<NossasNecessidades />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/doador/login" element={<DoadorLogin />} />
         <Route path="/doador/painel" element={<PainelDoadorPublico />} />
@@ -57,6 +57,8 @@ function Layout() {
         <Route path="/admin/relatorios" element={<RelatoriosAdmin />} />
         <Route path="/admin/pendentes" element={<PendentesAdmin />} />
         <Route path="/admin/graficos" element={<GraficosAdmin />} />
+        <Route path="/nossas-necessidades" element={<NossasNecessidades />} />
+
       </Routes>
 
       {mostrarLayoutPublico && <Footer />}
