@@ -129,6 +129,8 @@ function DashboardAdmin() {
           <CardLink to="/admin/relatorios" icon="📊" title="Relatórios" />
           <CardLink to="/admin/pendentes" icon="⏳" title="Pendentes" />
           <CardLink to="/admin/graficos" icon="📈" title="Central de Gráficos" />
+          {/*'Novo card: Publicar Noticias e eventos do Lar Batista'*/}
+          <CardLink to="/admin/noticias" icon="📰" title="Publicar Notícias" />
         </section>
 
         <section style={styles.needsCard}>

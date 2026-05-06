@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import './home.css'
 
@@ -7,7 +8,18 @@ import missao1 from '../../assets/Missao1.jpg'
 import missao2 from '../../assets/Missao2.jpg'
 import quemSomos from '../../assets/quemSomos.jpg'
 
+import { listarNoticias } from '../../services/noticiasService'
+
 function Home() {
+  const [noticias, setNoticias] = useState([])
+
+  useEffect(() => {
+    const listaNoticias = listarNoticias()
+    setNoticias(listaNoticias)
+  }, [])
+
+  const noticiaDestaque = noticias.length > 0 ? noticias[0] : null
+
   return (
     <main className="home-page" id="top">
       <section
@@ -60,6 +72,47 @@ function Home() {
         </div>
       </section>
 
+      {/* MENSAGEM DO DIA SIMPLES */}
+      <section className="home-highlight-section">
+        <div className="message-day-card">
+          <div className="message-day-text">
+            <span className="message-day-tag">Mensagem do Dia</span>
+
+            <h2>Histórias que inspiram</h2>
+
+            {noticiaDestaque ? (
+              <>
+                <h3>{noticiaDestaque.titulo}</h3>
+                <p>{noticiaDestaque.resumo}</p>
+                <Link to="/projetos">Ler mais →</Link>
+              </>
+            ) : (
+              <>
+                <h3>Amor, acolhimento e esperança</h3>
+                <p>
+                  Pequenas atitudes podem transformar vidas. Cada gesto de
+                  cuidado, apoio e solidariedade ajuda a construir um futuro
+                  melhor.
+                </p>
+                <Link to="/quem-somos">Conheça nossa história →</Link>
+              </>
+            )}
+          </div>
+
+          <div className="message-day-media">
+            {noticiaDestaque?.midia ? (
+              noticiaDestaque.tipoMidia?.startsWith('video') ? (
+                <video src={noticiaDestaque.midia} controls />
+              ) : (
+                <img src={noticiaDestaque.midia} alt={noticiaDestaque.titulo} />
+              )
+            ) : (
+              <img src={heroImg} alt="Mensagem do dia" />
+            )}
+          </div>
+        </div>
+      </section>
+
       <section className="impact-section">
         <h2>Juntos, fazemos a diferença</h2>
 
@@ -69,13 +122,10 @@ function Home() {
         </p>
 
         <div className="impact-cards">
-          {/* Card atualizado: agora leva para a página pública de necessidades */}
           <Link to="/necessidades" className="impact-card impact-card-link">
             <div className="icon yellow">♡</div>
-
             <div>
               <h3>Necessidades Atuais</h3>
-
               <p>
                 Veja alimentos, roupas, utensílios e itens prioritários que a
                 instituição precisa neste momento.
@@ -83,30 +133,26 @@ function Home() {
             </div>
           </Link>
 
-          <div className="impact-card">
+          <Link to="/voluntario" className="impact-card impact-card-link">
             <div className="icon blue">👥</div>
-
             <div>
               <h3>Recebemos voluntários</h3>
-
               <p>
                 Pessoas que doam tempo, talento e amor para transformar vidas.
               </p>
             </div>
-          </div>
+          </Link>
 
-          <div className="impact-card">
+          <Link to="/parceiros" className="impact-card impact-card-link">
             <div className="icon green">🤝</div>
-
             <div>
               <h3>Apoio institucional</h3>
-
               <p>
                 Empresas e parceiros que fortalecem o impacto social da
                 instituição.
               </p>
             </div>
-          </div>
+          </Link>
         </div>
       </section>
 
@@ -173,26 +219,40 @@ function Home() {
         </div>
 
         <div className="news-grid">
-          <NewsCard
-            image={quemSomos}
-            date="12 Mai 2025"
-            title="Ações que acolhem"
-            text="Momentos de cuidado, escuta e apoio às pessoas acolhidas pela instituição."
-          />
+          {noticias.length > 0 ? (
+            noticias.slice(0, 3).map((item) => (
+              <NewsCard
+                key={item.id}
+                image={item.midia || quemSomos}
+                date={item.criadoEm || 'Publicação'}
+                title={item.titulo}
+                text={item.resumo}
+              />
+            ))
+          ) : (
+            <>
+              <NewsCard
+                image={quemSomos}
+                date="12 Mai 2025"
+                title="Ações que acolhem"
+                text="Momentos de cuidado, escuta e apoio às pessoas acolhidas pela instituição."
+              />
 
-          <NewsCard
-            image={heroImg}
-            date="10 Mai 2025"
-            title="Doações que transformam"
-            text="Cada contribuição ajuda a manter o acolhimento e ampliar nosso impacto social."
-          />
+              <NewsCard
+                image={heroImg}
+                date="10 Mai 2025"
+                title="Doações que transformam"
+                text="Cada contribuição ajuda a manter o acolhimento e ampliar nosso impacto social."
+              />
 
-          <NewsCard
-            image={missao1}
-            date="05 Mai 2025"
-            title="Atividades educativas"
-            text="Ações que estimulam o aprendizado, a convivência e o desenvolvimento humano."
-          />
+              <NewsCard
+                image={missao1}
+                date="05 Mai 2025"
+                title="Atividades educativas"
+                text="Ações que estimulam o aprendizado, a convivência e o desenvolvimento humano."
+              />
+            </>
+          )}
         </div>
       </section>
 
