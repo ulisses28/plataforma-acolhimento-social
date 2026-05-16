@@ -1,8 +1,7 @@
 const KEY = 'analytics_visitas'
 
 function getData() {
-  const data = JSON.parse(localStorage.getItem(KEY)) || {}
-  return data
+  return JSON.parse(localStorage.getItem(KEY)) || {}
 }
 
 function salvar(data) {
@@ -11,10 +10,17 @@ function salvar(data) {
 
 function getHojeKey() {
   const hoje = new Date()
-  return `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`
+
+  return `${hoje.getFullYear()}-${String(
+    hoje.getMonth() + 1
+  ).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`
 }
 
-// REGISTRAR VISITA
+/*
+========================================
+REGISTRAR VISITA
+========================================
+*/
 export function registrarVisita() {
   const data = getData()
   const key = getHojeKey()
@@ -32,31 +38,74 @@ export function registrarVisita() {
   salvar(data)
 }
 
-// REGISTRAR TEMPO
+/*
+========================================
+REGISTRAR TEMPO
+========================================
+*/
 export function registrarTempo(segundos) {
   const data = getData()
   const key = getHojeKey()
 
-  if (!data[key]) return
+  if (!data[key]) {
+    data[key] = {
+      visitas: 0,
+      tempoTotal: 0,
+      interacoes: 0
+    }
+  }
 
-  data[key].tempoTotal += segundos
+  data[key].tempoTotal += Number(segundos || 0)
 
   salvar(data)
 }
 
-// 🔥 NOVO: registrar interação
+/*
+========================================
+REGISTRAR INTERAÇÃO
+========================================
+*/
 export function registrarInteracao() {
   const data = getData()
   const key = getHojeKey()
 
-  if (!data[key]) return
+  if (!data[key]) {
+    data[key] = {
+      visitas: 0,
+      tempoTotal: 0,
+      interacoes: 0
+    }
+  }
 
   data[key].interacoes += 1
 
   salvar(data)
 }
 
-// OBTER DADOS DO MÊS
+/*
+========================================
+FORMATAR TEMPO
+========================================
+*/
+export function formatarTempo(segundos) {
+  const horas = Math.floor(segundos / 3600)
+  const minutos = Math.floor((segundos % 3600) / 60)
+  const secs = Math.floor(segundos % 60)
+
+  let resultado = ''
+
+  if (horas > 0) resultado += `${horas}h `
+  if (minutos > 0) resultado += `${minutos}min `
+  resultado += `${secs}s`
+
+  return resultado
+}
+
+/*
+========================================
+OBTER ANALYTICS
+========================================
+*/
 export function obterAnalyticsMes(mes, ano) {
   const data = getData()
 
@@ -74,14 +123,21 @@ export function obterAnalyticsMes(mes, ano) {
     }
   })
 
-  const tempoMedio = totalVisitas > 0 ? tempoTotal / totalVisitas : 0
-  const interacoesPorUsuario = totalVisitas > 0 ? totalInteracoes / totalVisitas : 0
+  const tempoMedio =
+    totalVisitas > 0 ? tempoTotal / totalVisitas : 0
+
+  const interacoesPorUsuario =
+    totalVisitas > 0
+      ? totalInteracoes / totalVisitas
+      : 0
 
   return {
     totalVisitas,
     tempoTotal,
     tempoMedio,
     totalInteracoes,
-    interacoesPorUsuario
+    interacoesPorUsuario,
+    tempoTotalFormatado: formatarTempo(tempoTotal),
+    tempoMedioFormatado: formatarTempo(tempoMedio)
   }
 }

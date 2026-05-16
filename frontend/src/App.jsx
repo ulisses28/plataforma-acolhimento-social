@@ -13,6 +13,10 @@ import DoarAgora from './pages/public/DoarAgora'
 import AdminLogin from './pages/admin/AdminLogin'
 import DoadorLogin from './pages/public/DoadorLogin'
 import PainelDoadorPublico from './pages/public/PainelDoadorPublico'
+import Vagas from './pages/public/Vagas'
+import Noticias from './pages/public/Noticias'
+import NoticiaDetalhe from './pages/public/NoticiaDetalhe'
+import AssistenteVirtual from './components/ui/AssistenteVirtual'
 
 import DashboardAdmin from './pages/admin/DashboardAdmin'
 import ParceirosAdmin from './pages/admin/ParceirosAdmin'
@@ -24,6 +28,7 @@ import DoadorDetalheAdmin from './pages/admin/DoadorDetalheAdmin'
 import GraficosAdmin from './pages/admin/GraficosAdmin'
 import NossasNecessidades from './pages/public/NossasNecessidades'
 import NoticiasAdmin from './pages/admin/NoticiasAdmin'
+import VagasAdmin from './pages/admin/VagasAdmin'
 function Layout() {
   const location = useLocation()
 
@@ -49,6 +54,9 @@ function Layout() {
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/doador/login" element={<DoadorLogin />} />
         <Route path="/doador/painel" element={<PainelDoadorPublico />} />
+        <Route path="/vagas" element={<Vagas />} />
+        <Route path="/noticias" element={<Noticias />} />
+        <Route path="/noticias/:id" element={<NoticiaDetalhe />} />
 
         <Route path="/admin/dashboard" element={<DashboardAdmin />} />
         <Route path="/admin/parceiros" element={<ParceirosAdmin />} />
@@ -60,9 +68,12 @@ function Layout() {
         <Route path="/admin/graficos" element={<GraficosAdmin />} />
         <Route path="/nossas-necessidades" element={<NossasNecessidades />} />
         <Route path="/admin/noticias" element={<NoticiasAdmin />} />
+        <Route path="/admin/vagas" element={<VagasAdmin />} />
+      
       </Routes>
 
       {mostrarLayoutPublico && <Footer />}
+      {!isAdmin && <AssistenteVirtual />}
     </>
   )
 }

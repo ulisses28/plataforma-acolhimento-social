@@ -5,6 +5,11 @@ export function listarNoticias() {
   return dados ? JSON.parse(dados) : []
 }
 
+export function buscarNoticiaPorId(id) {
+  const noticias = listarNoticias()
+  return noticias.find((item) => String(item.id) === String(id))
+}
+
 export function salvarNoticia(noticia) {
   const noticias = listarNoticias()
 

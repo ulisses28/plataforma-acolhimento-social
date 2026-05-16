@@ -498,3 +498,40 @@
     font-size: 28px;
   }
 }
+.news-card-links {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.news-read-link {
+  color: #0b3d91;
+  text-decoration: none;
+  font-weight: 900;
+  text-transform: uppercase;
+  font-size: 13px;
+}
+
+.news-job-link {
+  color: #0b3d91;
+  text-decoration: none;
+  font-weight: 900;
+  text-transform: uppercase;
+  font-size: 13px;
+}
+.news-card-links {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.news-read-link,
+.news-job-link {
+  color: #0b3d91;
+  text-decoration: none;
+  font-weight: 900;
+  text-transform: uppercase;
+  font-size: 13px;
+}

@@ -19,7 +19,7 @@ import {
 
 import { listarDoacoes } from '../../services/doacoesService'
 import { listarDoadores } from '../../services/doadoresService'
-import { obterAnalyticsMes } from '../../services/analyticsService'
+import { obterAnalyticsMes, formatarTempo } from '../../services/analyticsService'
 import { gerarRelatorioPDF } from '../../utils/pdfService'
 
 function GraficosAdmin() {
@@ -27,7 +27,6 @@ function GraficosAdmin() {
 
   const [doacoes, setDoacoes] = useState([])
   const [doadores, setDoadores] = useState([])
-
   const [analytics, setAnalytics] = useState({
     totalVisitas: 0,
     tempoTotal: 0,
@@ -40,39 +39,25 @@ function GraficosAdmin() {
     String(hoje.getMonth() + 1).padStart(2, '0')
   )
 
-  const [anoSelecionado, setAnoSelecionado] = useState(
-    String(hoje.getFullYear())
-  )
-
+  const [anoSelecionado, setAnoSelecionado] = useState(String(hoje.getFullYear()))
   const [secoesRelatorio, setSecoesRelatorio] = useState([])
   const [erroRelatorio, setErroRelatorio] = useState('')
 
-  /*
-    Carrega doações, doadores e métricas do site
-  */
   useEffect(() => {
-    setDoacoes(listarDoacoes())
-    setDoadores(listarDoadores())
-    setAnalytics(obterAnalyticsMes(mesSelecionado, anoSelecionado))
+    carregarDados()
   }, [mesSelecionado, anoSelecionado])
 
-  /*
-    Atualização automática simulada
-  */
   useEffect(() => {
-    const intervalo = setInterval(() => {
-      setDoacoes(listarDoacoes())
-      setDoadores(listarDoadores())
-      setAnalytics(obterAnalyticsMes(mesSelecionado, anoSelecionado))
-    }, 2000)
-
+    const intervalo = setInterval(carregarDados, 2000)
     return () => clearInterval(intervalo)
   }, [mesSelecionado, anoSelecionado])
 
-  /*
-    Enriquecimento das doações com localização do doador.
-    Se a doação antiga não tiver país/estado/município, busca pelo nome do doador.
-  */
+  function carregarDados() {
+    setDoacoes(listarDoacoes())
+    setDoadores(listarDoadores())
+    setAnalytics(obterAnalyticsMes(mesSelecionado, anoSelecionado))
+  }
+
   const doacoesComLocalizacao = useMemo(() => {
     return doacoes.map((doacao) => {
       const doadorRelacionado = doadores.find(
@@ -81,29 +66,14 @@ function GraficosAdmin() {
 
       return {
         ...doacao,
-        pais:
-          doacao.pais ||
-          doadorRelacionado?.pais ||
-          'Não informado',
-        paisCodigo:
-          doacao.paisCodigo ||
-          doadorRelacionado?.paisCodigo ||
-          '',
-        estado:
-          doacao.estado ||
-          doadorRelacionado?.estado ||
-          'Não informado',
-        municipio:
-          doacao.municipio ||
-          doadorRelacionado?.municipio ||
-          'Não informado'
+        pais: doacao.pais || doadorRelacionado?.pais || 'Não informado',
+        paisCodigo: doacao.paisCodigo || doadorRelacionado?.paisCodigo || '',
+        estado: doacao.estado || doadorRelacionado?.estado || 'Não informado',
+        municipio: doacao.municipio || doadorRelacionado?.municipio || 'Não informado'
       }
     })
   }, [doacoes, doadores])
 
-  /*
-    Resumo principal
-  */
   const resumo = useMemo(() => {
     const financeiras = doacoesComLocalizacao.filter(
       (d) => d.tipoDoacao === 'Financeira'
@@ -130,9 +100,6 @@ function GraficosAdmin() {
     }
   }, [doacoesComLocalizacao])
 
-  /*
-    Gráfico: Financeiras x Materiais
-  */
   const dadosTipoDoacao = useMemo(() => {
     return [
       { name: 'Financeiras', value: resumo.quantidadeFinanceiras },
@@ -140,9 +107,6 @@ function GraficosAdmin() {
     ]
   }, [resumo])
 
-  /*
-    Gráfico: categoria do doador
-  */
   const dadosCategoriaDoador = useMemo(() => {
     const contagem = {
       'Pessoa Física': 0,
@@ -167,9 +131,6 @@ function GraficosAdmin() {
     ]
   }, [doacoesComLocalizacao])
 
-  /*
-    Gráfico: linha mensal
-  */
   const dadosLinhaMensal = useMemo(() => {
     const ano = Number(anoSelecionado)
     const mes = Number(mesSelecionado)
@@ -204,9 +165,6 @@ function GraficosAdmin() {
     return base
   }, [doacoesComLocalizacao, mesSelecionado, anoSelecionado])
 
-  /*
-    Gráfico: comparativo financeiro/material
-  */
   const dadosBarrasTotais = useMemo(() => {
     return [
       {
@@ -220,9 +178,6 @@ function GraficosAdmin() {
     ]
   }, [resumo])
 
-  /*
-    NOVO: gráfico por país
-  */
   const dadosPorPais = useMemo(() => {
     const mapa = {}
 
@@ -237,9 +192,6 @@ function GraficosAdmin() {
     }))
   }, [doacoesComLocalizacao])
 
-  /*
-    NOVO: gráfico por estado brasileiro
-  */
   const dadosPorEstado = useMemo(() => {
     const mapa = {}
 
@@ -259,9 +211,6 @@ function GraficosAdmin() {
     }))
   }, [doacoesComLocalizacao])
 
-  /*
-    NOVO: ranking por município
-  */
   const dadosPorMunicipio = useMemo(() => {
     const mapa = {}
 
@@ -279,18 +228,6 @@ function GraficosAdmin() {
       .slice(0, 10)
   }, [doacoesComLocalizacao])
 
-  /*
-    Cards geográficos
-  */
-  const resumoGeografico = {
-    paises: dadosPorPais.length,
-    estados: dadosPorEstado.length,
-    municipios: dadosPorMunicipio.length
-  }
-
-  /*
-    Analytics do site
-  */
   const totalVisitasMes = analytics.totalVisitas || 0
   const totalTempoMes = analytics.tempoTotal || 0
   const tempoMedioVisita = analytics.tempoMedio || 0
@@ -299,14 +236,11 @@ function GraficosAdmin() {
 
   const dadosMetricasSite = [
     { name: 'Visitas', valor: totalVisitasMes },
-    { name: 'Tempo médio (s)', valor: Number(tempoMedioVisita.toFixed(1)) },
+    { name: 'Tempo médio', valor: Number(tempoMedioVisita.toFixed(1)) },
     { name: 'Interações', valor: totalInteracoes },
     { name: 'Interações/usuário', valor: Number(interacoesPorUsuario.toFixed(1)) }
   ]
 
-  /*
-    Insights automáticos
-  */
   const insights = useMemo(() => {
     let nivelEngajamento = 'Baixo'
 
@@ -345,9 +279,6 @@ function GraficosAdmin() {
     }
   }, [tempoMedioVisita, interacoesPorUsuario])
 
-  /*
-    Opções do relatório
-  */
   const opcoesRelatorio = [
     { id: 'resumo', label: 'Resumo de doações' },
     { id: 'uso', label: 'Indicadores de uso da plataforma' },
@@ -488,6 +419,7 @@ function GraficosAdmin() {
               currency: 'BRL'
             })}
           />
+
           <SummaryCard
             label="Total estimado material"
             value={resumo.totalEstimadoMaterial.toLocaleString('pt-BR', {
@@ -495,16 +427,17 @@ function GraficosAdmin() {
               currency: 'BRL'
             })}
           />
+
           <SummaryCard label="Doações financeiras" value={resumo.quantidadeFinanceiras} />
           <SummaryCard label="Doações materiais" value={resumo.quantidadeMateriais} />
           <SummaryCard label="Visitas no mês" value={totalVisitasMes} />
-          <SummaryCard label="Tempo total (min)" value={(totalTempoMes / 60).toFixed(1)} />
-          <SummaryCard label="Tempo médio por usuário" value={`${tempoMedioVisita.toFixed(1)} s`} />
+          <SummaryCard label="Tempo total no site" value={formatarTempo(totalTempoMes)} />
+          <SummaryCard label="Tempo médio por usuário" value={formatarTempo(tempoMedioVisita)} />
           <SummaryCard label="Total de interações" value={totalInteracoes} />
           <SummaryCard label="Interações por usuário" value={interacoesPorUsuario.toFixed(1)} />
-          <SummaryCard label="Países alcançados" value={resumoGeografico.paises} />
-          <SummaryCard label="Estados brasileiros" value={resumoGeografico.estados} />
-          <SummaryCard label="Municípios no ranking" value={resumoGeografico.municipios} />
+          <SummaryCard label="Países alcançados" value={dadosPorPais.length} />
+          <SummaryCard label="Estados brasileiros" value={dadosPorEstado.length} />
+          <SummaryCard label="Municípios no ranking" value={dadosPorMunicipio.length} />
         </section>
 
         <section style={styles.insightsGrid}>
@@ -517,11 +450,16 @@ function GraficosAdmin() {
           <h2 style={styles.chartTitle}>Insight automático</h2>
           <p style={styles.textInsight}>{insights.resumoTexto}</p>
         </section>
+
         <MapaImpacto dadosPorPais={dadosPorPais} />
+
         <section style={styles.chartGrid}>
-          <div style={styles.chartCard}>
+          <div id="grafico-financeiras-materiais" style={styles.chartCard}>
             <h2 style={styles.chartTitle}>Financeiras x Materiais</h2>
-            <p style={styles.chartSubtitle}>Distribuição percentual por tipo de doação.</p>
+            <p style={styles.chartSubtitle}>
+              Distribuição percentual por tipo de doação.
+            </p>
+
             <div style={styles.chartArea}>
               <ResponsiveContainer width="100%" height={320}>
                 <PieChart>
@@ -536,9 +474,12 @@ function GraficosAdmin() {
             </div>
           </div>
 
-          <div style={styles.chartCard}>
+          <div id="grafico-origem-doacoes" style={styles.chartCard}>
             <h2 style={styles.chartTitle}>Origem das doações</h2>
-            <p style={styles.chartSubtitle}>Pessoa Física, Pessoa Jurídica e Parceiros.</p>
+            <p style={styles.chartSubtitle}>
+              Pessoa Física, Pessoa Jurídica e Parceiros.
+            </p>
+
             <div style={styles.chartArea}>
               <ResponsiveContainer width="100%" height={320}>
                 <PieChart>
@@ -554,9 +495,12 @@ function GraficosAdmin() {
             </div>
           </div>
 
-          <div style={styles.chartCard}>
+          <div id="grafico-pais" style={styles.chartCard}>
             <h2 style={styles.chartTitle}>Doações por país</h2>
-            <p style={styles.chartSubtitle}>Distribuição das doações por país informado.</p>
+            <p style={styles.chartSubtitle}>
+              Distribuição das doações por país informado.
+            </p>
+
             <div style={styles.chartArea}>
               <ResponsiveContainer width="100%" height={320}>
                 <PieChart>
@@ -572,9 +516,12 @@ function GraficosAdmin() {
             </div>
           </div>
 
-          <div style={styles.chartCard}>
+          <div id="grafico-estado" style={styles.chartCard}>
             <h2 style={styles.chartTitle}>Doações por estado</h2>
-            <p style={styles.chartSubtitle}>Impacto das doações por estado brasileiro.</p>
+            <p style={styles.chartSubtitle}>
+              Impacto das doações por estado brasileiro.
+            </p>
+
             <div style={styles.chartArea}>
               <ResponsiveContainer width="100%" height={320}>
                 <BarChart data={dadosPorEstado}>
@@ -589,9 +536,12 @@ function GraficosAdmin() {
             </div>
           </div>
 
-          <div style={{ ...styles.chartCard, gridColumn: '1 / -1' }}>
+          <div id="grafico-municipio" style={{ ...styles.chartCard, gridColumn: '1 / -1' }}>
             <h2 style={styles.chartTitle}>Ranking por município</h2>
-            <p style={styles.chartSubtitle}>Top 10 municípios com maior quantidade de doações.</p>
+            <p style={styles.chartSubtitle}>
+              Top 10 municípios com maior quantidade de doações.
+            </p>
+
             <div style={styles.chartAreaLarge}>
               <ResponsiveContainer width="100%" height={360}>
                 <BarChart data={dadosPorMunicipio}>
@@ -606,11 +556,12 @@ function GraficosAdmin() {
             </div>
           </div>
 
-          <div style={{ ...styles.chartCard, gridColumn: '1 / -1' }}>
+          <div id="grafico-variacao-diaria" style={{ ...styles.chartCard, gridColumn: '1 / -1' }}>
             <h2 style={styles.chartTitle}>Variação diária do mês</h2>
             <p style={styles.chartSubtitle}>
               Evolução do volume diário do dia 1 até o último dia do mês selecionado.
             </p>
+
             <div style={styles.chartAreaLarge}>
               <ResponsiveContainer width="100%" height={360}>
                 <LineChart data={dadosLinhaMensal}>
@@ -632,11 +583,12 @@ function GraficosAdmin() {
             </div>
           </div>
 
-          <div style={{ ...styles.chartCard, gridColumn: '1 / -1' }}>
+          <div id="grafico-comparativo-valores" style={{ ...styles.chartCard, gridColumn: '1 / -1' }}>
             <h2 style={styles.chartTitle}>Comparativo de valores</h2>
             <p style={styles.chartSubtitle}>
               Valor financeiro confirmado versus valor estimado de doações materiais.
             </p>
+
             <div style={styles.chartAreaLarge}>
               <ResponsiveContainer width="100%" height={340}>
                 <BarChart data={dadosBarrasTotais}>
@@ -651,11 +603,12 @@ function GraficosAdmin() {
             </div>
           </div>
 
-          <div style={{ ...styles.chartCard, gridColumn: '1 / -1' }}>
+          <div id="grafico-eficiencia-site" style={{ ...styles.chartCard, gridColumn: '1 / -1' }}>
             <h2 style={styles.chartTitle}>Eficiência e engajamento do site</h2>
             <p style={styles.chartSubtitle}>
               Visitas, tempo médio de permanência e interações para medir a eficiência da plataforma.
             </p>
+
             <div style={styles.chartAreaLarge}>
               <ResponsiveContainer width="100%" height={360}>
                 <BarChart data={dadosMetricasSite}>

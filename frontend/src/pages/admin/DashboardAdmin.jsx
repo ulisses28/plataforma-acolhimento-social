@@ -131,6 +131,8 @@ function DashboardAdmin() {
           <CardLink to="/admin/graficos" icon="📈" title="Central de Gráficos" />
           {/*'Novo card: Publicar Noticias e eventos do Lar Batista'*/}
           <CardLink to="/admin/noticias" icon="📰" title="Publicar Notícias" />
+          <CardLink to="/admin/vagas" icon="💼" title="Vagas" />
+          <CardLink to="/admin/vagas" icon="💼" title="Banco de Currículos" />
         </section>
 
         <section style={styles.needsCard}>

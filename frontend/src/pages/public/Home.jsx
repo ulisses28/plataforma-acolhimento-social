@@ -12,13 +12,37 @@ import { listarNoticias } from '../../services/noticiasService'
 
 function Home() {
   const [noticias, setNoticias] = useState([])
+  const [mensagemAberta, setMensagemAberta] = useState(false)
 
   useEffect(() => {
-    const listaNoticias = listarNoticias()
-    setNoticias(listaNoticias)
+    setNoticias(listarNoticias())
   }, [])
 
-  const noticiaDestaque = noticias.length > 0 ? noticias[0] : null
+  const noticiasPublicadas = noticias.filter(
+    (item) => String(item.status).trim().toLowerCase() === 'publicado'
+  )
+
+  const noticiaDestaque =
+    noticiasPublicadas.find(
+      (item) =>
+        item.areaPublicacao === 'Mensagem do Dia' ||
+        item.areaPublicacao === 'Ambos'
+    ) || null
+
+  const noticiasHome = noticiasPublicadas.filter(
+    (item) =>
+      item.areaPublicacao === 'Últimas Notícias' ||
+      item.areaPublicacao === 'Ambos'
+  )
+
+  const textoMensagem =
+    noticiaDestaque?.resumo ||
+    'Pequenas atitudes podem transformar vidas. Cada gesto de cuidado, apoio e solidariedade ajuda a construir um futuro melhor.'
+
+  const textoCurto =
+    textoMensagem.length > 430 && !mensagemAberta
+      ? `${textoMensagem.slice(0, 430)}...`
+      : textoMensagem
 
   return (
     <main className="home-page" id="top">
@@ -42,9 +66,7 @@ function Home() {
               <Link to="/parceiros">Parceiros</Link>
             </nav>
 
-            <Link to="/login" className="login-top">
-              Entrar
-            </Link>
+            <Link to="/login" className="login-top">Entrar</Link>
           </header>
 
           <div className="hero-content">
@@ -72,42 +94,51 @@ function Home() {
         </div>
       </section>
 
-      {/* MENSAGEM DO DIA SIMPLES */}
-      <section className="home-highlight-section">
-        <div className="message-day-card">
-          <div className="message-day-text">
-            <span className="message-day-tag">Mensagem do Dia</span>
+      <section style={styles.messageSection}>
+        <div style={styles.messageCard}>
+          <div style={styles.messageText}>
+            <div style={styles.messageTop}>
+              <span style={styles.messageTag}>Mensagem do Dia</span>
+              <span style={styles.messageIcon}>✨</span>
+            </div>
 
-            <h2>Histórias que inspiram</h2>
+            <h2 style={styles.messageTitle}>
+              {noticiaDestaque?.titulo || 'Amor, acolhimento e esperança'}
+            </h2>
 
-            {noticiaDestaque ? (
-              <>
-                <h3>{noticiaDestaque.titulo}</h3>
-                <p>{noticiaDestaque.resumo}</p>
-                <Link to="/projetos">Ler mais →</Link>
-              </>
-            ) : (
-              <>
-                <h3>Amor, acolhimento e esperança</h3>
-                <p>
-                  Pequenas atitudes podem transformar vidas. Cada gesto de
-                  cuidado, apoio e solidariedade ajuda a construir um futuro
-                  melhor.
-                </p>
-                <Link to="/quem-somos">Conheça nossa história →</Link>
-              </>
+            <p style={styles.messageParagraph}>{textoCurto}</p>
+
+            {textoMensagem.length > 430 && (
+              <button
+                type="button"
+                style={styles.messageButton}
+                onClick={() => setMensagemAberta(!mensagemAberta)}
+              >
+                {mensagemAberta ? 'Mostrar menos ↑' : 'Ler mais →'}
+              </button>
             )}
           </div>
 
-          <div className="message-day-media">
-            {noticiaDestaque?.midia ? (
+          <div style={styles.messageMediaBox}>
+            {noticiaDestaque?.youtubeUrl ? (
+              <iframe
+                width="100%"
+                height="100%"
+                src={converterYoutubeEmbed(noticiaDestaque.youtubeUrl)}
+                title={noticiaDestaque.titulo}
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                style={styles.messageIframe}
+              />
+            ) : noticiaDestaque?.midia ? (
               noticiaDestaque.tipoMidia?.startsWith('video') ? (
-                <video src={noticiaDestaque.midia} controls />
+                <video src={noticiaDestaque.midia} controls style={styles.messageVideo} />
               ) : (
-                <img src={noticiaDestaque.midia} alt={noticiaDestaque.titulo} />
+                <img src={noticiaDestaque.midia} alt={noticiaDestaque.titulo} style={styles.messageImage} />
               )
             ) : (
-              <img src={heroImg} alt="Mensagem do dia" />
+              <img src={heroImg} alt="Mensagem do dia" style={styles.messageImage} />
             )}
           </div>
         </div>
@@ -137,9 +168,7 @@ function Home() {
             <div className="icon blue">👥</div>
             <div>
               <h3>Recebemos voluntários</h3>
-              <p>
-                Pessoas que doam tempo, talento e amor para transformar vidas.
-              </p>
+              <p>Pessoas que doam tempo, talento e amor para transformar vidas.</p>
             </div>
           </Link>
 
@@ -147,110 +176,50 @@ function Home() {
             <div className="icon green">🤝</div>
             <div>
               <h3>Apoio institucional</h3>
-              <p>
-                Empresas e parceiros que fortalecem o impacto social da
-                instituição.
-              </p>
+              <p>Empresas e parceiros que fortalecem o impacto social.</p>
             </div>
           </Link>
         </div>
       </section>
 
       <section className="navigation-section">
-        <HomeCard
-          image={missao1}
-          title="Nossos projetos"
-          text="Conheça as ações que transformam vidas todos os dias."
-          link="/projetos"
-          button="Saiba mais"
-        />
-
-        <HomeCard
-          image={missao2}
-          title="Transparência"
-          text="Acesse relatórios, prestação de contas e veja como as doações são utilizadas."
-          link="/transparencia"
-          button="Acessar"
-        />
-
-        <HomeCard
-          image={quemSomos}
-          title="Quem somos"
-          text="Conheça a história, missão, visão e valores da instituição."
-          link="/quem-somos"
-          button="Conhecer"
-        />
-
-        <HomeCard
-          image={heroImg}
-          title="Como ajudar"
-          text="Existem muitas formas de fazer parte dessa missão de amor."
-          link="/voluntario"
-          button="Fazer parte"
-        />
+        <HomeCard image={missao1} title="Nossos projetos" text="Conheça as ações que transformam vidas todos os dias." link="/projetos" button="Saiba mais" />
+        <HomeCard image={missao2} title="Transparência" text="Acesse relatórios, prestação de contas e veja como as doações são utilizadas." link="/transparencia" button="Acessar" />
+        <HomeCard image={quemSomos} title="Quem somos" text="Conheça a história, missão, visão e valores da instituição." link="/quem-somos" button="Conhecer" />
+        <HomeCard image={heroImg} title="Como ajudar" text="Existem muitas formas de fazer parte dessa missão de amor." link="/voluntario" button="Fazer parte" />
       </section>
 
       <section className="numbers-section">
-        <div>
-          <strong>+250</strong>
-          <span>Vidas impactadas</span>
-        </div>
-
-        <div>
-          <strong>+10</strong>
-          <span>Anos de história</span>
-        </div>
-
-        <div>
-          <strong>+50</strong>
-          <span>Parceiros</span>
-        </div>
-
-        <div>
-          <strong>+5</strong>
-          <span>Cidades atendidas</span>
-        </div>
+        <div><strong>+250</strong><span>Vidas impactadas</span></div>
+        <div><strong>+10</strong><span>Anos de história</span></div>
+        <div><strong>+50</strong><span>Parceiros</span></div>
+        <div><strong>+5</strong><span>Cidades atendidas</span></div>
       </section>
 
       <section className="news-section">
         <div className="section-header">
           <h2>Últimas notícias</h2>
-          <Link to="/projetos">Ver todas →</Link>
+          <Link to="/noticias">Ver todas →</Link>
         </div>
 
         <div className="news-grid">
-          {noticias.length > 0 ? (
-            noticias.slice(0, 3).map((item) => (
+          {noticiasHome.length > 0 ? (
+            noticiasHome.slice(0, 3).map((item) => (
               <NewsCard
                 key={item.id}
+                id={item.id}
                 image={item.midia || quemSomos}
                 date={item.criadoEm || 'Publicação'}
                 title={item.titulo}
                 text={item.resumo}
+                categoria={item.categoria}
               />
             ))
           ) : (
             <>
-              <NewsCard
-                image={quemSomos}
-                date="12 Mai 2025"
-                title="Ações que acolhem"
-                text="Momentos de cuidado, escuta e apoio às pessoas acolhidas pela instituição."
-              />
-
-              <NewsCard
-                image={heroImg}
-                date="10 Mai 2025"
-                title="Doações que transformam"
-                text="Cada contribuição ajuda a manter o acolhimento e ampliar nosso impacto social."
-              />
-
-              <NewsCard
-                image={missao1}
-                date="05 Mai 2025"
-                title="Atividades educativas"
-                text="Ações que estimulam o aprendizado, a convivência e o desenvolvimento humano."
-              />
+              <NewsCard image={quemSomos} date="12 Mai 2025" title="Ações que acolhem" text="Momentos de cuidado, escuta e apoio às pessoas acolhidas pela instituição." />
+              <NewsCard image={heroImg} date="10 Mai 2025" title="Doações que transformam" text="Cada contribuição ajuda a manter o acolhimento e ampliar nosso impacto social." />
+              <NewsCard image={missao1} date="05 Mai 2025" title="Atividades educativas" text="Ações que estimulam o aprendizado, a convivência e o desenvolvimento humano." />
             </>
           )}
         </div>
@@ -261,7 +230,6 @@ function Home() {
           <div className="footer-logo-box">
             <img src={logoLar} alt="Logo Lar Batista" />
           </div>
-
           <p>
             O Lar Batista Albertine Meador é uma instituição cristã sem fins
             lucrativos que acolhe, cuida e transforma vidas com amor, fé e
@@ -296,13 +264,8 @@ function Home() {
         </div>
       </footer>
 
-      <Link to="/doar-agora" className="float-donate">
-        ❤
-      </Link>
-
-      <a href="#top" className="float-top">
-        ↑
-      </a>
+      <Link to="/doar-agora" className="float-donate">❤</Link>
+      <a href="#top" className="float-top">↑</a>
     </main>
   )
 }
@@ -311,7 +274,6 @@ function HomeCard({ image, title, text, link, button }) {
   return (
     <article className="home-card">
       <img src={image} alt={title} />
-
       <div>
         <h3>{title}</h3>
         <p>{text}</p>
@@ -321,7 +283,7 @@ function HomeCard({ image, title, text, link, button }) {
   )
 }
 
-function NewsCard({ image, date, title, text }) {
+function NewsCard({ image, date, title, text, categoria, id }) {
   return (
     <article className="news-card">
       <img src={image} alt={title} />
@@ -331,10 +293,144 @@ function NewsCard({ image, date, title, text }) {
       <div>
         <h3>{title}</h3>
         <p>{text}</p>
-        <Link to="/projetos">Leia mais →</Link>
+
+        <div className="news-card-links">
+          <Link to={`/noticias/${id}`} className="news-read-link">
+            Leia mais →
+          </Link>
+
+          {categoria === 'Vagas' && (
+            <Link to="/vagas" className="news-job-link">
+              Envie-nos seu currículo aqui →
+            </Link>
+          )}
+        </div>
       </div>
     </article>
   )
+}
+
+function converterYoutubeEmbed(url) {
+  if (!url) return ''
+
+  if (url.includes('watch?v=')) {
+    return url.replace('watch?v=', 'embed/')
+  }
+
+  if (url.includes('youtu.be/')) {
+    const id = url.split('youtu.be/')[1].split('?')[0]
+    return `https://www.youtube.com/embed/${id}`
+  }
+
+  if (url.includes('/shorts/')) {
+    const id = url.split('/shorts/')[1].split('?')[0]
+    return `https://www.youtube.com/embed/${id}`
+  }
+
+  return url
+}
+
+const styles = {
+  messageSection: {
+    background: 'linear-gradient(180deg, #ffffff 0%, #eef6ff 100%)',
+    padding: '70px 24px'
+  },
+
+  messageCard: {
+    maxWidth: '1280px',
+    margin: '0 auto',
+    display: 'grid',
+    gridTemplateColumns: '1fr 0.9fr',
+    gap: '34px',
+    alignItems: 'center',
+    background: 'linear-gradient(135deg, #ffffff 0%, #f8fbff 55%, #eef6ff 100%)',
+    border: '1px solid #dbeafe',
+    borderRadius: '30px',
+    padding: '38px',
+    boxShadow: '0 18px 45px rgba(11, 61, 145, 0.12)'
+  },
+
+  messageText: {
+    position: 'relative'
+  },
+
+  messageTop: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    marginBottom: '18px'
+  },
+
+  messageTag: {
+    display: 'inline-block',
+    background: '#ffc928',
+    color: '#002855',
+    padding: '9px 16px',
+    borderRadius: '999px',
+    fontWeight: '900',
+    textTransform: 'uppercase',
+    fontSize: '13px'
+  },
+
+  messageIcon: {
+    fontSize: '26px'
+  },
+
+  messageTitle: {
+    color: '#0B3D91',
+    fontSize: 'clamp(2rem, 4vw, 3.2rem)',
+    lineHeight: '1.08',
+    margin: '0 0 18px'
+  },
+
+  messageParagraph: {
+    color: '#475569',
+    fontSize: '1.1rem',
+    lineHeight: '1.85',
+    marginBottom: '22px'
+  },
+
+  messageButton: {
+    background: '#0B3D91',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '12px',
+    padding: '12px 18px',
+    fontWeight: '900',
+    cursor: 'pointer'
+  },
+
+  messageMediaBox: {
+    background: '#0B3D91',
+    borderRadius: '28px',
+    padding: '12px',
+    minHeight: '340px',
+    boxShadow: '0 14px 34px rgba(0,0,0,0.18)'
+  },
+
+  messageIframe: {
+    width: '100%',
+    height: '100%',
+    minHeight: '340px',
+    border: 'none',
+    borderRadius: '20px'
+  },
+
+  messageVideo: {
+    width: '100%',
+    minHeight: '340px',
+    maxHeight: '430px',
+    objectFit: 'cover',
+    borderRadius: '20px'
+  },
+
+  messageImage: {
+    width: '100%',
+    minHeight: '340px',
+    maxHeight: '430px',
+    objectFit: 'cover',
+    borderRadius: '20px'
+  }
 }
 
 export default Home
