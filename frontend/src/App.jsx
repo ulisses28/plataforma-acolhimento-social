@@ -17,6 +17,7 @@ import Vagas from './pages/public/Vagas'
 import Noticias from './pages/public/Noticias'
 import NoticiaDetalhe from './pages/public/NoticiaDetalhe'
 import AssistenteVirtual from './components/ui/AssistenteVirtual'
+import Tutorial from './pages/public/Tutorial'
 
 import DashboardAdmin from './pages/admin/DashboardAdmin'
 import ParceirosAdmin from './pages/admin/ParceirosAdmin'
@@ -29,6 +30,9 @@ import GraficosAdmin from './pages/admin/GraficosAdmin'
 import NossasNecessidades from './pages/public/NossasNecessidades'
 import NoticiasAdmin from './pages/admin/NoticiasAdmin'
 import VagasAdmin from './pages/admin/VagasAdmin'
+import BancoCurriculosAdmin from './pages/admin/BancoCurriculosAdmin'
+import HistoricoNecessidadesAdmin from './pages/admin/HistoricoNecessidadesAdmin'
+
 function Layout() {
   const location = useLocation()
 
@@ -57,6 +61,7 @@ function Layout() {
         <Route path="/vagas" element={<Vagas />} />
         <Route path="/noticias" element={<Noticias />} />
         <Route path="/noticias/:id" element={<NoticiaDetalhe />} />
+        <Route path="/tutorial" element={<Tutorial />} />
 
         <Route path="/admin/dashboard" element={<DashboardAdmin />} />
         <Route path="/admin/parceiros" element={<ParceirosAdmin />} />
@@ -69,6 +74,9 @@ function Layout() {
         <Route path="/nossas-necessidades" element={<NossasNecessidades />} />
         <Route path="/admin/noticias" element={<NoticiasAdmin />} />
         <Route path="/admin/vagas" element={<VagasAdmin />} />
+        <Route path="/admin/banco-curriculos" element={<BancoCurriculosAdmin />} />
+        <Route path="/admin/necessidades/historico" element={<HistoricoNecessidadesAdmin />}/>
+
       
       </Routes>
 

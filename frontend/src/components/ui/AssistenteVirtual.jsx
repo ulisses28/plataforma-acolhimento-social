@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import chullyImg from '../../assets/chully_robo.png'
+import { registrarInteracao } from '../../services/analyticsService'
 
 function AssistenteVirtual() {
   const [aberto, setAberto] = useState(false)

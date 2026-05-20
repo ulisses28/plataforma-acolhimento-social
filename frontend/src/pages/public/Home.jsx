@@ -7,6 +7,7 @@ import heroImg from '../../assets/quemSomos.jpg'
 import missao1 from '../../assets/Missao1.jpg'
 import missao2 from '../../assets/Missao2.jpg'
 import quemSomos from '../../assets/quemSomos.jpg'
+import { registrarInteracao } from '../../services/analyticsService'
 
 import { listarNoticias } from '../../services/noticiasService'
 
@@ -52,10 +53,9 @@ function Home() {
       >
         <div className="hero-overlay">
           <header className="home-navbar">
-            <Link to="/" className="logo-heart">
-              <span className="heart-bg" />
-              <img src={logoLar} alt="Lar Batista Albertine Meador" />
-            </Link>
+            <Link to="/" className="home-logo-link">
+            <img src={logoLar} alt="Lar Batista Albertine Meador" className="home-logo-img" />
+          </Link>
 
             <nav>
               <Link to="/">Home</Link>
@@ -64,6 +64,7 @@ function Home() {
               <Link to="/transparencia">Transparência</Link>
               <Link to="/voluntario">Seja um Voluntário</Link>
               <Link to="/parceiros">Parceiros</Link>
+              <Link to="/tutorial">Tutorial</Link>
             </nav>
 
             <Link to="/login" className="login-top">Entrar</Link>

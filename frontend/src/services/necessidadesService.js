@@ -1,14 +1,22 @@
-// src/services/necessidadesService.js
-
 const STORAGE_KEY = 'necessidades_lar_batista'
 
-// Lista todas as necessidades salvas no localStorage
 export function listarNecessidades() {
   const dados = localStorage.getItem(STORAGE_KEY)
   return dados ? JSON.parse(dados) : []
 }
 
-// Salva uma nova necessidade
+export function listarNecessidadesAtivas() {
+  return listarNecessidades().filter(
+    (item) => item.status !== 'Concluída'
+  )
+}
+
+export function listarNecessidadesConcluidas() {
+  return listarNecessidades().filter(
+    (item) => item.status === 'Concluída'
+  )
+}
+
 export function salvarNecessidade(novaNecessidade) {
   const lista = listarNecessidades()
 
@@ -16,20 +24,40 @@ export function salvarNecessidade(novaNecessidade) {
     id: Date.now(),
     categoria: novaNecessidade.categoria,
     descricao: novaNecessidade.descricao,
-    prioridade: novaNecessidade.prioridade,
-    criadoEm: new Date().toLocaleDateString('pt-BR')
+    prioridade: novaNecessidade.prioridade || 'MEDIA',
+    quantidade: Number(novaNecessidade.quantidade || 0),
+    unidade: novaNecessidade.unidade || 'unidade',
+    status: 'Em aberto',
+    criadoEm: new Date().toLocaleDateString('pt-BR'),
+    concluidoEm: ''
   }
 
-  const listaAtualizada = [...lista, necessidade]
-
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(listaAtualizada))
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify([necessidade, ...lista])
+  )
 
   return necessidade
 }
 
-// Conta quantas necessidades existem por categoria
-export function contarNecessidadesPorCategoria() {
+export function concluirNecessidade(id) {
   const lista = listarNecessidades()
+
+  const atualizada = lista.map((item) =>
+    item.id === id
+      ? {
+          ...item,
+          status: 'Concluída',
+          concluidoEm: new Date().toLocaleDateString('pt-BR')
+        }
+      : item
+  )
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(atualizada))
+}
+
+export function contarNecessidadesPorCategoria() {
+  const lista = listarNecessidadesAtivas()
 
   return lista.reduce((acc, item) => {
     acc[item.categoria] = (acc[item.categoria] || 0) + 1

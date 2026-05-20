@@ -1,5 +1,6 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
+import { registrarInteracao } from '../../services/analyticsService'
 
 function Voluntario() {
   return (

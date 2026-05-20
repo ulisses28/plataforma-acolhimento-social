@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import logoLar from '../../assets/logo-lar.jpg'
+import { registrarInteracao } from '../../services/analyticsService'
 import {
   listarPaises,
   listarEstadosBrasil,

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { obterTopDoadores } from '../../services/rankingService'
 import { listarPublicacoesTransparencia } from '../../services/transparenciaService'
+import { registrarInteracao } from '../../services/analyticsService'
 
 function Transparencia() {
   const hoje = new Date()

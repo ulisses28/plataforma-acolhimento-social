@@ -18,10 +18,16 @@ function DoadoresAdmin() {
   const [status, setStatus] = useState('ativo')
   const [obs, setObs] = useState('')
 
-  // Tipo de contribuição cadastrada pelo admin
+  /*
+  ========================================
+  NOVOS CAMPOS
+  ========================================
+  */
   const [tipoContribuicao, setTipoContribuicao] = useState('')
   const [quantidade, setQuantidade] = useState('')
   const [descricaoContribuicao, setDescricaoContribuicao] = useState('')
+  const [formaPagamento, setFormaPagamento] = useState('Pix')
+  const [banco, setBanco] = useState('')
 
   // Localização
   const [paises, setPaises] = useState([])
@@ -50,6 +56,7 @@ function DoadoresAdmin() {
       }
 
       const lista = await listarMunicipiosPorEstado(estadoId)
+
       setMunicipios(lista)
       setMunicipio('')
     }
@@ -67,7 +74,7 @@ function DoadoresAdmin() {
     e.preventDefault()
 
     if (!nome.trim()) {
-      alert('Informe o nome ou razão social.')
+      alert('Informe o nome.')
       return
     }
 
@@ -82,24 +89,12 @@ function DoadoresAdmin() {
     }
 
     if (!tipoContribuicao) {
-      alert('Selecione se é material, voluntário ou apenas cadastro.')
+      alert('Selecione o tipo de contribuição.')
       return
     }
 
-    if (
-      (tipoContribuicao === 'Material' || tipoContribuicao === 'Voluntário') &&
-      !descricaoContribuicao.trim()
-    ) {
-      alert('Descreva a contribuição.')
-      return
-    }
-
-    const paisNome = paises.find((p) => p.codigo === pais)?.nome || 'Brazil'
-
-    const descricaoFinal =
-      tipoContribuicao === 'Apenas cadastro'
-        ? obs
-        : `${tipoContribuicao}: ${quantidade ? quantidade + ' - ' : ''}${descricaoContribuicao}`
+    const paisNome =
+      paises.find((p) => p.codigo === pais)?.nome || 'Brazil'
 
     salvarNovoDoador({
       nome: nome.trim(),
@@ -108,10 +103,19 @@ function DoadoresAdmin() {
       telefone: telefone.trim(),
       categoria,
       status,
+
       tipoContribuicao,
+
       quantidade,
+
       descricaoContribuicao,
-      obs: descricaoFinal,
+
+      formaPagamento,
+
+      banco,
+
+      obs,
+
       paisCodigo: pais,
       pais: paisNome,
       estadoId,
@@ -120,6 +124,7 @@ function DoadoresAdmin() {
     })
 
     limparFormulario()
+
     setDoadores(listarDoadores())
 
     alert('Doador cadastrado com sucesso!')
@@ -131,10 +136,12 @@ function DoadoresAdmin() {
     setTelefone('')
     setCategoria('Pessoa Física')
     setStatus('ativo')
+    setObs('')
     setTipoContribuicao('')
     setQuantidade('')
     setDescricaoContribuicao('')
-    setObs('')
+    setFormaPagamento('Pix')
+    setBanco('')
     setEstadoId('')
     setEstadoNome('')
     setMunicipio('')
@@ -147,7 +154,9 @@ function DoadoresAdmin() {
 
     if (filtro === 'ativos_atencao') {
       lista = lista.filter(
-        (d) => (d.status || 'ativo') === 'ativo' || d.status === 'atencao'
+        (d) =>
+          (d.status || 'ativo') === 'ativo' ||
+          d.status === 'atencao'
       )
     }
 
@@ -158,9 +167,15 @@ function DoadoresAdmin() {
     if (termo) {
       lista = lista.filter((d) => {
         const nomeDoador = String(d.nome || '').toLowerCase()
-        const documentoDoador = String(d.documento || d.cpfCnpj || '').toLowerCase()
 
-        return nomeDoador.includes(termo) || documentoDoador.includes(termo)
+        const documentoDoador = String(
+          d.documento || d.cpfCnpj || ''
+        ).toLowerCase()
+
+        return (
+          nomeDoador.includes(termo) ||
+          documentoDoador.includes(termo)
+        )
       })
     }
 
@@ -180,16 +195,25 @@ function DoadoresAdmin() {
       <BackButton />
 
       <section style={styles.header}>
-        <h1 style={styles.title}>Cadastro de Doadores</h1>
+        <h1 style={styles.title}>
+          Cadastro de Doadores
+        </h1>
+
         <p style={styles.subtitle}>
-          Gerencie doadores, contribuições materiais, voluntários e localização.
+          Gerencie doadores, contribuições financeiras,
+          materiais e voluntários.
         </p>
       </section>
 
       <form onSubmit={cadastrar} style={styles.card}>
-        <h2 style={styles.formTitle}>Novo Doador</h2>
+        <h2 style={styles.formTitle}>
+          Novo Doador
+        </h2>
 
-        <label style={styles.label}>Nome ou razão social</label>
+        <label style={styles.label}>
+          Nome ou razão social
+        </label>
+
         <input
           style={styles.input}
           placeholder="Nome ou razão social"
@@ -197,7 +221,10 @@ function DoadoresAdmin() {
           onChange={(e) => setNome(e.target.value)}
         />
 
-        <label style={styles.label}>CPF ou CNPJ</label>
+        <label style={styles.label}>
+          CPF ou CNPJ
+        </label>
+
         <input
           style={styles.input}
           placeholder="Digite CPF ou CNPJ"
@@ -205,7 +232,10 @@ function DoadoresAdmin() {
           onChange={(e) => setDocumento(e.target.value)}
         />
 
-        <label style={styles.label}>Telefone</label>
+        <label style={styles.label}>
+          Telefone
+        </label>
+
         <input
           style={styles.input}
           placeholder="Telefone"
@@ -213,7 +243,10 @@ function DoadoresAdmin() {
           onChange={(e) => setTelefone(e.target.value)}
         />
 
-        <label style={styles.label}>Tipo de pessoa</label>
+        <label style={styles.label}>
+          Tipo de pessoa
+        </label>
+
         <select
           style={styles.input}
           value={categoria}
@@ -224,47 +257,114 @@ function DoadoresAdmin() {
           <option>Parceiro</option>
         </select>
 
-        <label style={styles.label}>Tipo de contribuição</label>
+        <label style={styles.label}>
+          Tipo de contribuição
+        </label>
+
         <select
           style={styles.input}
           value={tipoContribuicao}
-          onChange={(e) => {
-            setTipoContribuicao(e.target.value)
-            setQuantidade('')
-            setDescricaoContribuicao('')
-          }}
+          onChange={(e) => setTipoContribuicao(e.target.value)}
         >
           <option value="">Selecione</option>
-          <option>Apenas cadastro</option>
-          <option>Material</option>
-          <option>Voluntário</option>
+
+          <option value="Financeira">
+            Financeira
+          </option>
+
+          <option value="Material">
+            Material
+          </option>
+
+          <option value="Voluntário">
+            Voluntário
+          </option>
+
+          <option value="Apenas cadastro">
+            Apenas cadastro
+          </option>
         </select>
 
-        {(tipoContribuicao === 'Material' || tipoContribuicao === 'Voluntário') && (
+        {tipoContribuicao === 'Financeira' && (
           <div style={styles.contribuicaoBox}>
-            <label style={styles.label}>Quantidade</label>
-            <input
-              style={styles.smallInput}
-              placeholder="Ex: 24"
-              value={quantidade}
-              onChange={(e) => setQuantidade(e.target.value)}
-            />
+            <label style={styles.label}>
+              Tipo de transação
+            </label>
 
-            <label style={styles.label}>Descrição</label>
+            <select
+              style={styles.input}
+              value={formaPagamento}
+              onChange={(e) =>
+                setFormaPagamento(e.target.value)
+              }
+            >
+              <option value="Pix">Pix</option>
+              <option value="TED">TED</option>
+            </select>
+
+            <label style={styles.label}>
+              Banco
+            </label>
+
             <input
               style={styles.input}
-              placeholder={
-                tipoContribuicao === 'Material'
-                  ? 'Ex: latas de leite ninho, roupas, alimentos'
-                  : 'Ex: aulas, recreação, apoio administrativo'
+              placeholder="Ex: Nubank, Caixa, Bradesco..."
+              value={banco}
+              onChange={(e) =>
+                setBanco(e.target.value)
               }
-              value={descricaoContribuicao}
-              onChange={(e) => setDescricaoContribuicao(e.target.value)}
             />
           </div>
         )}
 
-        <label style={styles.label}>Status do doador</label>
+        {(tipoContribuicao === 'Material' ||
+          tipoContribuicao === 'Voluntário') && (
+          <div style={styles.contribuicaoBox}>
+            <label style={styles.label}>
+              Quantidade
+            </label>
+
+            <input
+              style={styles.smallInput}
+              placeholder="Ex: 24"
+              value={quantidade}
+              onChange={(e) =>
+                setQuantidade(e.target.value)
+              }
+            />
+
+            <label style={styles.label}>
+              Descrição
+            </label>
+
+            <input
+              style={styles.input}
+              placeholder="Descreva a contribuição"
+              value={descricaoContribuicao}
+              onChange={(e) =>
+                setDescricaoContribuicao(
+                  e.target.value
+                )
+              }
+            />
+          </div>
+        )}
+
+        <label style={styles.label}>
+          Observações
+        </label>
+
+        <textarea
+          style={styles.textarea}
+          placeholder="Observações internas"
+          value={obs}
+          onChange={(e) => setObs(e.target.value)}
+        />
+
+        <label style={styles.label}>
+          Status do doador
+        </label>
+
         <select
           style={styles.input}
           value={status}
@@ -275,17 +375,14 @@ function DoadoresAdmin() {
           <option value="inativo">Inativo</option>
         </select>
 
-        <label style={styles.label}>Observações</label>
-        <textarea
-          style={styles.textarea}
-          placeholder="Observações internas"
-          value={obs}
-          onChange={(e) => setObs(e.target.value)}
-        />
+        <h3 style={styles.sectionTitle}>
+          Localização
+        </h3>
 
-        <h3 style={styles.sectionTitle}>Localização</h3>
+        <label style={styles.label}>
+          País
+        </label>
 
-        <label style={styles.label}>País</label>
         <select
           style={styles.input}
           value={pais}
@@ -297,28 +394,44 @@ function DoadoresAdmin() {
           }}
         >
           {paises.map((p) => (
-            <option key={p.codigo} value={p.codigo}>
+            <option
+              key={p.codigo}
+              value={p.codigo}
+            >
               {p.nome}
             </option>
           ))}
         </select>
 
-        <label style={styles.label}>Estado</label>
+        <label style={styles.label}>
+          Estado
+        </label>
+
         <select
           style={styles.input}
           value={estadoId}
           onChange={(e) => {
             const novoEstadoId = e.target.value
+
             const estado = estados.find(
-              (item) => String(item.id) === String(novoEstadoId)
+              (item) =>
+                String(item.id) ===
+                String(novoEstadoId)
             )
 
             setEstadoId(novoEstadoId)
-            setEstadoNome(estado?.nome || '')
+
+            setEstadoNome(
+              estado?.nome || ''
+            )
+
             setMunicipio('')
           }}
         >
-          <option value="">Selecione o estado</option>
+          <option value="">
+            Selecione o estado
+          </option>
+
           {estados.map((e) => (
             <option key={e.id} value={e.id}>
               {e.nome} - {e.sigla}
@@ -326,14 +439,22 @@ function DoadoresAdmin() {
           ))}
         </select>
 
-        <label style={styles.label}>Município</label>
+        <label style={styles.label}>
+          Município
+        </label>
+
         <select
           style={styles.input}
           value={municipio}
-          onChange={(e) => setMunicipio(e.target.value)}
+          onChange={(e) =>
+            setMunicipio(e.target.value)
+          }
           disabled={!estadoId}
         >
-          <option value="">Selecione o município</option>
+          <option value="">
+            Selecione o município
+          </option>
+
           {municipios.map((m) => (
             <option key={m.id} value={m.nome}>
               {m.nome}
@@ -341,19 +462,28 @@ function DoadoresAdmin() {
           ))}
         </select>
 
-        <button style={styles.button}>Salvar Doador</button>
+        <button style={styles.button}>
+          Salvar Doador
+        </button>
       </form>
 
       <section style={styles.listCard}>
         <div style={styles.listHeader}>
           <div>
-            <h2 style={styles.formTitle}>Doadores cadastrados</h2>
+            <h2 style={styles.formTitle}>
+              Doadores cadastrados
+            </h2>
+
             <p style={styles.helperText}>
-              Sem pesquisa, aparecem os 5 últimos cadastrados.
+              Sem pesquisa aparecem os 5 últimos.
             </p>
           </div>
 
-          <button type="button" style={styles.printButton} onClick={exportarLista}>
+          <button
+            type="button"
+            style={styles.printButton}
+            onClick={exportarLista}
+          >
             Exportar / Imprimir
           </button>
         </div>
@@ -363,49 +493,142 @@ function DoadoresAdmin() {
             style={styles.input}
             placeholder="Buscar por nome, CPF ou CNPJ"
             value={busca}
-            onChange={(e) => setBusca(e.target.value)}
+            onChange={(e) =>
+              setBusca(e.target.value)
+            }
           />
 
           <select
             style={styles.input}
             value={filtro}
-            onChange={(e) => setFiltro(e.target.value)}
+            onChange={(e) =>
+              setFiltro(e.target.value)
+            }
           >
-            <option value="doador">Procurar por doador</option>
-            <option value="todos">Procurar todos</option>
-            <option value="ativos_atencao">Ativos e em atenção</option>
-            <option value="inativos">Inativos</option>
+            <option value="doador">
+              Procurar por doador
+            </option>
+
+            <option value="todos">
+              Procurar todos
+            </option>
+
+            <option value="ativos_atencao">
+              Ativos e em atenção
+            </option>
+
+            <option value="inativos">
+              Inativos
+            </option>
           </select>
         </div>
 
         {doadoresFiltrados.length === 0 ? (
-          <p style={styles.emptyText}>Nenhum doador encontrado.</p>
+          <p style={styles.emptyText}>
+            Nenhum doador encontrado.
+          </p>
         ) : (
-          <div style={styles.table}>
+          <>
             <div style={styles.tableHead}>
               <span>Status</span>
               <span>Nome</span>
               <span>CPF/CNPJ</span>
               <span>Tipo</span>
               <span>Contribuição</span>
+              <span>Banco / Observação</span>
               <span>Cidade/Estado</span>
             </div>
 
-            {doadoresFiltrados.map((d) => (
-              <div key={d.id} style={styles.tableRow}>
-                <span>
-                  <span style={{ ...styles.statusDot, background: corStatus(d.status) }} />
-                </span>
-                <strong>{d.nome}</strong>
-                <span>{d.documento || d.cpfCnpj || '-'}</span>
-                <span>{d.categoria || '-'}</span>
-                <span>{d.tipoContribuicao || d.obs || '-'}</span>
-                <span>
-                  {d.municipio || '-'} {d.estado ? `- ${d.estado}` : ''}
-                </span>
-              </div>
-            ))}
-          </div>
+            {doadoresFiltrados.map((d) => {
+              let contribuicao = 'Apenas cadastro'
+              let detalheBanco = '-'
+
+              if (
+                d.tipoContribuicao ===
+                  'Financeira' ||
+                d.formaPagamento ||
+                d.banco
+              ) {
+                contribuicao =
+                  `${d.formaPagamento || 'Pix'} • Financeira`
+
+                detalheBanco =
+                  d.banco
+                    ? `Banco: ${d.banco}`
+                    : 'Banco não informado'
+              }
+
+              else if (
+                d.tipoContribuicao ===
+                'Material'
+              ) {
+                contribuicao = 'Material'
+
+                detalheBanco =
+                  d.obs ||
+                  d.descricaoContribuicao ||
+                  'Sem observações'
+              }
+
+              else if (
+                d.tipoContribuicao ===
+                'Voluntário'
+              ) {
+                contribuicao = 'Voluntário'
+
+                detalheBanco =
+                  d.obs ||
+                  d.descricaoContribuicao ||
+                  'Sem observações'
+              }
+
+              return (
+                <div
+                  key={d.id}
+                  style={styles.tableRow}
+                >
+                  <span>
+                    <span
+                      style={{
+                        ...styles.statusDot,
+                        background:
+                          corStatus(
+                            d.status
+                          )
+                      }}
+                    />
+                  </span>
+
+                  <strong>{d.nome}</strong>
+
+                  <span>
+                    {d.documento ||
+                      d.cpfCnpj ||
+                      '-'}
+                  </span>
+
+                  <span>
+                    {d.categoria || '-'}
+                  </span>
+
+                  <span>
+                    {contribuicao}
+                  </span>
+
+                  <span style={styles.obsColumn}>
+                    {detalheBanco}
+                  </span>
+
+                  <span>
+                    {d.municipio || '-'}{' '}
+                    {d.estado
+                      ? `- ${d.estado}`
+                      : ''}
+                  </span>
+                </div>
+              )
+            })}
+          </>
         )}
       </section>
     </main>
@@ -413,8 +636,12 @@ function DoadoresAdmin() {
 }
 
 function corStatus(status) {
-  if (status === 'inativo') return '#dc2626'
-  if (status === 'atencao') return '#f97316'
+  if (status === 'inativo')
+    return '#dc2626'
+
+  if (status === 'atencao')
+    return '#f97316'
+
   return '#16a34a'
 }
 
@@ -424,42 +651,52 @@ const styles = {
     background: '#f1f7ff',
     padding: '32px'
   },
+
   header: {
     maxWidth: '850px',
     margin: '0 auto 24px'
   },
+
   title: {
     color: '#0B3D91',
     fontSize: '2.4rem',
     margin: 0
   },
+
   subtitle: {
     color: '#475569'
   },
+
   card: {
     maxWidth: '850px',
     margin: '0 auto',
     background: '#ffffff',
     padding: '30px',
     borderRadius: '18px',
-    boxShadow: '0 8px 24px rgba(0,0,0,0.08)'
+    boxShadow:
+      '0 8px 24px rgba(0,0,0,0.08)'
   },
+
   listCard: {
-    maxWidth: '1100px',
+    maxWidth: '1300px',
     margin: '28px auto 0',
     background: '#ffffff',
     padding: '25px',
     borderRadius: '18px',
-    boxShadow: '0 8px 24px rgba(0,0,0,0.08)'
+    boxShadow:
+      '0 8px 24px rgba(0,0,0,0.08)'
   },
+
   formTitle: {
     color: '#002855',
     margin: 0
   },
+
   sectionTitle: {
     color: '#0B3D91',
     marginTop: '18px'
   },
+
   label: {
     display: 'block',
     marginTop: '12px',
@@ -467,6 +704,7 @@ const styles = {
     color: '#334155',
     fontWeight: '700'
   },
+
   input: {
     width: '100%',
     height: '48px',
@@ -477,6 +715,7 @@ const styles = {
     padding: '0 12px',
     boxSizing: 'border-box'
   },
+
   smallInput: {
     width: '160px',
     height: '46px',
@@ -487,6 +726,7 @@ const styles = {
     padding: '0 12px',
     boxSizing: 'border-box'
   },
+
   textarea: {
     width: '100%',
     minHeight: '90px',
@@ -497,6 +737,7 @@ const styles = {
     padding: '12px',
     boxSizing: 'border-box'
   },
+
   contribuicaoBox: {
     background: '#f8fbff',
     border: '1px solid #dbeafe',
@@ -504,6 +745,7 @@ const styles = {
     padding: '16px',
     margin: '10px 0'
   },
+
   button: {
     background: '#ffc928',
     color: '#002855',
@@ -514,6 +756,7 @@ const styles = {
     cursor: 'pointer',
     marginTop: '12px'
   },
+
   printButton: {
     background: '#0B3D91',
     color: '#ffffff',
@@ -523,6 +766,7 @@ const styles = {
     fontWeight: '900',
     cursor: 'pointer'
   },
+
   listHeader: {
     display: 'flex',
     justifyContent: 'space-between',
@@ -531,24 +775,24 @@ const styles = {
     flexWrap: 'wrap',
     marginBottom: '18px'
   },
+
   helperText: {
     margin: '6px 0 0',
     color: '#64748b',
     fontSize: '14px'
   },
+
   searchGrid: {
     display: 'grid',
     gridTemplateColumns: '2fr 1fr',
     gap: '14px',
     marginBottom: '18px'
   },
-  table: {
-    width: '100%',
-    overflowX: 'auto'
-  },
+
   tableHead: {
     display: 'grid',
-    gridTemplateColumns: '70px 1.5fr 1fr 1fr 1.3fr 1.2fr',
+    gridTemplateColumns:
+      '70px 1.5fr 1fr 1fr 1.3fr 1.5fr 1.2fr',
     gap: '12px',
     padding: '12px',
     background: '#eff6ff',
@@ -556,20 +800,30 @@ const styles = {
     fontWeight: '900',
     borderRadius: '10px'
   },
+
   tableRow: {
     display: 'grid',
-    gridTemplateColumns: '70px 1.5fr 1fr 1fr 1.3fr 1.2fr',
+    gridTemplateColumns:
+      '70px 1.5fr 1fr 1fr 1.3fr 1.5fr 1.2fr',
     gap: '12px',
     padding: '14px 12px',
     borderBottom: '1px solid #e5e7eb',
     alignItems: 'center'
   },
+
   statusDot: {
     display: 'inline-block',
     width: '13px',
     height: '13px',
     borderRadius: '999px'
   },
+
+  obsColumn: {
+    color: '#475569',
+    fontSize: '14px',
+    lineHeight: '1.5'
+  },
+
   emptyText: {
     color: '#64748b'
   }

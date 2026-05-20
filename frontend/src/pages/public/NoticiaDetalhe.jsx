@@ -1,6 +1,7 @@
 import React from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { buscarNoticiaPorId } from '../../services/noticiasService'
+import { registrarInteracao } from '../../services/analyticsService'
 
 function NoticiaDetalhe() {
   const { id } = useParams()

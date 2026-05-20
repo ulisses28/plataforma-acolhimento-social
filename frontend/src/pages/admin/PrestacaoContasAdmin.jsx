@@ -9,9 +9,7 @@ import {
 } from '../../services/transparenciaService'
 
 function PrestacaoContasAdmin() {
-  const [publicacoes, setPublicacoes] = useState([])
-
-  const [form, setForm] = useState({
+  const formLimpo = {
     titulo: '',
     tipo: 'Relatório Mensal',
     ano: '2025',
@@ -22,11 +20,16 @@ function PrestacaoContasAdmin() {
     valorAplicado: '',
     categoriaAplicacao: 'Alimentação',
     arquivoNome: '',
+    arquivoBase64: '',
     imagemCapa: '',
     graficosPublicos: [],
     status: 'Publicado'
-  })
+  }
+
+  const [publicacoes, setPublicacoes] = useState([])
+  const [form, setForm] = useState(formLimpo)
   const [editandoId, setEditandoId] = useState(null)
+
   useEffect(() => {
     carregar()
   }, [])
@@ -55,6 +58,25 @@ function PrestacaoContasAdmin() {
     })
   }
 
+  async function selecionarPdf(e) {
+    const arquivo = e.target.files?.[0]
+    if (!arquivo) return
+
+    if (arquivo.type !== 'application/pdf') {
+      alert('Envie apenas arquivos PDF.')
+      e.target.value = ''
+      return
+    }
+
+    const base64 = await lerArquivoComoBase64(arquivo)
+
+    setForm((atual) => ({
+      ...atual,
+      arquivoNome: arquivo.name,
+      arquivoBase64: base64
+    }))
+  }
+
   function publicar(e) {
     e.preventDefault()
 
@@ -69,39 +91,51 @@ function PrestacaoContasAdmin() {
     }
 
     if (editandoId) {
-      atualizarPublicacaoTransparencia({ ...form, id: editandoId })
+      atualizarPublicacaoTransparencia({
+        ...form,
+        id: editandoId
+      })
       setEditandoId(null)
     } else {
       salvarPublicacaoTransparencia(form)
     }
 
+    setForm(formLimpo)
+    carregar()
+
+    alert('Publicação salva na transparência pública.')
+  }
+
+  function editar(item) {
     setForm({
-      titulo: '',
-      tipo: 'Relatório Mensal',
-      ano: '2025',
-      periodo: '',
-      resumo: '',
-      descricao: '',
-      valorArrecadado: '',
-      valorAplicado: '',
-      categoriaAplicacao: 'Alimentação',
-      arquivoNome: '',
-      imagemCapa: '',
-      graficosPublicos: [],
-      status: 'Publicado'
+      ...formLimpo,
+      ...item,
+      arquivoBase64: item.arquivoBase64 || '',
+      graficosPublicos: item.graficosPublicos || []
     })
 
-    carregar()
-    alert('Publicação salva na transparência pública.')
+    setEditandoId(item.id)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   function remover(id) {
     const confirmar = confirm('Deseja remover esta publicação?')
-
     if (!confirmar) return
 
     excluirPublicacaoTransparencia(id)
     carregar()
+  }
+
+  function baixarDocumento(item) {
+    if (!item.arquivoBase64) {
+      alert('Este documento não possui PDF anexado.')
+      return
+    }
+
+    const link = document.createElement('a')
+    link.href = item.arquivoBase64
+    link.download = item.arquivoNome || 'documento.pdf'
+    link.click()
   }
 
   return (
@@ -111,15 +145,17 @@ function PrestacaoContasAdmin() {
 
         <header style={styles.header}>
           <h1 style={styles.title}>Prestação de Contas</h1>
+
           <p style={styles.subtitle}>
-            Cadastre documentos, notícias, relatórios e selecione os gráficos que
-            serão exibidos na página pública de transparência.
+            Cadastre documentos, relatórios e gráficos públicos para a página de transparência.
           </p>
         </header>
 
         <section style={styles.grid}>
           <form onSubmit={publicar} style={styles.card}>
-            <h2 style={styles.sectionTitle}>Nova publicação</h2>
+            <h2 style={styles.sectionTitle}>
+              {editandoId ? 'Editar publicação' : 'Nova publicação'}
+            </h2>
 
             <label style={styles.label}>Título da publicação</label>
             <input
@@ -178,7 +214,7 @@ function PrestacaoContasAdmin() {
               style={styles.textarea}
               value={form.descricao}
               onChange={(e) => alterarCampo('descricao', e.target.value)}
-              placeholder="Explique o conteúdo do documento ou notícia."
+              placeholder="Explique o conteúdo do documento."
             />
 
             <div style={styles.twoColumns}>
@@ -220,76 +256,32 @@ function PrestacaoContasAdmin() {
             </select>
 
             <label style={styles.label}>Anexar PDF</label>
-            <input
-              type="file"
-              accept=".pdf"
-              style={styles.input}
-              onChange={(e) =>
-                alterarCampo('arquivoNome', e.target.files?.[0]?.name || '')
-              }
-            />
+            <input type="file" accept=".pdf" style={styles.input} onChange={selecionarPdf} />
 
-            <label style={styles.label}>Imagem de capa</label>
-            <input
-              type="file"
-              accept="image/*"
-              style={styles.input}
-              onChange={(e) =>
-                alterarCampo('imagemCapa', e.target.files?.[0]?.name || '')
-              }
-            />
+            {form.arquivoNome && (
+              <p style={styles.fileName}>PDF selecionado: {form.arquivoNome}</p>
+            )}
 
             <section style={styles.graphBox}>
               <h3 style={styles.smallTitle}>Gráficos públicos</h3>
-              <p style={styles.helper}>
-                Selecione quais gráficos da Central de Gráficos poderão aparecer
-                na página pública de transparência.
-              </p>
 
-              <label style={styles.check}>
-                <input
-                  type="checkbox"
-                  checked={form.graficosPublicos.includes('doacoes-mensais')}
-                  onChange={() => alternarGrafico('doacoes-mensais')}
-                />
-                Doações mensais
-              </label>
-
-              <label style={styles.check}>
-                <input
-                  type="checkbox"
-                  checked={form.graficosPublicos.includes('receitas-despesas')}
-                  onChange={() => alternarGrafico('receitas-despesas')}
-                />
-                Receitas x Despesas
-              </label>
-
-              <label style={styles.check}>
-                <input
-                  type="checkbox"
-                  checked={form.graficosPublicos.includes('categorias')}
-                  onChange={() => alternarGrafico('categorias')}
-                />
-                Aplicação por categoria
-              </label>
-
-              <label style={styles.check}>
-                <input
-                  type="checkbox"
-                  checked={form.graficosPublicos.includes('patrimonio')}
-                  onChange={() => alternarGrafico('patrimonio')}
-                />
-                Balanço patrimonial
-              </label>
-
-              <label style={styles.check}>
-                <input
-                  type="checkbox"
-                  checked={form.graficosPublicos.includes('ranking-doadores')}
-                  onChange={() => alternarGrafico('ranking-doadores')}
-                />
-                Ranking de doadores
-              </label>
+              {[
+                ['doacoes-mensais', 'Doações mensais'],
+                ['receitas-despesas', 'Receitas x Despesas'],
+                ['categorias', 'Aplicação por categoria'],
+                ['patrimonio', 'Balanço patrimonial'],
+                ['ranking-doadores', 'Ranking de doadores'],
+                ['mapa-impacto', 'Mapa de impacto social']
+              ].map(([id, label]) => (
+                <label key={id} style={styles.check}>
+                  <input
+                    type="checkbox"
+                    checked={form.graficosPublicos.includes(id)}
+                    onChange={() => alternarGrafico(id)}
+                  />
+                  {label}
+                </label>
+              ))}
             </section>
 
             <label style={styles.label}>Status</label>
@@ -302,9 +294,24 @@ function PrestacaoContasAdmin() {
               <option>Rascunho</option>
             </select>
 
-            <button type="submit" style={styles.button}>
-              Publicar na Transparência
-            </button>
+            <div style={styles.actions}>
+              <button type="submit" style={styles.button}>
+                {editandoId ? 'Atualizar publicação' : 'Publicar na Transparência'}
+              </button>
+
+              {editandoId && (
+                <button
+                  type="button"
+                  style={styles.cancelButton}
+                  onClick={() => {
+                    setForm(formLimpo)
+                    setEditandoId(null)
+                  }}
+                >
+                  Cancelar edição
+                </button>
+              )}
+            </div>
           </form>
 
           <section style={styles.card}>
@@ -330,23 +337,18 @@ function PrestacaoContasAdmin() {
                   )}
 
                   <div style={styles.actions}>
-                  <button
-                    style={styles.editButton}
-                    onClick={() => {
-                      setForm(item)
-                      setEditandoId(item.id)
-                    }}
-                  >
-                    ✏️ Editar
-                  </button>
+                    <button style={styles.editButton} onClick={() => editar(item)}>
+                      ✏️ Editar
+                    </button>
 
-                  <button
-                    style={styles.deleteButton}
-                    onClick={() => remover(item.id)}
-                  >
-                    🗑 Remover
-                  </button>
-                </div>
+                    <button style={styles.downloadButton} onClick={() => baixarDocumento(item)}>
+                      ⬇ Baixar PDF
+                    </button>
+
+                    <button style={styles.deleteButton} onClick={() => remover(item.id)}>
+                      🗑 Remover
+                    </button>
+                  </div>
                 </article>
               ))
             )}
@@ -363,51 +365,42 @@ const styles = {
     background: '#f1f7ff',
     padding: '40px 20px'
   },
-
   container: {
     maxWidth: '1200px',
     margin: '0 auto'
   },
-
   header: {
     marginBottom: '25px'
   },
-
   title: {
     color: '#0B3D91',
     margin: 0,
     fontSize: '2.4rem'
   },
-
   subtitle: {
     color: '#475569',
     lineHeight: '1.6'
   },
-
   grid: {
     display: 'grid',
     gridTemplateColumns: '1.3fr 1fr',
     gap: '24px',
     alignItems: 'start'
   },
-
   card: {
     background: '#ffffff',
     borderRadius: '20px',
     padding: '28px',
     boxShadow: '0 8px 24px rgba(0,0,0,0.08)'
   },
-
   sectionTitle: {
     color: '#0B3D91',
     marginTop: 0
   },
-
   smallTitle: {
     color: '#0B3D91',
     marginBottom: '8px'
   },
-
   label: {
     display: 'block',
     marginTop: '14px',
@@ -415,7 +408,6 @@ const styles = {
     color: '#334155',
     fontWeight: '800'
   },
-
   input: {
     width: '100%',
     minHeight: '46px',
@@ -425,7 +417,6 @@ const styles = {
     padding: '0 12px',
     boxSizing: 'border-box'
   },
-
   textarea: {
     width: '100%',
     minHeight: '90px',
@@ -436,13 +427,11 @@ const styles = {
     boxSizing: 'border-box',
     resize: 'vertical'
   },
-
   twoColumns: {
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
     gap: '14px'
   },
-
   graphBox: {
     background: '#f8fbff',
     border: '1px solid #dbeafe',
@@ -450,21 +439,17 @@ const styles = {
     padding: '16px',
     marginTop: '18px'
   },
-
   helper: {
     color: '#64748b',
     lineHeight: '1.5'
   },
-
   check: {
     display: 'block',
     marginTop: '10px',
     color: '#334155',
     fontWeight: '700'
   },
-
   button: {
-    marginTop: '22px',
     background: '#0B3D91',
     color: '#ffffff',
     border: 'none',
@@ -473,7 +458,15 @@ const styles = {
     fontWeight: '900',
     cursor: 'pointer'
   },
-
+  cancelButton: {
+    background: '#64748b',
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '12px',
+    padding: '14px 20px',
+    fontWeight: '900',
+    cursor: 'pointer'
+  },
   publicationItem: {
     background: '#f8fbff',
     border: '1px solid #dbeafe',
@@ -481,7 +474,6 @@ const styles = {
     padding: '18px',
     marginBottom: '14px'
   },
-
   status: {
     background: '#ffc928',
     color: '#002855',
@@ -490,29 +482,24 @@ const styles = {
     fontWeight: '900',
     fontSize: '12px'
   },
-
   itemTitle: {
     color: '#0B3D91',
     marginBottom: '6px'
   },
-
   itemText: {
     color: '#475569',
     lineHeight: '1.5'
   },
-
   fileName: {
     color: '#0B3D91',
     fontWeight: '800'
   },
-
-  // ✅ NOVOS BOTÕES PROFISSIONAIS
   actions: {
     display: 'flex',
     gap: '10px',
-    marginTop: '12px'
+    marginTop: '12px',
+    flexWrap: 'wrap'
   },
-
   editButton: {
     background: '#16a34a',
     color: '#fff',
@@ -522,7 +509,15 @@ const styles = {
     cursor: 'pointer',
     fontWeight: '700'
   },
-
+  downloadButton: {
+    background: '#0B3D91',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '8px',
+    padding: '8px 14px',
+    cursor: 'pointer',
+    fontWeight: '700'
+  },
   deleteButton: {
     background: '#dc2626',
     color: '#fff',

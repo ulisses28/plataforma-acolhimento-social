@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { listarNoticias } from '../../services/noticiasService'
+import { registrarInteracao } from '../../services/analyticsService'
 
 function Noticias() {
   const [noticias, setNoticias] = useState([])

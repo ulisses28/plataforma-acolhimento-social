@@ -19,6 +19,7 @@ import {
 
 import { listarDoacoes } from '../../services/doacoesService'
 import { listarDoadores } from '../../services/doadoresService'
+import { listarNecessidades } from '../../services/necessidadesService'
 import { obterAnalyticsMes, formatarTempo } from '../../services/analyticsService'
 import { gerarRelatorioPDF } from '../../utils/pdfService'
 
@@ -27,6 +28,7 @@ function GraficosAdmin() {
 
   const [doacoes, setDoacoes] = useState([])
   const [doadores, setDoadores] = useState([])
+  const [necessidades, setNecessidades] = useState([])
   const [analytics, setAnalytics] = useState({
     totalVisitas: 0,
     tempoTotal: 0,
@@ -55,6 +57,7 @@ function GraficosAdmin() {
   function carregarDados() {
     setDoacoes(listarDoacoes())
     setDoadores(listarDoadores())
+    setNecessidades(listarNecessidades())
     setAnalytics(obterAnalyticsMes(mesSelecionado, anoSelecionado))
   }
 
@@ -79,7 +82,7 @@ function GraficosAdmin() {
       (d) => d.tipoDoacao === 'Financeira'
     )
 
-    const materiais = doacoesComLocalizacao.filter(
+    const materiaisDoacoes = doacoesComLocalizacao.filter(
       (d) => d.tipoDoacao === 'Material'
     )
 
@@ -87,18 +90,23 @@ function GraficosAdmin() {
       .filter((d) => d.status === 'Confirmado')
       .reduce((acc, d) => acc + extrairNumeroMoeda(d.valor), 0)
 
-    const totalEstimadoMaterial = materiais.reduce(
+    const totalMateriaisDoacoes = materiaisDoacoes.reduce(
       (acc, d) => acc + Number(d.valorEstimadoMaterial || 0),
+      0
+    )
+
+    const totalMateriaisNecessidades = necessidades.reduce(
+      (acc, item) => acc + Number(item.valorEstimado || item.valorEstimadoMaterial || 0),
       0
     )
 
     return {
       quantidadeFinanceiras: financeiras.length,
-      quantidadeMateriais: materiais.length,
+      quantidadeMateriais: materiaisDoacoes.length + necessidades.length,
       totalFinanceiroConfirmado,
-      totalEstimadoMaterial
+      totalEstimadoMaterial: totalMateriaisDoacoes + totalMateriaisNecessidades
     }
-  }, [doacoesComLocalizacao])
+  }, [doacoesComLocalizacao, necessidades])
 
   const dadosTipoDoacao = useMemo(() => {
     return [
@@ -244,19 +252,13 @@ function GraficosAdmin() {
   const insights = useMemo(() => {
     let nivelEngajamento = 'Baixo'
 
-    if (interacoesPorUsuario >= 3) {
-      nivelEngajamento = 'Alto'
-    } else if (interacoesPorUsuario >= 1.5) {
-      nivelEngajamento = 'Médio'
-    }
+    if (interacoesPorUsuario >= 3) nivelEngajamento = 'Alto'
+    else if (interacoesPorUsuario >= 1.5) nivelEngajamento = 'Médio'
 
     let leituraTempo = 'Tempo médio baixo'
 
-    if (tempoMedioVisita >= 120) {
-      leituraTempo = 'Tempo médio alto'
-    } else if (tempoMedioVisita >= 45) {
-      leituraTempo = 'Tempo médio moderado'
-    }
+    if (tempoMedioVisita >= 120) leituraTempo = 'Tempo médio alto'
+    else if (tempoMedioVisita >= 45) leituraTempo = 'Tempo médio moderado'
 
     let eficiencia = 'Eficiência baixa'
 
@@ -371,65 +373,45 @@ function GraficosAdmin() {
         </section>
 
         <section style={styles.reportPanel}>
-          <div style={styles.reportBox}>
-            <div style={styles.reportTitle}>Dados do relatório</div>
-            <p style={styles.reportSubtitle}>
-              Selecione quais informações deseja incluir no PDF.
-            </p>
+          <div style={styles.reportTitle}>Dados do relatório</div>
+          <p style={styles.reportSubtitle}>
+            Selecione quais informações deseja incluir no PDF.
+          </p>
 
-            <div style={styles.optionsGrid}>
-              {opcoesRelatorio.map((opcao) => (
-                <label key={opcao.id} style={styles.checkItem}>
-                  <input
-                    type="checkbox"
-                    checked={secoesRelatorio.includes(opcao.id)}
-                    onChange={() => alternarSecao(opcao.id)}
-                  />
-                  {opcao.label}
-                </label>
-              ))}
-
-              <label style={styles.checkItemStrong}>
+          <div style={styles.optionsGrid}>
+            {opcoesRelatorio.map((opcao) => (
+              <label key={opcao.id} style={styles.checkItem}>
                 <input
                   type="checkbox"
-                  checked={secoesRelatorio.length === opcoesRelatorio.length}
-                  onChange={selecionarTodosRelatorios}
+                  checked={secoesRelatorio.includes(opcao.id)}
+                  onChange={() => alternarSecao(opcao.id)}
                 />
-                Todos - gerar relatório completo
+                {opcao.label}
               </label>
-            </div>
+            ))}
 
-            {erroRelatorio && <p style={styles.errorText}>{erroRelatorio}</p>}
+            <label style={styles.checkItemStrong}>
+              <input
+                type="checkbox"
+                checked={secoesRelatorio.length === opcoesRelatorio.length}
+                onChange={selecionarTodosRelatorios}
+              />
+              Todos - gerar relatório completo
+            </label>
           </div>
 
-          <button
-            style={styles.btnExport}
-            onClick={handleGerarRelatorioPDF}
-            type="button"
-          >
+          {erroRelatorio && <p style={styles.errorText}>{erroRelatorio}</p>}
+
+          <button style={styles.btnExport} onClick={handleGerarRelatorioPDF} type="button">
             Gerar PDF Profissional
           </button>
         </section>
 
         <section style={styles.summaryGrid}>
-          <SummaryCard
-            label="Total financeiro confirmado"
-            value={resumo.totalFinanceiroConfirmado.toLocaleString('pt-BR', {
-              style: 'currency',
-              currency: 'BRL'
-            })}
-          />
-
-          <SummaryCard
-            label="Total estimado material"
-            value={resumo.totalEstimadoMaterial.toLocaleString('pt-BR', {
-              style: 'currency',
-              currency: 'BRL'
-            })}
-          />
-
+          <SummaryCard label="Total financeiro confirmado" value={formatarMoeda(resumo.totalFinanceiroConfirmado)} />
+          <SummaryCard label="Total estimado material" value={formatarMoeda(resumo.totalEstimadoMaterial)} />
           <SummaryCard label="Doações financeiras" value={resumo.quantidadeFinanceiras} />
-          <SummaryCard label="Doações materiais" value={resumo.quantidadeMateriais} />
+          <SummaryCard label="Doações materiais / necessidades" value={resumo.quantidadeMateriais} />
           <SummaryCard label="Visitas no mês" value={totalVisitasMes} />
           <SummaryCard label="Tempo total no site" value={formatarTempo(totalTempoMes)} />
           <SummaryCard label="Tempo médio por usuário" value={formatarTempo(tempoMedioVisita)} />
@@ -454,177 +436,172 @@ function GraficosAdmin() {
         <MapaImpacto dadosPorPais={dadosPorPais} />
 
         <section style={styles.chartGrid}>
-          <div id="grafico-financeiras-materiais" style={styles.chartCard}>
-            <h2 style={styles.chartTitle}>Financeiras x Materiais</h2>
-            <p style={styles.chartSubtitle}>
-              Distribuição percentual por tipo de doação.
-            </p>
+          <ChartCard
+            id="grafico-financeiras-materiais"
+            title="Financeiras x Materiais"
+            subtitle="Distribuição percentual por tipo de doação."
+            explanation="Este gráfico compara a quantidade de doações financeiras com as doações ou necessidades materiais cadastradas. Ele ajuda a entender se a instituição recebe mais apoio em dinheiro ou em itens físicos."
+          >
+            <PieGraphic data={dadosTipoDoacao} colors={['#00C2FF', '#7CFFB2']} />
+          </ChartCard>
 
-            <div style={styles.chartArea}>
-              <ResponsiveContainer width="100%" height={320}>
-                <PieChart>
-                  <Pie data={dadosTipoDoacao} dataKey="value" nameKey="name" outerRadius={110} label>
-                    <Cell fill="#00C2FF" />
-                    <Cell fill="#7CFFB2" />
-                  </Pie>
-                  <Tooltip contentStyle={tooltipStyle} />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
+          <ChartCard
+            id="grafico-origem-doacoes"
+            title="Origem das doações"
+            subtitle="Pessoa Física, Pessoa Jurídica e Parceiros."
+            explanation="Mostra de onde vêm as contribuições. Ajuda a identificar se a maior participação vem de pessoas físicas, empresas ou parceiros institucionais."
+          >
+            <PieGraphic data={dadosCategoriaDoador} colors={['#FACC15', '#38BDF8', '#FB7185']} />
+          </ChartCard>
 
-          <div id="grafico-origem-doacoes" style={styles.chartCard}>
-            <h2 style={styles.chartTitle}>Origem das doações</h2>
-            <p style={styles.chartSubtitle}>
-              Pessoa Física, Pessoa Jurídica e Parceiros.
-            </p>
+          <ChartCard
+            id="grafico-pais"
+            title="Doações por país"
+            subtitle="Distribuição das doações por país informado."
+            explanation="Apresenta a origem geográfica internacional das doações. Esse indicador mostra o alcance social da instituição fora e dentro do Brasil."
+          >
+            <PieGraphic data={dadosPorPais} colors={coresGraficos} />
+          </ChartCard>
 
-            <div style={styles.chartArea}>
-              <ResponsiveContainer width="100%" height={320}>
-                <PieChart>
-                  <Pie data={dadosCategoriaDoador} dataKey="value" nameKey="name" outerRadius={110} label>
-                    <Cell fill="#FACC15" />
-                    <Cell fill="#38BDF8" />
-                    <Cell fill="#FB7185" />
-                  </Pie>
-                  <Tooltip contentStyle={tooltipStyle} />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
+          <ChartCard
+            id="grafico-estado"
+            title="Doações por estado"
+            subtitle="Impacto das doações por estado brasileiro."
+            explanation="Permite acompanhar quais estados brasileiros mais participam das doações registradas no sistema."
+          >
+            <BarGraphic data={dadosPorEstado} dataKey="value" name="Quantidade" color="#22c55e" />
+          </ChartCard>
 
-          <div id="grafico-pais" style={styles.chartCard}>
-            <h2 style={styles.chartTitle}>Doações por país</h2>
-            <p style={styles.chartSubtitle}>
-              Distribuição das doações por país informado.
-            </p>
+          <ChartCard
+            id="grafico-municipio"
+            title="Ranking por município"
+            subtitle="Top 10 municípios com maior quantidade de doações."
+            explanation="Mostra as cidades com maior volume de participação. Esse ranking ajuda a identificar regiões com maior engajamento."
+            large
+          >
+            <BarGraphic data={dadosPorMunicipio} dataKey="value" name="Quantidade" color="#38bdf8" />
+          </ChartCard>
 
-            <div style={styles.chartArea}>
-              <ResponsiveContainer width="100%" height={320}>
-                <PieChart>
-                  <Pie data={dadosPorPais} dataKey="value" nameKey="name" outerRadius={110} label>
-                    {dadosPorPais.map((_, index) => (
-                      <Cell key={index} fill={coresGraficos[index % coresGraficos.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip contentStyle={tooltipStyle} />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
+          <ChartCard
+            id="grafico-variacao-diaria"
+            title="Variação diária do mês"
+            subtitle="Evolução do volume diário do mês selecionado."
+            explanation="Mostra a evolução diária dos valores registrados no mês. Ajuda a entender os dias com maior entrada de doações ou maior atividade financeira."
+            large
+          >
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={dadosLinhaMensal}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#2a3140" />
+                <XAxis dataKey="dia" stroke="#cbd5e1" />
+                <YAxis stroke="#cbd5e1" />
+                <Tooltip contentStyle={tooltipStyle} formatter={(value) => [formatarMoeda(value), 'Total diário']} />
+                <Legend />
+                <Line
+                  type="monotone"
+                  dataKey="total"
+                  stroke="#22d3ee"
+                  strokeWidth={3}
+                  dot={{ r: 3 }}
+                  name="Total diário"
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </ChartCard>
 
-          <div id="grafico-estado" style={styles.chartCard}>
-            <h2 style={styles.chartTitle}>Doações por estado</h2>
-            <p style={styles.chartSubtitle}>
-              Impacto das doações por estado brasileiro.
-            </p>
+          <ChartCard
+            id="grafico-comparativo-valores"
+            title="Comparativo de valores"
+            subtitle="Financeiro confirmado versus material estimado."
+            explanation="Compara o valor financeiro confirmado com o valor estimado dos materiais e necessidades cadastradas."
+            large
+          >
+            <BarGraphic data={dadosBarrasTotais} dataKey="total" name="Total em R$" color="#60a5fa" money />
+          </ChartCard>
 
-            <div style={styles.chartArea}>
-              <ResponsiveContainer width="100%" height={320}>
-                <BarChart data={dadosPorEstado}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#2a3140" />
-                  <XAxis dataKey="name" stroke="#cbd5e1" />
-                  <YAxis stroke="#cbd5e1" />
-                  <Tooltip contentStyle={tooltipStyle} />
-                  <Legend />
-                  <Bar dataKey="value" fill="#22c55e" name="Quantidade" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div id="grafico-municipio" style={{ ...styles.chartCard, gridColumn: '1 / -1' }}>
-            <h2 style={styles.chartTitle}>Ranking por município</h2>
-            <p style={styles.chartSubtitle}>
-              Top 10 municípios com maior quantidade de doações.
-            </p>
-
-            <div style={styles.chartAreaLarge}>
-              <ResponsiveContainer width="100%" height={360}>
-                <BarChart data={dadosPorMunicipio}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#2a3140" />
-                  <XAxis dataKey="name" stroke="#cbd5e1" />
-                  <YAxis stroke="#cbd5e1" />
-                  <Tooltip contentStyle={tooltipStyle} />
-                  <Legend />
-                  <Bar dataKey="value" fill="#38bdf8" name="Quantidade" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div id="grafico-variacao-diaria" style={{ ...styles.chartCard, gridColumn: '1 / -1' }}>
-            <h2 style={styles.chartTitle}>Variação diária do mês</h2>
-            <p style={styles.chartSubtitle}>
-              Evolução do volume diário do dia 1 até o último dia do mês selecionado.
-            </p>
-
-            <div style={styles.chartAreaLarge}>
-              <ResponsiveContainer width="100%" height={360}>
-                <LineChart data={dadosLinhaMensal}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#2a3140" />
-                  <XAxis dataKey="dia" stroke="#cbd5e1" />
-                  <YAxis stroke="#cbd5e1" />
-                  <Tooltip contentStyle={tooltipStyle} />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="total"
-                    stroke="#22d3ee"
-                    strokeWidth={3}
-                    dot={{ r: 3 }}
-                    name="Total diário"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div id="grafico-comparativo-valores" style={{ ...styles.chartCard, gridColumn: '1 / -1' }}>
-            <h2 style={styles.chartTitle}>Comparativo de valores</h2>
-            <p style={styles.chartSubtitle}>
-              Valor financeiro confirmado versus valor estimado de doações materiais.
-            </p>
-
-            <div style={styles.chartAreaLarge}>
-              <ResponsiveContainer width="100%" height={340}>
-                <BarChart data={dadosBarrasTotais}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#2a3140" />
-                  <XAxis dataKey="name" stroke="#cbd5e1" />
-                  <YAxis stroke="#cbd5e1" />
-                  <Tooltip contentStyle={tooltipStyle} />
-                  <Legend />
-                  <Bar dataKey="total" fill="#60a5fa" name="Total em R$" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div id="grafico-eficiencia-site" style={{ ...styles.chartCard, gridColumn: '1 / -1' }}>
-            <h2 style={styles.chartTitle}>Eficiência e engajamento do site</h2>
-            <p style={styles.chartSubtitle}>
-              Visitas, tempo médio de permanência e interações para medir a eficiência da plataforma.
-            </p>
-
-            <div style={styles.chartAreaLarge}>
-              <ResponsiveContainer width="100%" height={360}>
-                <BarChart data={dadosMetricasSite}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#2a3140" />
-                  <XAxis dataKey="name" stroke="#cbd5e1" />
-                  <YAxis stroke="#cbd5e1" />
-                  <Tooltip contentStyle={tooltipStyle} />
-                  <Legend />
-                  <Bar dataKey="valor" fill="#22c55e" name="Métrica" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
+          <ChartCard
+            id="grafico-eficiencia-site"
+            title="Eficiência e engajamento do site"
+            subtitle="Visitas, permanência e interações da plataforma."
+            explanation="Mostra se os visitantes estão apenas acessando ou também interagindo com o site. Para funcionar plenamente, os botões e links públicos precisam chamar registrarInteracao()."
+            large
+          >
+            <BarGraphic data={dadosMetricasSite} dataKey="valor" name="Métrica" color="#22c55e" />
+          </ChartCard>
         </section>
       </div>
     </main>
+  )
+}
+
+function PieGraphic({ data, colors }) {
+  const total = data.reduce((acc, item) => acc + Number(item.value || 0), 0)
+
+  return (
+    <ResponsiveContainer width="100%" height="100%">
+      <PieChart>
+        <Pie
+          data={data}
+          dataKey="value"
+          nameKey="name"
+          outerRadius={85}
+          innerRadius={40}
+          label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
+        >
+          {data.map((_, index) => (
+            <Cell key={index} fill={colors[index % colors.length]} />
+          ))}
+        </Pie>
+
+        <Tooltip
+          contentStyle={tooltipStyle}
+          formatter={(value, name) => {
+            const percentual = total > 0 ? ((value / total) * 100).toFixed(1) : 0
+            return [`${value} registros (${percentual}%)`, name]
+          }}
+        />
+
+        <Legend
+          formatter={(value, entry) => {
+            const itemValue = entry?.payload?.value || 0
+            const percentual = total > 0 ? ((itemValue / total) * 100).toFixed(1) : 0
+            return `${value}: ${percentual}% | ${itemValue}`
+          }}
+        />
+      </PieChart>
+    </ResponsiveContainer>
+  )
+}
+
+function BarGraphic({ data, dataKey, name, color, money = false }) {
+  return (
+    <ResponsiveContainer width="100%" height="100%">
+      <BarChart data={data}>
+        <CartesianGrid strokeDasharray="3 3" stroke="#2a3140" />
+        <XAxis dataKey="name" stroke="#cbd5e1" />
+        <YAxis stroke="#cbd5e1" />
+        <Tooltip
+          contentStyle={tooltipStyle}
+          formatter={(value) => [money ? formatarMoeda(value) : value, name]}
+        />
+        <Legend />
+        <Bar dataKey={dataKey} fill={color} name={name} radius={[8, 8, 0, 0]} />
+      </BarChart>
+    </ResponsiveContainer>
+  )
+}
+
+function ChartCard({ id, title, subtitle, explanation, children, large = false }) {
+  return (
+    <div id={id} style={large ? { ...styles.chartCard, gridColumn: '1 / -1' } : styles.chartCard}>
+      <h2 style={styles.chartTitle}>{title}</h2>
+      <p style={styles.chartSubtitle}>{subtitle}</p>
+
+      <div style={large ? styles.chartAreaLarge : styles.chartArea}>
+        {children}
+      </div>
+
+      <p style={styles.chartExplanation}>{explanation}</p>
+    </div>
   )
 }
 
@@ -662,6 +639,13 @@ function extrairNumeroMoeda(valor) {
         .trim()
     ) || 0
   )
+}
+
+function formatarMoeda(valor) {
+  return Number(valor || 0).toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL'
+  })
 }
 
 const coresGraficos = [
@@ -724,9 +708,6 @@ const styles = {
     padding: '16px',
     marginBottom: '22px'
   },
-  reportBox: {
-    marginBottom: '14px'
-  },
   reportTitle: {
     color: '#fff',
     fontWeight: '700',
@@ -741,7 +722,8 @@ const styles = {
   optionsGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-    gap: '10px'
+    gap: '10px',
+    marginBottom: '14px'
   },
   checkItem: {
     color: '#cbd5e1',
@@ -764,7 +746,7 @@ const styles = {
     color: '#f87171',
     fontSize: '13px',
     fontWeight: '700',
-    margin: '10px 0 0 0'
+    margin: '10px 0'
   },
   btnExport: {
     background: 'linear-gradient(135deg, #16a34a, #166534)',
@@ -831,7 +813,7 @@ const styles = {
   },
   chartGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))',
     gap: '18px'
   },
   chartCard: {
@@ -849,12 +831,18 @@ const styles = {
     marginTop: '8px'
   },
   chartArea: {
-    height: '320px',
+    height: '260px',
     marginTop: '12px'
   },
   chartAreaLarge: {
-    height: '360px',
+    height: '330px',
     marginTop: '12px'
+  },
+  chartExplanation: {
+    color: '#94a3b8',
+    marginTop: '14px',
+    lineHeight: '1.7',
+    fontSize: '14px'
   }
 }
 

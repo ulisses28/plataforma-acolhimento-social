@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { criarDoacao, listarDoacoes } from '../../services/doacoesService'
 import { buscarDoadores, salvarNovoDoador } from '../../services/doadoresService'
+import { registrarInteracao } from '../../services/analyticsService'
 
 function PainelDoador() {
   const [doacoes, setDoacoes] = useState([])

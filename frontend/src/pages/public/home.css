@@ -535,3 +535,105 @@
   text-transform: uppercase;
   font-size: 13px;
 }
+.home-brand-text {
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+}
+
+.home-brand-text strong {
+  color: #38bdf8;
+  font-size: 23px;
+  font-weight: 950;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.home-brand-text small {
+  color: #ff6b00;
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: 3px;
+  margin-top: 3px;
+}
+
+.brand-people {
+  display: flex;
+  align-items: end;
+  gap: 3px;
+}
+
+.brand-people i {
+  width: 9px;
+  height: 13px;
+  background: #4fc3e8;
+  border-radius: 8px 8px 4px 4px;
+  position: relative;
+  display: inline-block;
+}
+
+.brand-people i::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  top: -7px;
+  background: #4fc3e8;
+  border-radius: 50%;
+  position: absolute;
+  top: -9px;
+  left: 1px;
+}
+
+.brand-people i:nth-child(2),
+.brand-people i:nth-child(4) {
+  background: #78d6ef;
+}
+
+.brand-people i:nth-child(2)::before,
+.brand-people i:nth-child(4)::before {
+  background: #78d6ef;
+}
+.home-brand-badge {
+  background: linear-gradient(180deg, #ffd95a, #ffc928);
+  color: #0B3D91;
+  padding: 12px 24px;
+  border-radius: 18px;
+  text-decoration: none;
+  box-shadow: 0 8px 18px rgba(0,0,0,0.25);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 230px;
+}
+
+.brand-badge-main {
+  font-size: 24px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.brand-badge-sub {
+  color: #f97316;
+  font-size: 14px;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  margin-top: 4px;
+}
+.home-logo-link {
+  width: 130px;
+  height: 95px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.home-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.35));
+}

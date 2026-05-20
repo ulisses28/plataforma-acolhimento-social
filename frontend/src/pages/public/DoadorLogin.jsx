@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import BackButton from '../../components/ui/BackButton'
 import { criarDoacao } from '../../services/doacoesService'
+import { registrarInteracao } from '../../services/analyticsService'
+
 import {
   listarPaises,
   listarEstadosBrasil,

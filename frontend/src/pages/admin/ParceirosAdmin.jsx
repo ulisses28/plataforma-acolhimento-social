@@ -13,6 +13,7 @@ function ParceirosAdmin() {
 
   const [nomeFantasia, setNomeFantasia] = useState('')
   const [razaoSocial, setRazaoSocial] = useState('')
+  const [logo, setLogo] = useState('')
   const [cnpj, setCnpj] = useState('')
   const [responsavel, setResponsavel] = useState('')
   const [telefone, setTelefone] = useState('')
@@ -70,6 +71,7 @@ function ParceirosAdmin() {
       id: Date.now(),
       nomeFantasia,
       razaoSocial,
+      logo,
       cnpj,
       responsavel,
       telefone,
@@ -121,6 +123,20 @@ function ParceirosAdmin() {
         <h2 style={styles.formTitle}>Novo Parceiro</h2>
 
         <input style={styles.input} placeholder="Nome Fantasia *" value={nomeFantasia} onChange={(e) => setNomeFantasia(e.target.value)} />
+        <label style={styles.label}>Logo do parceiro</label>
+        <input
+          type="file"
+          accept="image/*"
+          style={styles.input}
+          onChange={(e) => {
+            const arquivo = e.target.files?.[0]
+            if (!arquivo) return
+
+            const leitor = new FileReader()
+            leitor.onload = () => setLogo(leitor.result)
+            leitor.readAsDataURL(arquivo)
+          }}
+        />
         <input style={styles.input} placeholder="Razão Social" value={razaoSocial} onChange={(e) => setRazaoSocial(e.target.value)} />
         <input style={styles.input} placeholder="CNPJ *" value={cnpj} onChange={(e) => setCnpj(e.target.value)} />
         <input style={styles.input} placeholder="Responsável" value={responsavel} onChange={(e) => setResponsavel(e.target.value)} />

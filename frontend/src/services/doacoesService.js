@@ -17,17 +17,41 @@ export function criarDoacao(valorOuDados, doadorAntigo = null) {
   if (typeof valorOuDados !== 'object' || valorOuDados === null) {
     const valorFormatado = formatarValor(valorOuDados)
 
-    const nova = {
-      id: Date.now(),
-      valor: valorFormatado,
+  const nova = {
+    id: Date.now(),
+
+    valor:
+    formaPagamento === 'Pix' && !valor
+      ? 'Valor informado no banco'
+      : formatarValor(valor),
+
       data: new Date().toLocaleDateString('pt-BR'),
-      forma: 'Pix',
-      status: 'Confirmado',
-      doador: doadorAntigo ? doadorAntigo.nome : 'Anônimo',
+
+      dataCompleta: new Date().toISOString(),
+
+      forma: formaPagamento,
+
+      operacao: operacao || formaPagamento,
+
+      banco: banco || 'Não informado',
+
+      agencia: agencia || '',
+
+      status: formaPagamento === 'Pix'
+        ? 'Confirmado'
+        : 'Pendente',
+
+      doador: nomeDoador,
+
       tipoDoacao: 'Financeira',
-      comprovante: '',
+
+      comprovante: comprovante || '',
+
+      descricaoMaterial: '',
+
       valorEstimadoMaterial: 0,
-      categoriaDoador: doadorAntigo?.categoria || 'Pessoa Física'
+
+      categoriaDoador
     }
 
     doacoes.push(nova)
@@ -37,14 +61,17 @@ export function criarDoacao(valorOuDados, doadorAntigo = null) {
   }
 
   const {
-    doador,
-    tipoDoacao,
-    valor,
-    forma,
-    comprovante,
-    descricaoMaterial,
-    valorEstimadoMaterial
-  } = valorOuDados
+  doador,
+  tipoDoacao,
+  valor,
+  forma,
+  comprovante,
+  descricaoMaterial,
+  valorEstimadoMaterial,
+  banco,
+  agencia,
+  operacao
+} = valorOuDados
 
   const nomeDoador = doador ? doador.nome : 'Anônimo'
   const categoriaDoador = doador?.categoria || 'Pessoa Física'

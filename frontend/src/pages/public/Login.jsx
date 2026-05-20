@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { registrarInteracao } from '../../services/analyticsService'
 
 function Login() {
   return (

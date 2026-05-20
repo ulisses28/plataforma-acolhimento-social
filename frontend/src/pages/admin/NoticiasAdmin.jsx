@@ -47,19 +47,32 @@ function NoticiasAdmin() {
   }
 
   async function selecionarMidias(e) {
-    const arquivos = Array.from(e.target.files || [])
-    if (arquivos.length === 0) return
+  const arquivos = Array.from(e.target.files || [])
+  if (arquivos.length === 0) return
 
-    const midiasConvertidas = await Promise.all(
-      arquivos.map(async (arquivo) => ({
-        nome: arquivo.name,
-        tipo: arquivo.type,
-        base64: await lerMidiaComoBase64(arquivo)
-      }))
-    )
+  const LIMITE_VIDEO = 20 * 1024 * 1024
 
-    alterarCampo('midias', [...form.midias, ...midiasConvertidas])
+  for (const arquivo of arquivos) {
+    if (arquivo.type.startsWith('video') && arquivo.size > LIMITE_VIDEO) {
+      alert(
+        'Vídeo muito grande. Envie vídeos de até 20MB ou use o campo de link do YouTube.'
+      )
+
+      e.target.value = ''
+      return
+    }
   }
+
+  const midiasConvertidas = await Promise.all(
+    arquivos.map(async (arquivo) => ({
+      nome: arquivo.name,
+      tipo: arquivo.type,
+      base64: await lerMidiaComoBase64(arquivo)
+    }))
+  )
+
+  alterarCampo('midias', [...form.midias, ...midiasConvertidas])
+}
 
   function removerMidia(index) {
     alterarCampo(

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import BackButton from '../../components/ui/BackButton'
 import { listarNecessidades } from '../../services/necessidadesService'
+import { registrarInteracao } from '../../services/analyticsService'
 
 const WHATSAPP_LINK = 'https://wa.me/5527999999999'
 

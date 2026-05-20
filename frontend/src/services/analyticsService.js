@@ -16,15 +16,7 @@ function getHojeKey() {
   ).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`
 }
 
-/*
-========================================
-REGISTRAR VISITA
-========================================
-*/
-export function registrarVisita() {
-  const data = getData()
-  const key = getHojeKey()
-
+function criarDiaSeNaoExistir(data, key) {
   if (!data[key]) {
     data[key] = {
       visitas: 0,
@@ -32,49 +24,49 @@ export function registrarVisita() {
       interacoes: 0
     }
   }
+}
+
+export function registrarVisita() {
+  const data = getData()
+  const key = getHojeKey()
+
+  criarDiaSeNaoExistir(data, key)
 
   data[key].visitas += 1
 
   salvar(data)
 }
 
-/*
-========================================
-REGISTRAR TEMPO
-========================================
-*/
 export function registrarTempo(segundos) {
   const data = getData()
   const key = getHojeKey()
 
-  if (!data[key]) {
-    data[key] = {
-      visitas: 0,
-      tempoTotal: 0,
-      interacoes: 0
-    }
-  }
+  criarDiaSeNaoExistir(data, key)
 
   data[key].tempoTotal += Number(segundos || 0)
 
   salvar(data)
 }
 
-/*
-========================================
-REGISTRAR INTERAÇÃO
-========================================
-*/
 export function registrarInteracao() {
   const data = getData()
   const key = getHojeKey()
 
-  if (!data[key]) {
-    data[key] = {
-      visitas: 0,
-      tempoTotal: 0,
-      interacoes: 0
-    }
+  criarDiaSeNaoExistir(data, key)
+
+  data[key].interacoes += 1
+
+  salvar(data)
+}
+
+export function registrarInteracaoComVisita() {
+  const data = getData()
+  const key = getHojeKey()
+
+  criarDiaSeNaoExistir(data, key)
+
+  if (data[key].visitas === 0) {
+    data[key].visitas = 1
   }
 
   data[key].interacoes += 1
@@ -82,30 +74,24 @@ export function registrarInteracao() {
   salvar(data)
 }
 
-/*
-========================================
-FORMATAR TEMPO
-========================================
-*/
 export function formatarTempo(segundos) {
-  const horas = Math.floor(segundos / 3600)
-  const minutos = Math.floor((segundos % 3600) / 60)
-  const secs = Math.floor(segundos % 60)
+  const total = Number(segundos || 0)
 
-  let resultado = ''
+  const horas = Math.floor(total / 3600)
+  const minutos = Math.floor((total % 3600) / 60)
+  const secs = Math.floor(total % 60)
 
-  if (horas > 0) resultado += `${horas}h `
-  if (minutos > 0) resultado += `${minutos}min `
-  resultado += `${secs}s`
+  if (horas > 0) {
+    return `${horas}h ${minutos}min ${secs}s`
+  }
 
-  return resultado
+  if (minutos > 0) {
+    return `${minutos}min ${secs}s`
+  }
+
+  return `${secs}s`
 }
 
-/*
-========================================
-OBTER ANALYTICS
-========================================
-*/
 export function obterAnalyticsMes(mes, ano) {
   const data = getData()
 
@@ -116,10 +102,10 @@ export function obterAnalyticsMes(mes, ano) {
   Object.keys(data).forEach((dataKey) => {
     const [y, m] = dataKey.split('-')
 
-    if (y === ano && m === mes) {
-      totalVisitas += data[dataKey].visitas
-      tempoTotal += data[dataKey].tempoTotal
-      totalInteracoes += data[dataKey].interacoes
+    if (String(y) === String(ano) && String(m) === String(mes)) {
+      totalVisitas += Number(data[dataKey].visitas || 0)
+      tempoTotal += Number(data[dataKey].tempoTotal || 0)
+      totalInteracoes += Number(data[dataKey].interacoes || 0)
     }
   })
 
@@ -127,16 +113,23 @@ export function obterAnalyticsMes(mes, ano) {
     totalVisitas > 0 ? tempoTotal / totalVisitas : 0
 
   const interacoesPorUsuario =
-    totalVisitas > 0
-      ? totalInteracoes / totalVisitas
-      : 0
+    totalVisitas > 0 ? totalInteracoes / totalVisitas : 0
+
+  const taxaInteracao =
+    totalVisitas > 0 ? (totalInteracoes / totalVisitas) * 100 : 0
 
   return {
     totalVisitas,
     tempoTotal,
     tempoMedio,
     totalInteracoes,
+
     interacoesPorUsuario,
+    interacoesPorUsuarioFormatado: interacoesPorUsuario.toFixed(2),
+
+    taxaInteracao,
+    taxaInteracaoFormatada: `${taxaInteracao.toFixed(2)}%`,
+
     tempoTotalFormatado: formatarTempo(tempoTotal),
     tempoMedioFormatado: formatarTempo(tempoMedio)
   }

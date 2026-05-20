@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { criarDoacao } from '../../services/doacoesService'
 import BackButton from '../../components/ui/BackButton'
+import { registrarInteracao } from '../../services/analyticsService'
 
 import {
   listarPaises,

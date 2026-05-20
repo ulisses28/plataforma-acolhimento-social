@@ -1,12 +1,17 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { listarDoacoes } from '../../services/doacoesService'
-import { obterTopDoadores } from '../../services/rankingService'
+
 import BackButton from '../../components/ui/BackButton'
+
+import { listarDoacoes } from '../../services/doacoesService'
+
+import { obterTopDoadores } from '../../services/rankingService'
+
 import {
-  listarNecessidades,
+  listarNecessidadesAtivas,
   salvarNecessidade,
-  contarNecessidadesPorCategoria
+  contarNecessidadesPorCategoria,
+  concluirNecessidade
 } from '../../services/necessidadesService'
 
 function DashboardAdmin() {
@@ -15,36 +20,45 @@ function DashboardAdmin() {
 
   const [necessidades, setNecessidades] = useState([])
   const [graficoNecessidades, setGraficoNecessidades] = useState({})
-  const [categoriaSelecionada, setCategoriaSelecionada] = useState('')
-  const [mostrarFormulario, setMostrarFormulario] = useState(false)
 
-  const [descricaoNecessidade, setDescricaoNecessidade] = useState('')
+  const [categoriaSelecionada, setCategoriaSelecionada] = useState('')
+
+  const [mostrarFormulario, setMostrarFormulario] =
+    useState(false)
+
+  const [descricaoNecessidade, setDescricaoNecessidade] =
+    useState('')
+
   const [prioridade, setPrioridade] = useState('MEDIA')
+
+  const [quantidade, setQuantidade] = useState('')
 
   useEffect(() => {
     carregarDashboard()
   }, [])
 
-  useEffect(() => {
-    const intervalo = setInterval(() => {
-      carregarDashboard()
-    }, 2000)
-
-    return () => clearInterval(intervalo)
-  }, [])
-
   function carregarDashboard() {
     setDoacoes([...listarDoacoes()])
+
     setTopDoadores(obterTopDoadores(3))
-    setNecessidades(listarNecessidades())
-    setGraficoNecessidades(contarNecessidadesPorCategoria())
+
+    setNecessidades(listarNecessidadesAtivas())
+
+    setGraficoNecessidades(
+      contarNecessidadesPorCategoria()
+    )
   }
 
   function abrirCategoria(categoria) {
     setCategoriaSelecionada(categoria)
+
     setMostrarFormulario(false)
+
     setDescricaoNecessidade('')
+
     setPrioridade('MEDIA')
+
+    setQuantidade('')
   }
 
   function salvarNovaNecessidade() {
@@ -61,44 +75,63 @@ function DashboardAdmin() {
     salvarNecessidade({
       categoria: categoriaSelecionada,
       descricao: descricaoNecessidade.trim(),
-      prioridade
+      prioridade,
+      quantidade
     })
 
     setDescricaoNecessidade('')
     setPrioridade('MEDIA')
+    setQuantidade('')
+
     setMostrarFormulario(false)
+
     carregarDashboard()
 
     alert('Necessidade cadastrada com sucesso!')
   }
 
   const totalDoacoes = doacoes.length
-  const confirmadas = doacoes.filter((d) => d.status === 'Confirmado')
-  const pendentes = doacoes.filter((d) => d.status === 'Pendente')
-  const falhas = doacoes.filter((d) => d.status === 'Erro')
 
-  const valorTotalConfirmado = confirmadas.reduce((total, d) => {
-    const valorNumerico = Number(
-      String(d.valor)
-        .replace('R$', '')
-        .replace(/\./g, '')
-        .replace(',', '.')
-        .trim()
-    )
-
-    return total + (isNaN(valorNumerico) ? 0 : valorNumerico)
-  }, 0)
-
-  const valorTotalFormatado = valorTotalConfirmado.toLocaleString('pt-BR', {
-    style: 'currency',
-    currency: 'BRL'
-  })
-
-  const ultimasDoacoes = [...doacoes].slice(-5).reverse()
-
-  const necessidadesDaCategoria = necessidades.filter(
-    (item) => item.categoria === categoriaSelecionada
+  const confirmadas = doacoes.filter(
+    (d) => d.status === 'Confirmado'
   )
+
+  const pendentes = doacoes.filter(
+    (d) => d.status === 'Pendente'
+  )
+
+  const falhas = doacoes.filter(
+    (d) => d.status === 'Erro'
+  )
+
+  const valorTotalConfirmado =
+    confirmadas.reduce((total, d) => {
+      const valorNumerico = Number(
+        String(d.valor)
+          .replace('R$', '')
+          .replace(/\./g, '')
+          .replace(',', '.')
+          .trim()
+      )
+
+      return total + (isNaN(valorNumerico) ? 0 : valorNumerico)
+    }, 0)
+
+  const valorTotalFormatado =
+    valorTotalConfirmado.toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    })
+
+  const ultimasDoacoes = [...doacoes]
+    .slice(-5)
+    .reverse()
+
+  const necessidadesDaCategoria =
+    necessidades.filter(
+      (item) =>
+        item.categoria === categoriaSelecionada
+    )
 
   return (
     <main style={styles.page}>
@@ -106,122 +139,275 @@ function DashboardAdmin() {
         <BackButton />
 
         <header style={styles.header}>
-          <div>
-            <h1 style={styles.title}>Dashboard Administrativo</h1>
-            <p style={styles.subtitle}>
-              Gerencie a operação da instituição e acompanhe indicadores do sistema em tempo real.
-            </p>
-          </div>
+          <h1 style={styles.title}>
+            Dashboard Administrativo
+          </h1>
+
+          <p style={styles.subtitle}>
+            Gerencie a operação da instituição
+            e acompanhe indicadores em tempo real.
+          </p>
         </header>
 
+        {/* INDICADORES */}
+
+        <section style={styles.sectionHeaderBlue}>
+          <h2 style={styles.sectionTitleWhite}>
+            Indicadores do Sistema
+          </h2>
+
+          <p style={styles.sectionSubtitleWhite}>
+            Monitoramento operacional da plataforma.
+          </p>
+        </section>
+
         <section style={styles.summaryGrid}>
-          <SummaryCard icon="📦" label="Doações registradas" value={totalDoacoes} />
-          <SummaryCard icon="✅" label="Confirmadas" value={confirmadas.length} />
-          <SummaryCard icon="⏳" label="Pendentes" value={pendentes.length} />
-          <SummaryCard icon="⚠️" label="Falhas" value={falhas.length} />
-          <SummaryCard icon="💰" label="Total confirmado" value={valorTotalFormatado} />
+          <SummaryCard
+            icon="📦"
+            label="Doações registradas"
+            value={totalDoacoes}
+          />
+
+          <SummaryCard
+            icon="✅"
+            label="Confirmadas"
+            value={confirmadas.length}
+          />
+
+          <SummaryCard
+            icon="⏳"
+            label="Pendentes"
+            value={pendentes.length}
+          />
+
+          <SummaryCard
+            icon="⚠️"
+            label="Falhas"
+            value={falhas.length}
+          />
+
+          <SummaryCard
+            icon="💰"
+            label="Total confirmado"
+            value={valorTotalFormatado}
+          />
+        </section>
+
+        {/* PAINEL ADMIN */}
+
+        <section style={styles.sectionHeaderBlue}>
+          <h2 style={styles.sectionTitleWhite}>
+            Painel de Controle do Administrador
+          </h2>
+
+          <p style={styles.sectionSubtitleWhite}>
+            Acesse os módulos administrativos da plataforma.
+          </p>
         </section>
 
         <section style={styles.grid}>
-          <CardLink to="/admin/parceiros" icon="🤝" title="Parceiros" />
-          <CardLink to="/admin/doadores" icon="👥" title="Doadores" />
-          <CardLink to="/admin/prestacao-contas" icon="📄" title="Prestação de Contas" />
-          <CardLink to="/admin/relatorios" icon="📊" title="Relatórios" />
-          <CardLink to="/admin/pendentes" icon="⏳" title="Pendentes" />
-          <CardLink to="/admin/graficos" icon="📈" title="Central de Gráficos" />
-          {/*'Novo card: Publicar Noticias e eventos do Lar Batista'*/}
-          <CardLink to="/admin/noticias" icon="📰" title="Publicar Notícias" />
-          <CardLink to="/admin/vagas" icon="💼" title="Vagas" />
-          <CardLink to="/admin/vagas" icon="💼" title="Banco de Currículos" />
+          <CardLink
+            to="/admin/parceiros"
+            icon="🤝"
+            title="Parceiros"
+            descricao="Empresas e instituições parceiras."
+          />
+
+          <CardLink
+            to="/admin/doadores"
+            icon="👥"
+            title="Doadores"
+            descricao="Controle de doadores e contribuições."
+          />
+
+          <CardLink
+            to="/admin/prestacao-contas"
+            icon="📄"
+            title="Prestação de Contas"
+            descricao="Relatórios financeiros e transparência."
+          />
+
+          <CardLink
+            to="/admin/relatorios"
+            icon="📊"
+            title="Relatórios"
+            descricao="Exportações e análises."
+          />
+
+          <CardLink
+            to="/admin/pendentes"
+            icon="⏳"
+            title="Pendentes"
+            descricao="Aprovação de TEDs e registros."
+          />
+
+          <CardLink
+            to="/admin/graficos"
+            icon="📈"
+            title="Central de Gráficos"
+            descricao="Analytics e indicadores."
+          />
+
+          <CardLink
+            to="/admin/noticias"
+            icon="📰"
+            title="Publicar Notícias"
+            descricao="Publicações e comunicados."
+          />
+
+          <CardLink
+            to="/admin/vagas"
+            icon="💼"
+            title="Vagas"
+            descricao="Gestão de oportunidades."
+          />
+
+          <CardLink
+            to="/admin/banco-curriculos"
+            icon="📁"
+            title="Banco de Currículos"
+            descricao="Gestão de candidatos cadastrados."
+          />
         </section>
 
+        {/* NECESSIDADES */}
+
         <section style={styles.needsCard}>
-          <div style={styles.needsHeader}>
-            <div>
-              <h2 style={styles.tableTitle}>Nossas Necessidades</h2>
-              <p style={styles.subtitle}>
-                Cadastre necessidades da instituição por categoria e prioridade.
-              </p>
-            </div>
-          </div>
+          <h2 style={styles.tableTitle}>
+            Nossas Necessidades
+          </h2>
+
+          <p style={styles.subtitle}>
+            Cadastre necessidades por categoria
+            e prioridade.
+          </p>
 
           <div style={styles.categoryButtons}>
-            {['Alimentos', 'Roupas', 'Utensílios', 'Higiene', 'Escolar', 'Outros'].map(
-              (categoria) => (
-                <button
-                  key={categoria}
-                  type="button"
-                  onClick={() => abrirCategoria(categoria)}
-                  style={
-                    categoriaSelecionada === categoria
-                      ? styles.categoryButtonActive
-                      : styles.categoryButton
-                  }
-                >
-                  {categoria}
-                </button>
-              )
-            )}
+            {[
+              'Alimentos',
+              'Roupas',
+              'Utensílios',
+              'Higiene',
+              'Escolar',
+              'Outros'
+            ].map((categoria) => (
+              <button
+                key={categoria}
+                type="button"
+                onClick={() =>
+                  abrirCategoria(categoria)
+                }
+                style={
+                  categoriaSelecionada === categoria
+                    ? styles.categoryButtonActive
+                    : styles.categoryButton
+                }
+              >
+                {categoria}
+              </button>
+            ))}
           </div>
 
           {categoriaSelecionada && (
             <div style={styles.categoryArea}>
-              <h3 style={styles.categoryTitle}>{categoriaSelecionada}</h3>
+              <h3 style={styles.categoryTitle}>
+                {categoriaSelecionada}
+              </h3>
 
               <button
                 type="button"
                 style={styles.addNeedButton}
-                onClick={() => setMostrarFormulario(true)}
+                onClick={() =>
+                  setMostrarFormulario(true)
+                }
               >
                 + Deseja cadastrar uma nova necessidade?
               </button>
 
               {mostrarFormulario && (
                 <div style={styles.formNeed}>
-                  <label style={styles.label}>Descrição da necessidade</label>
+                  <label style={styles.label}>
+                    Descrição da necessidade
+                  </label>
+
                   <textarea
                     style={styles.textarea}
-                    placeholder="Ex: 24 latas de leite ninho, roupas infantis, material escolar..."
+                    placeholder="Ex: 24 latas de leite..."
                     value={descricaoNecessidade}
-                    onChange={(e) => setDescricaoNecessidade(e.target.value)}
+                    onChange={(e) =>
+                      setDescricaoNecessidade(
+                        e.target.value
+                      )
+                    }
                   />
 
-                  <label style={styles.label}>Nível de prioridade</label>
+                  <label style={styles.label}>
+                    Quantidade necessária
+                  </label>
+
+                  <input
+                    type="number"
+                    value={quantidade}
+                    onChange={(e) =>
+                      setQuantidade(e.target.value)
+                    }
+                    style={styles.input}
+                    placeholder="Ex: 24"
+                  />
+
+                  <label style={styles.label}>
+                    Nível de prioridade
+                  </label>
 
                   <div style={styles.priorityGroup}>
                     <label style={styles.priorityItem}>
                       <input
                         type="radio"
-                        checked={prioridade === 'ALTA'}
-                        onChange={() => setPrioridade('ALTA')}
+                        checked={
+                          prioridade === 'ALTA'
+                        }
+                        onChange={() =>
+                          setPrioridade('ALTA')
+                        }
                       />
-                      <span style={{ ...styles.priorityDot, background: '#dc2626' }} />
-                      Alta
+                      🔴 Alta
                     </label>
 
                     <label style={styles.priorityItem}>
                       <input
                         type="radio"
-                        checked={prioridade === 'MEDIA'}
-                        onChange={() => setPrioridade('MEDIA')}
+                        checked={
+                          prioridade === 'MEDIA'
+                        }
+                        onChange={() =>
+                          setPrioridade('MEDIA')
+                        }
                       />
-                      <span style={{ ...styles.priorityDot, background: '#f97316' }} />
-                      Média
+                      🟠 Média
                     </label>
 
                     <label style={styles.priorityItem}>
                       <input
                         type="radio"
-                        checked={prioridade === 'BAIXA'}
-                        onChange={() => setPrioridade('BAIXA')}
+                        checked={
+                          prioridade === 'BAIXA'
+                        }
+                        onChange={() =>
+                          setPrioridade('BAIXA')
+                        }
                       />
-                      <span style={{ ...styles.priorityDot, background: '#16a34a' }} />
-                      Baixa
+                      🟢 Baixa
                     </label>
                   </div>
 
                   <div style={styles.formActions}>
-                    <button type="button" style={styles.saveButton} onClick={salvarNovaNecessidade}>
+                    <button
+                      type="button"
+                      style={styles.saveButton}
+                      onClick={
+                        salvarNovaNecessidade
+                      }
+                    >
                       Salvar
                     </button>
 
@@ -232,6 +418,7 @@ function DashboardAdmin() {
                         setMostrarFormulario(false)
                         setDescricaoNecessidade('')
                         setPrioridade('MEDIA')
+                        setQuantidade('')
                       }}
                     >
                       Cancelar
@@ -241,75 +428,113 @@ function DashboardAdmin() {
               )}
 
               <div style={styles.needsList}>
-                {necessidadesDaCategoria.length === 0 ? (
-                  <p style={styles.emptyText}>Nenhuma necessidade cadastrada nesta categoria.</p>
-                ) : (
-                  necessidadesDaCategoria.map((item) => (
-                    <div key={item.id} style={styles.needItem}>
-                      <span
-                        style={{
-                          ...styles.priorityBar,
-                          background: prioridadeCor(item.prioridade)
-                        }}
-                      />
-
+                {necessidadesDaCategoria.map(
+                  (item) => (
+                    <div
+                      key={item.id}
+                      style={styles.needItem}
+                    >
                       <div>
-                        <strong>{item.descricao}</strong>
+                        <strong>
+                          {item.descricao}
+                        </strong>
+
                         <p style={styles.needMeta}>
-                          Prioridade: {item.prioridade} | Cadastro: {item.criadoEm}
+                          Quantidade:{' '}
+                          {item.quantidade || 0}
                         </p>
+
+                        <p style={styles.needMeta}>
+                          Prioridade:{' '}
+                          {item.prioridade}
+                        </p>
+
+                        <p style={styles.needMeta}>
+                          Cadastro:{' '}
+                          {item.criadoEm}
+                        </p>
+                        <button
+                        type="button"
+                        style={styles.completeButton}
+                        onClick={() => {
+                          const ok = confirm(
+                            'Deseja concluir esta necessidade? Ela sairá da campanha ativa e irá para o histórico.'
+                          )
+
+                          if (!ok) return
+
+                          concluirNecessidade(item.id)
+                          carregarDashboard()
+                        }}
+                      >
+                        Concluir necessidade
+                      </button>
                       </div>
                     </div>
-                  ))
+                  )
                 )}
               </div>
             </div>
           )}
-
-          <div style={styles.pizzaBox}>
-            <h3 style={styles.categoryTitle}>Gráfico por Categoria</h3>
-
-            <div style={styles.pizzaGrid}>
-              {Object.keys(graficoNecessidades).length === 0 ? (
-                <p style={styles.emptyText}>Nenhuma necessidade cadastrada para gerar gráfico.</p>
-              ) : (
-                Object.entries(graficoNecessidades).map(([categoria, total]) => (
-                  <div key={categoria} style={styles.pizzaItem}>
-                    <span style={styles.pizzaColor} />
-                    <strong>{categoria}</strong>
-                    <span>{total}</span>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
         </section>
+        <div style={styles.historyBox}>
+          <h3 style={styles.historyTitle}>
+            Histórico de necessidades concluídas
+          </h3>
+
+          <p style={styles.historyText}>
+            Consulte necessidades que já foram atendidas e retiradas da campanha ativa.
+          </p>
+
+          <Link to="/admin/necessidades/historico" style={styles.historyLink}>
+            Ver histórico →
+          </Link>
+        </div>
+        {/* TOP DOADORES */}
 
         <section style={styles.rankingCard}>
-          <h2 style={styles.tableTitle}>Top 3 doadores</h2>
+          <h2 style={styles.tableTitle}>
+            Top 3 Doadores
+          </h2>
 
           <div style={styles.rankingGrid}>
             {topDoadores.map((d, i) => (
-              <div key={d.nome} style={styles.rankingItem}>
+              <div
+                key={d.nome}
+                style={styles.rankingItem}
+              >
                 <div style={styles.rankingPosition}>
-                  {getMedalha(i)} {i + 1}º lugar
+                  {i === 0
+                    ? '🥇'
+                    : i === 1
+                    ? '🥈'
+                    : '🥉'}
                 </div>
 
-                <h3 style={styles.rankingName}>{d.nome}</h3>
+                <h3 style={styles.rankingName}>
+                  {d.nome}
+                </h3>
 
                 <p style={styles.rankingText}>
-                  {d.total.toLocaleString('pt-BR', {
-                    style: 'currency',
-                    currency: 'BRL'
-                  })}
+                  {d.total.toLocaleString(
+                    'pt-BR',
+                    {
+                      style: 'currency',
+                      currency: 'BRL'
+                    }
+                  )}
                 </p>
               </div>
             ))}
           </div>
         </section>
 
+        {/* ÚLTIMAS DOAÇÕES */}
+
         <section style={styles.tableCard}>
-          <h2 style={styles.tableTitle}>Últimas doações</h2>
+          <h2 style={styles.tableTitle}>
+            Últimas Doações
+          </h2>
 
           <table style={styles.table}>
             <thead>
@@ -324,10 +549,21 @@ function DashboardAdmin() {
             <tbody>
               {ultimasDoacoes.map((d) => (
                 <tr key={d.id}>
-                  <td style={styles.td}>{d.data}</td>
-                  <td style={styles.td}>{d.doador}</td>
-                  <td style={styles.td}>{d.valor}</td>
-                  <td style={styles.td}>{d.status}</td>
+                  <td style={styles.td}>
+                    {d.data}
+                  </td>
+
+                  <td style={styles.td}>
+                    {d.doador}
+                  </td>
+
+                  <td style={styles.td}>
+                    {d.valor}
+                  </td>
+
+                  <td style={styles.td}>
+                    {d.status}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -338,329 +574,399 @@ function DashboardAdmin() {
   )
 }
 
-function SummaryCard({ icon, label, value }) {
+function SummaryCard({
+  icon,
+  label,
+  value
+}) {
   return (
     <div style={styles.summaryCard}>
-      <div style={styles.summaryIcon}>{icon}</div>
-      <h2 style={styles.summaryNumber}>{value}</h2>
-      <p style={styles.summaryLabel}>{label}</p>
+      <div style={styles.summaryIcon}>
+        {icon}
+      </div>
+
+      <h2 style={styles.summaryNumber}>
+        {value}
+      </h2>
+
+      <p style={styles.summaryLabel}>
+        {label}
+      </p>
     </div>
   )
 }
 
-function CardLink({ to, icon, title }) {
+function CardLink({
+  to,
+  icon,
+  title,
+  descricao
+}) {
   return (
     <Link to={to} style={styles.card}>
       <div style={styles.cardIcon}>{icon}</div>
-      <h2 style={styles.cardTitle}>{title}</h2>
+
+      <h2 style={styles.cardTitle}>
+        {title}
+      </h2>
+
+      <p style={styles.cardDescription}>
+        {descricao}
+      </p>
     </Link>
   )
-}
-
-function getMedalha(i) {
-  if (i === 0) return '🥇'
-  if (i === 1) return '🥈'
-  if (i === 2) return '🥉'
-  return ''
-}
-
-function prioridadeCor(prioridade) {
-  if (prioridade === 'ALTA') return '#dc2626'
-  if (prioridade === 'MEDIA') return '#f97316'
-  return '#16a34a'
 }
 
 const styles = {
   page: {
     minHeight: '100vh',
-    background: '#f8fbff',
+    background: '#f1f5f9',
     padding: '40px 20px'
   },
+
   container: {
-    maxWidth: '1200px',
+    maxWidth: '1280px',
     margin: '0 auto'
   },
+
   header: {
-    marginBottom: '20px'
+    marginBottom: '24px'
   },
+
   title: {
+    fontSize: '2.5rem',
     color: '#0B3D91',
-    fontSize: '2.4rem',
-    margin: 0
-  },
-  subtitle: {
-    color: '#4b5563',
-    lineHeight: '1.5'
-  },
-  summaryGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-    gap: '20px'
-  },
-  summaryCard: {
-    background: '#fff',
-    padding: '22px',
-    borderRadius: '18px',
-    borderLeft: '6px solid #ffc928',
-    boxShadow: '0 8px 24px rgba(0,0,0,0.07)'
-  },
-  summaryIcon: {
-    fontSize: '26px',
-    marginBottom: '8px'
-  },
-  summaryNumber: {
-    color: '#0B3D91',
-    margin: 0
-  },
-  summaryLabel: {
-    color: '#6b7280',
-    marginBottom: 0
-  },
-  grid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-    gap: '20px',
-    marginTop: '20px'
-  },
-  card: {
-    background: '#fff',
-    padding: '22px',
-    borderRadius: '18px',
-    textDecoration: 'none',
-    borderLeft: '6px solid #ffc928',
-    boxShadow: '0 8px 24px rgba(0,0,0,0.07)'
-  },
-  cardIcon: {
-    fontSize: '30px',
     marginBottom: '10px'
   },
-  cardTitle: {
-    color: '#0B3D91',
+
+  subtitle: {
+    color: '#475569'
+  },
+
+  sectionHeaderBlue: {
+    background: '#0B3D91',
+    borderRadius: '20px',
+    padding: '24px',
+    marginTop: '30px',
+    marginBottom: '24px'
+  },
+
+  sectionTitleWhite: {
+    color: '#fff',
     margin: 0
   },
-  needsCard: {
-    marginTop: '30px',
+
+  sectionSubtitleWhite: {
+    color: '#dbeafe',
+    marginTop: '8px'
+  },
+
+  summaryGrid: {
+    display: 'grid',
+    gridTemplateColumns:
+      'repeat(auto-fit, minmax(210px, 1fr))',
+    gap: '20px'
+  },
+
+  summaryCard: {
     background: '#fff',
-    padding: '26px',
+    padding: '24px',
     borderRadius: '20px',
-    boxShadow: '0 8px 24px rgba(0,0,0,0.08)'
+    borderTop: '6px solid #ffc928',
+    boxShadow:
+      '0 8px 24px rgba(0,0,0,0.07)'
   },
-  needsHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    gap: '16px',
-    flexWrap: 'wrap'
+
+  summaryIcon: {
+    fontSize: '30px'
   },
+
+  summaryNumber: {
+    color: '#0B3D91'
+  },
+
+  summaryLabel: {
+    color: '#64748b'
+  },
+
+  grid: {
+    display: 'grid',
+    gridTemplateColumns:
+      'repeat(auto-fit, minmax(250px, 1fr))',
+    gap: '24px'
+  },
+
+  card: {
+    background: '#fff',
+    borderRadius: '22px',
+    padding: '26px',
+    textDecoration: 'none',
+    boxShadow:
+      '0 8px 24px rgba(0,0,0,0.07)',
+    borderTop: '5px solid #0B3D91'
+  },
+
+  cardIcon: {
+    fontSize: '36px'
+  },
+
+  cardTitle: {
+    color: '#0B3D91'
+  },
+
+  cardDescription: {
+    color: '#64748b',
+    lineHeight: '1.5'
+  },
+
+  needsCard: {
+    marginTop: '35px',
+    background: '#fff',
+    borderRadius: '24px',
+    padding: '28px',
+    boxShadow:
+      '0 8px 24px rgba(0,0,0,0.08)'
+  },
+
+  tableTitle: {
+    color: '#0B3D91'
+  },
+
   categoryButtons: {
     display: 'flex',
-    gap: '10px',
+    gap: '12px',
     flexWrap: 'wrap',
-    marginTop: '18px'
+    marginTop: '20px'
   },
+
   categoryButton: {
     background: '#0B3D91',
     color: '#fff',
     border: 'none',
-    padding: '10px 16px',
     borderRadius: '10px',
+    padding: '12px 18px',
     cursor: 'pointer',
     fontWeight: '800'
   },
+
   categoryButtonActive: {
     background: '#ffc928',
     color: '#002855',
     border: 'none',
-    padding: '10px 16px',
     borderRadius: '10px',
+    padding: '12px 18px',
     cursor: 'pointer',
     fontWeight: '900'
   },
+
   categoryArea: {
-    marginTop: '20px',
+    marginTop: '25px',
     background: '#f8fbff',
-    border: '1px solid #dbeafe',
-    borderRadius: '16px',
-    padding: '18px'
+    borderRadius: '18px',
+    padding: '20px',
+    border: '1px solid #dbeafe'
   },
+
   categoryTitle: {
-    color: '#0B3D91',
-    marginTop: 0
+    color: '#0B3D91'
   },
+
   addNeedButton: {
     background: '#ffc928',
     color: '#002855',
     border: 'none',
-    padding: '12px 18px',
     borderRadius: '10px',
+    padding: '14px 18px',
     cursor: 'pointer',
     fontWeight: '900'
   },
+
   formNeed: {
-    marginTop: '16px',
+    marginTop: '20px',
     background: '#fff',
-    borderRadius: '14px',
-    padding: '18px',
+    padding: '20px',
+    borderRadius: '16px',
     border: '1px solid #dbeafe'
   },
+
   label: {
     display: 'block',
-    color: '#334155',
-    fontWeight: '800',
+    marginTop: '14px',
     marginBottom: '6px',
-    marginTop: '10px'
-  },
-  textarea: {
-    width: '100%',
-    minHeight: '90px',
-    borderRadius: '10px',
-    border: '1px solid #bfdbfe',
-    background: '#f8fbff',
-    padding: '12px',
-    boxSizing: 'border-box'
-  },
-  priorityGroup: {
-    display: 'flex',
-    gap: '18px',
-    flexWrap: 'wrap'
-  },
-  priorityItem: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '7px',
     fontWeight: '800',
     color: '#334155'
   },
-  priorityDot: {
-    width: '13px',
-    height: '13px',
-    borderRadius: '50%',
-    display: 'inline-block'
+
+  textarea: {
+    width: '100%',
+    minHeight: '110px',
+    borderRadius: '12px',
+    border: '1px solid #cbd5e1',
+    padding: '14px',
+    resize: 'vertical'
   },
+
+  input: {
+    width: '100%',
+    minHeight: '48px',
+    borderRadius: '12px',
+    border: '1px solid #cbd5e1',
+    padding: '0 12px',
+    boxSizing: 'border-box'
+  },
+
+  priorityGroup: {
+    display: 'flex',
+    gap: '20px',
+    marginTop: '10px',
+    flexWrap: 'wrap'
+  },
+
+  priorityItem: {
+    fontWeight: '700',
+    color: '#334155'
+  },
+
   formActions: {
     display: 'flex',
-    gap: '10px',
-    marginTop: '16px'
+    gap: '12px',
+    marginTop: '24px'
   },
+
   saveButton: {
     background: '#16a34a',
     color: '#fff',
     border: 'none',
-    padding: '12px 18px',
+    padding: '14px 20px',
     borderRadius: '10px',
-    fontWeight: '900',
-    cursor: 'pointer'
+    cursor: 'pointer',
+    fontWeight: '900'
   },
+
   cancelButton: {
     background: '#dc2626',
     color: '#fff',
     border: 'none',
-    padding: '12px 18px',
+    padding: '14px 20px',
     borderRadius: '10px',
-    fontWeight: '900',
-    cursor: 'pointer'
+    cursor: 'pointer',
+    fontWeight: '900'
   },
+
   needsList: {
-    marginTop: '18px'
+    marginTop: '24px'
   },
+
   needItem: {
-    display: 'flex',
-    gap: '12px',
     background: '#fff',
-    padding: '12px',
-    borderRadius: '12px',
-    marginBottom: '10px',
-    border: '1px solid #e5e7eb'
+    padding: '16px',
+    borderRadius: '14px',
+    marginBottom: '12px',
+    borderLeft: '6px solid #ffc928'
   },
-  priorityBar: {
-    width: '8px',
-    borderRadius: '999px'
-  },
+
   needMeta: {
     color: '#64748b',
-    margin: '4px 0 0',
-    fontSize: '14px'
+    marginTop: '4px'
   },
-  pizzaBox: {
-    marginTop: '22px',
+
+  rankingCard: {
+    marginTop: '35px',
+    background: '#fff',
+    borderRadius: '24px',
+    padding: '28px',
+    boxShadow:
+      '0 8px 24px rgba(0,0,0,0.08)'
+  },
+
+  rankingGrid: {
+    display: 'grid',
+    gridTemplateColumns:
+      'repeat(auto-fit, minmax(220px, 1fr))',
+    gap: '18px'
+  },
+
+  rankingItem: {
     background: '#f8fbff',
-    border: '1px solid #dbeafe',
     borderRadius: '16px',
     padding: '18px'
   },
-  pizzaGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-    gap: '12px'
-  },
-  pizzaItem: {
-    background: '#fff',
-    borderRadius: '12px',
-    padding: '12px',
-    display: 'flex',
-    gap: '10px',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    border: '1px solid #e5e7eb'
-  },
-  pizzaColor: {
-    width: '14px',
-    height: '14px',
-    borderRadius: '50%',
-    background: '#ffc928'
-  },
-  rankingCard: {
-    marginTop: '30px',
-    background: '#fff',
-    padding: '20px',
-    borderRadius: '16px',
-    boxShadow: '0 8px 24px rgba(0,0,0,0.07)'
-  },
-  tableTitle: {
-    color: '#002855'
-  },
-  rankingGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-    gap: '20px'
-  },
-  rankingItem: {
-    background: '#f1f5f9',
-    padding: '16px',
-    borderRadius: '12px'
-  },
+
   rankingPosition: {
-    fontWeight: 'bold'
+    fontSize: '26px'
   },
+
   rankingName: {
-    margin: 0
+    color: '#0B3D91'
   },
+
   rankingText: {
-    color: '#4b5563'
+    color: '#475569'
   },
+
   tableCard: {
-    marginTop: '30px',
+    marginTop: '35px',
     background: '#fff',
-    padding: '20px',
-    borderRadius: '16px',
-    boxShadow: '0 8px 24px rgba(0,0,0,0.07)'
+    borderRadius: '24px',
+    padding: '28px',
+    boxShadow:
+      '0 8px 24px rgba(0,0,0,0.08)'
   },
+
   table: {
     width: '100%',
     borderCollapse: 'collapse'
   },
+
   th: {
     textAlign: 'left',
-    color: '#0B3D91',
+    padding: '14px',
     borderBottom: '1px solid #dbeafe',
-    padding: '10px'
+    color: '#0B3D91'
   },
+
   td: {
-    padding: '10px',
+    padding: '14px',
     borderBottom: '1px solid #f1f5f9'
   },
-  emptyText: {
-    color: '#64748b'
-  }
+  completeButton: {
+  marginTop: '12px',
+  background: '#16a34a',
+  color: '#fff',
+  border: 'none',
+  borderRadius: '10px',
+  padding: '10px 14px',
+  fontWeight: '900',
+  cursor: 'pointer'
+},
+
+historyBox: {
+  marginTop: '24px',
+  background: '#eef6ff',
+  border: '1px solid #bfdbfe',
+  borderRadius: '18px',
+  padding: '20px'
+},
+
+historyTitle: {
+  color: '#0B3D91',
+  margin: 0
+},
+
+historyText: {
+  color: '#475569'
+},
+
+historyLink: {
+  display: 'inline-block',
+  marginTop: '8px',
+  background: '#0B3D91',
+  color: '#fff',
+  textDecoration: 'none',
+  padding: '12px 16px',
+  borderRadius: '10px',
+  fontWeight: '900'
+}
 }
 
 export default DashboardAdmin

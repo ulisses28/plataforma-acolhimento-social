@@ -2,15 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { listarDoacoes } from '../../services/doacoesService'
 import AdminHeader from '../../components/ui/AdminHeader'
 
-/*
-  RELATÓRIOS ADMIN
-  - Abas: Financeiro, Material e Geral
-  - Separa doações em dinheiro e materiais
-  - Mostra resumo mensal
-  - Exporta CSV/Excel
-  - Exporta PDF usando impressão do navegador
-*/
-
 function RelatoriosAdmin() {
   const [doacoes, setDoacoes] = useState([])
   const [aba, setAba] = useState('geral')
@@ -42,12 +33,23 @@ function RelatoriosAdmin() {
         mapa[nome] = {
           nome,
           quantidade: 0,
-          total: 0
+          total: 0,
+          ultimaDoacao: d.data || '-',
+          banco: d.banco || 'Não informado',
+          historico: []
         }
       }
 
       mapa[nome].quantidade += 1
       mapa[nome].total += valor
+      mapa[nome].ultimaDoacao = d.data || '-'
+
+      mapa[nome].historico.push({
+        data: d.data || '-',
+        valor,
+        banco: d.banco || 'Não informado',
+        forma: d.forma || d.operacao || 'Pix'
+      })
     })
 
     return Object.values(mapa).sort((a, b) => b.total - a.total)
@@ -66,13 +68,24 @@ function RelatoriosAdmin() {
           nome,
           quantidade: 0,
           totalEstimado: 0,
-          itens: []
+          ultimaDoacao: d.data || '-',
+          banco: d.banco || 'Não informado',
+          itens: [],
+          historico: []
         }
       }
 
       mapa[nome].quantidade += 1
       mapa[nome].totalEstimado += valorEstimado
+      mapa[nome].ultimaDoacao = d.data || '-'
       mapa[nome].itens.push(descricao)
+
+      mapa[nome].historico.push({
+        data: d.data || '-',
+        item: descricao,
+        valorEstimado,
+        banco: d.banco || 'Não informado'
+      })
     })
 
     return Object.values(mapa).sort((a, b) => b.totalEstimado - a.totalEstimado)
@@ -126,25 +139,29 @@ function RelatoriosAdmin() {
 
     if (aba === 'financeiro') {
       linhas = [
-        ['Posição', 'Doador', 'Quantidade', 'Total financeiro'],
+        ['Posição', 'Doador', 'Quantidade', 'Total financeiro', 'Última doação', 'Banco'],
         ...rankingFinanceiro.map((item, index) => [
           index + 1,
           item.nome,
           item.quantidade,
-          item.total.toFixed(2)
+          item.total.toFixed(2),
+          item.ultimaDoacao,
+          item.banco
         ])
       ]
     }
 
     if (aba === 'material') {
       linhas = [
-        ['Posição', 'Doador', 'Quantidade', 'Itens doados', 'Valor estimado'],
+        ['Posição', 'Doador', 'Quantidade', 'Itens doados', 'Valor estimado', 'Última doação', 'Banco'],
         ...rankingMaterial.map((item, index) => [
           index + 1,
           item.nome,
           item.quantidade,
           item.itens.join(' | '),
-          item.totalEstimado.toFixed(2)
+          item.totalEstimado.toFixed(2),
+          item.ultimaDoacao,
+          item.banco
         ])
       ]
     }
@@ -194,24 +211,15 @@ function RelatoriosAdmin() {
 
         <section style={styles.actions}>
           <div style={styles.tabs}>
-            <button
-              style={aba === 'geral' ? styles.tabActive : styles.tab}
-              onClick={() => setAba('geral')}
-            >
+            <button style={aba === 'geral' ? styles.tabActive : styles.tab} onClick={() => setAba('geral')}>
               Geral
             </button>
 
-            <button
-              style={aba === 'financeiro' ? styles.tabActive : styles.tab}
-              onClick={() => setAba('financeiro')}
-            >
+            <button style={aba === 'financeiro' ? styles.tabActive : styles.tab} onClick={() => setAba('financeiro')}>
               Financeiro
             </button>
 
-            <button
-              style={aba === 'material' ? styles.tabActive : styles.tab}
-              onClick={() => setAba('material')}
-            >
+            <button style={aba === 'material' ? styles.tabActive : styles.tab} onClick={() => setAba('material')}>
               Material
             </button>
           </div>
@@ -232,22 +240,10 @@ function RelatoriosAdmin() {
             <h2 style={styles.cardTitle}>Resumo Geral do Mês</h2>
 
             <div style={styles.summaryGrid}>
-              <ResumoCard
-                label="Total financeiro"
-                value={formatarMoeda(resumoGeral.totalFinanceiro)}
-              />
-              <ResumoCard
-                label="Total material estimado"
-                value={formatarMoeda(resumoGeral.totalMaterial)}
-              />
-              <ResumoCard
-                label="Total geral arrecadado"
-                value={formatarMoeda(resumoGeral.totalGeral)}
-              />
-              <ResumoCard
-                label="Doações registradas"
-                value={confirmadas.length}
-              />
+              <ResumoCard label="Total financeiro" value={formatarMoeda(resumoGeral.totalFinanceiro)} />
+              <ResumoCard label="Total material estimado" value={formatarMoeda(resumoGeral.totalMaterial)} />
+              <ResumoCard label="Total geral arrecadado" value={formatarMoeda(resumoGeral.totalGeral)} />
+              <ResumoCard label="Doações registradas" value={confirmadas.length} />
             </div>
 
             <h3 style={styles.sectionTitle}>Itens materiais por categoria</h3>
@@ -271,27 +267,49 @@ function RelatoriosAdmin() {
             {rankingFinanceiro.length === 0 ? (
               <p style={styles.emptyText}>Nenhuma doação financeira confirmada.</p>
             ) : (
-              <table style={styles.table}>
-                <thead>
-                  <tr>
-                    <th style={styles.th}>#</th>
-                    <th style={styles.th}>Doador</th>
-                    <th style={styles.th}>Quantidade</th>
-                    <th style={styles.th}>Total financeiro</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {rankingFinanceiro.map((item, index) => (
-                    <tr key={item.nome}>
-                      <td style={styles.td}>{index + 1}</td>
-                      <td style={styles.td}>{item.nome}</td>
-                      <td style={styles.td}>{item.quantidade}</td>
-                      <td style={styles.td}>{formatarMoeda(item.total)}</td>
+              <div style={styles.tableWrapper}>
+                <table style={styles.table}>
+                  <thead>
+                    <tr>
+                      <th style={styles.th}>#</th>
+                      <th style={styles.th}>Doador</th>
+                      <th style={styles.th}>Quantidade</th>
+                      <th style={styles.th}>Total financeiro</th>
+                      <th style={styles.th}>Última doação</th>
+                      <th style={styles.th}>Banco</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+
+                  <tbody>
+                    {rankingFinanceiro.map((item, index) => (
+                      <React.Fragment key={item.nome}>
+                        <tr>
+                          <td style={styles.td}>{index + 1}</td>
+                          <td style={styles.td}>{item.nome}</td>
+                          <td style={styles.td}>{item.quantidade}</td>
+                          <td style={styles.td}>{formatarMoeda(item.total)}</td>
+                          <td style={styles.td}>{item.ultimaDoacao}</td>
+                          <td style={styles.td}>{item.banco}</td>
+                        </tr>
+
+                        <tr>
+                          <td style={styles.historyTd} colSpan="6">
+                            <strong>Histórico de doações:</strong>
+
+                            <div style={styles.historyList}>
+                              {item.historico.map((h, i) => (
+                                <span key={i} style={styles.historyItem}>
+                                  {h.data} • {h.forma} • {h.banco} • {formatarMoeda(h.valor)}
+                                </span>
+                              ))}
+                            </div>
+                          </td>
+                        </tr>
+                      </React.Fragment>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </section>
         )}
@@ -303,29 +321,51 @@ function RelatoriosAdmin() {
             {rankingMaterial.length === 0 ? (
               <p style={styles.emptyText}>Nenhuma doação material confirmada.</p>
             ) : (
-              <table style={styles.table}>
-                <thead>
-                  <tr>
-                    <th style={styles.th}>#</th>
-                    <th style={styles.th}>Doador</th>
-                    <th style={styles.th}>Quantidade</th>
-                    <th style={styles.th}>Itens doados</th>
-                    <th style={styles.th}>Valor estimado</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {rankingMaterial.map((item, index) => (
-                    <tr key={item.nome}>
-                      <td style={styles.td}>{index + 1}</td>
-                      <td style={styles.td}>{item.nome}</td>
-                      <td style={styles.td}>{item.quantidade}</td>
-                      <td style={styles.td}>{item.itens.join(', ')}</td>
-                      <td style={styles.td}>{formatarMoeda(item.totalEstimado)}</td>
+              <div style={styles.tableWrapper}>
+                <table style={styles.table}>
+                  <thead>
+                    <tr>
+                      <th style={styles.th}>#</th>
+                      <th style={styles.th}>Doador</th>
+                      <th style={styles.th}>Quantidade</th>
+                      <th style={styles.th}>Itens doados</th>
+                      <th style={styles.th}>Valor estimado</th>
+                      <th style={styles.th}>Última doação</th>
+                      <th style={styles.th}>Banco</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+
+                  <tbody>
+                    {rankingMaterial.map((item, index) => (
+                      <React.Fragment key={item.nome}>
+                        <tr>
+                          <td style={styles.td}>{index + 1}</td>
+                          <td style={styles.td}>{item.nome}</td>
+                          <td style={styles.td}>{item.quantidade}</td>
+                          <td style={styles.td}>{item.itens.join(', ')}</td>
+                          <td style={styles.td}>{formatarMoeda(item.totalEstimado)}</td>
+                          <td style={styles.td}>{item.ultimaDoacao}</td>
+                          <td style={styles.td}>{item.banco}</td>
+                        </tr>
+
+                        <tr>
+                          <td style={styles.historyTd} colSpan="7">
+                            <strong>Histórico de materiais:</strong>
+
+                            <div style={styles.historyList}>
+                              {item.historico.map((h, i) => (
+                                <span key={i} style={styles.historyItem}>
+                                  {h.data} • {h.item} • {h.banco} • {formatarMoeda(h.valorEstimado)}
+                                </span>
+                              ))}
+                            </div>
+                          </td>
+                        </tr>
+                      </React.Fragment>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </section>
         )}
@@ -377,10 +417,12 @@ const styles = {
     background: 'linear-gradient(180deg, #eaf4ff 0%, #f8fbff 100%)',
     padding: '40px 20px'
   },
+
   container: {
-    maxWidth: '1150px',
+    maxWidth: '1220px',
     margin: '0 auto'
   },
+
   actions: {
     display: 'flex',
     justifyContent: 'space-between',
@@ -388,11 +430,13 @@ const styles = {
     flexWrap: 'wrap',
     marginBottom: '20px'
   },
+
   tabs: {
     display: 'flex',
     gap: '10px',
     flexWrap: 'wrap'
   },
+
   tab: {
     background: '#ffffff',
     color: '#0B3D91',
@@ -402,6 +446,7 @@ const styles = {
     fontWeight: '800',
     cursor: 'pointer'
   },
+
   tabActive: {
     background: '#0B3D91',
     color: '#ffffff',
@@ -411,10 +456,12 @@ const styles = {
     fontWeight: '800',
     cursor: 'pointer'
   },
+
   exportButtons: {
     display: 'flex',
     gap: '10px'
   },
+
   btnPdf: {
     background: '#dc2626',
     color: '#ffffff',
@@ -424,6 +471,7 @@ const styles = {
     fontWeight: '900',
     cursor: 'pointer'
   },
+
   btnExcel: {
     background: '#16a34a',
     color: '#ffffff',
@@ -433,21 +481,25 @@ const styles = {
     fontWeight: '900',
     cursor: 'pointer'
   },
+
   card: {
     backgroundColor: '#ffffff',
     borderRadius: '20px',
     padding: '28px',
     boxShadow: '0 8px 24px rgba(0,0,0,0.08)'
   },
+
   cardTitle: {
     color: '#0B3D91',
     marginTop: 0
   },
+
   summaryGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
     gap: '16px'
   },
+
   resumoCard: {
     background: '#f8fbff',
     border: '1px solid #bfdbfe',
@@ -458,15 +510,18 @@ const styles = {
     flexDirection: 'column',
     gap: '8px'
   },
+
   sectionTitle: {
     color: '#002855',
     marginTop: '28px'
   },
+
   categoryGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
     gap: '14px'
   },
+
   categoryCard: {
     background: '#eff6ff',
     border: '1px solid #bfdbfe',
@@ -476,22 +531,55 @@ const styles = {
     flexDirection: 'column',
     gap: '6px'
   },
+
+  tableWrapper: {
+    width: '100%',
+    overflowX: 'auto'
+  },
+
   table: {
     width: '100%',
     borderCollapse: 'collapse'
   },
+
   th: {
     textAlign: 'left',
     padding: '14px',
     borderBottom: '1px solid #dbeafe',
     color: '#0B3D91',
-    fontSize: '14px'
+    fontSize: '14px',
+    whiteSpace: 'nowrap'
   },
+
   td: {
     padding: '14px',
     borderBottom: '1px solid #f1f5f9',
-    color: '#1f2937'
+    color: '#1f2937',
+    verticalAlign: 'top'
   },
+
+  historyTd: {
+    padding: '12px 14px 18px',
+    background: '#f8fbff',
+    borderBottom: '1px solid #dbeafe',
+    color: '#475569'
+  },
+
+  historyList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+    marginTop: '8px'
+  },
+
+  historyItem: {
+    background: '#ffffff',
+    border: '1px solid #dbeafe',
+    borderRadius: '10px',
+    padding: '8px 10px',
+    color: '#334155'
+  },
+
   emptyText: {
     color: '#6b7280',
     margin: 0

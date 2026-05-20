@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import BackButton from '../../components/ui/BackButton'
 import { listarDoacoes } from '../../services/doacoesService'
+import logoLar from '../../assets/logo-lar.jpg'
+import { registrarInteracao } from '../../services/analyticsService'
 
 const DOADORES_KEY = 'doadores_lar_batista'
 const DOADOR_LOGADO_KEY = 'doador_logado_lar_batista'
@@ -18,6 +20,14 @@ function PainelDoadorPublico() {
   const [telefone, setTelefone] = useState('')
   const [email, setEmail] = useState('')
   const [documento, setDocumento] = useState('')
+  const [cidade, setCidade] = useState('')
+  const [estado, setEstado] = useState('')
+
+  const [senhaAtual, setSenhaAtual] = useState('')
+  const [novaSenha, setNovaSenha] = useState('')
+  const [confirmarSenha, setConfirmarSenha] = useState('')
+  const [codigoRecuperacao, setCodigoRecuperacao] = useState('')
+  const [codigoDigitado, setCodigoDigitado] = useState('')
 
   useEffect(() => {
     const logado = localStorage.getItem(DOADOR_LOGADO_KEY)
@@ -34,17 +44,23 @@ function PainelDoadorPublico() {
     setTelefone(dados.telefone || '')
     setEmail(dados.email || '')
     setDocumento(dados.documento || '')
+    setCidade(dados.cidade || dados.municipio || '')
+    setEstado(dados.estado || '')
   }, [navigate])
 
   function salvarAtualizacao(e) {
     e.preventDefault()
+    registrarInteracao()
 
     const atualizado = {
       ...doador,
       nome: nome.trim(),
       telefone: telefone.trim(),
       email: email.trim().toLowerCase(),
-      documento: documento.trim()
+      documento: documento.trim(),
+      cidade: cidade.trim(),
+      municipio: cidade.trim(),
+      estado: estado.trim()
     }
 
     const lista = JSON.parse(localStorage.getItem(DOADORES_KEY)) || []
@@ -60,32 +76,176 @@ function PainelDoadorPublico() {
     setMensagem('Cadastro atualizado com sucesso.')
   }
 
+  function gerarCodigoRecuperacao() {
+    registrarInteracao()
+
+    const codigo = String(Math.floor(100000 + Math.random() * 900000))
+    setCodigoRecuperacao(codigo)
+    setMensagem(
+      `Código de recuperação gerado: ${codigo}. Em produção real, ele seria enviado para ${email || telefone}.`
+    )
+  }
+
+  function alterarSenha(e) {
+    e.preventDefault()
+    registrarInteracao()
+
+    if (!senhaAtual.trim()) {
+      setMensagem('Informe a senha atual.')
+      return
+    }
+
+    if (!codigoDigitado.trim()) {
+      setMensagem('Informe o código de recuperação.')
+      return
+    }
+
+    if (codigoDigitado !== codigoRecuperacao) {
+      setMensagem('Código de recuperação inválido.')
+      return
+    }
+
+    if (novaSenha.length < 6) {
+      setMensagem('A nova senha deve ter no mínimo 6 caracteres.')
+      return
+    }
+
+    if (novaSenha !== confirmarSenha) {
+      setMensagem('A confirmação da senha não confere.')
+      return
+    }
+
+    const atualizado = {
+      ...doador,
+      senha: novaSenha
+    }
+
+    const lista = JSON.parse(localStorage.getItem(DOADORES_KEY)) || []
+    const novaLista = lista.map((item) =>
+      item.id === atualizado.id ? atualizado : item
+    )
+
+    localStorage.setItem(DOADORES_KEY, JSON.stringify(novaLista))
+    localStorage.setItem(DOADOR_LOGADO_KEY, JSON.stringify(atualizado))
+
+    setDoador(atualizado)
+    setSenhaAtual('')
+    setNovaSenha('')
+    setConfirmarSenha('')
+    setCodigoDigitado('')
+    setCodigoRecuperacao('')
+    setMensagem('Senha alterada com sucesso.')
+  }
+
   function gerarComprovante(doacao, doadorLogado) {
+    registrarInteracao()
+
     const janela = window.open('', '_blank')
+    const municipioDoador = doadorLogado.cidade || doadorLogado.municipio || '-'
 
     janela.document.write(`
       <html>
         <head>
           <title>Comprovante de Doação</title>
           <style>
-            body { font-family: Arial, sans-serif; padding: 40px; color: #111827; }
-            .comprovante { max-width: 800px; margin: auto; border: 2px solid #0B3D91; border-radius: 16px; padding: 30px; }
-            .header { text-align: center; border-bottom: 2px solid #0B3D91; padding-bottom: 20px; margin-bottom: 25px; }
-            .logo { width: 120px; margin-bottom: 10px; }
-            h1 { color: #0B3D91; margin-bottom: 5px; }
-            .frase { color: #475569; font-style: italic; }
-            .section { margin-top: 20px; }
-            .label { font-weight: bold; color: #0B3D91; }
-            .footer { margin-top: 30px; text-align: center; font-size: 13px; color: #64748b; }
-            button { margin-top: 25px; padding: 12px 18px; background: #0B3D91; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
-            @media print { button { display: none; } }
+            body {
+              font-family: Arial, sans-serif;
+              padding: 40px;
+              color: #111827;
+              background:
+                linear-gradient(rgba(255,255,255,0.92), rgba(255,255,255,0.92)),
+                radial-gradient(circle at center, #ffe4e6 0%, #f8fbff 45%, #dbeafe 100%);
+            }
+
+            .comprovante {
+              max-width: 820px;
+              margin: auto;
+              border: 2px solid #0B3D91;
+              border-radius: 18px;
+              padding: 34px;
+              background: rgba(255,255,255,0.96);
+              box-shadow: 0 12px 35px rgba(0,0,0,0.14);
+              position: relative;
+              overflow: hidden;
+            }
+
+            .watermark {
+              position: absolute;
+              right: -20px;
+              bottom: -20px;
+              font-size: 150px;
+              opacity: 0.08;
+            }
+
+            .header {
+              text-align: center;
+              border-bottom: 2px solid #0B3D91;
+              padding-bottom: 20px;
+              margin-bottom: 25px;
+            }
+
+            .logo {
+              width: 120px;
+              height: 120px;
+              object-fit: contain;
+              margin-bottom: 8px;
+            }
+
+            h1 {
+              color: #0B3D91;
+              margin-bottom: 5px;
+            }
+
+            h2, h3 {
+              color: #111827;
+            }
+
+            .frase {
+              color: #475569;
+              font-style: italic;
+            }
+
+            .section {
+              margin-top: 20px;
+            }
+
+            .label {
+              font-weight: bold;
+              color: #0B3D91;
+            }
+
+            .footer {
+              margin-top: 30px;
+              text-align: center;
+              font-size: 13px;
+              color: #64748b;
+            }
+
+            button {
+              margin-top: 25px;
+              padding: 12px 18px;
+              background: #0B3D91;
+              color: white;
+              border: none;
+              border-radius: 8px;
+              font-weight: bold;
+              cursor: pointer;
+            }
+
+            @media print {
+              button { display: none; }
+              body { background: #fff; }
+              .comprovante { box-shadow: none; }
+            }
           </style>
         </head>
 
         <body>
           <div class="comprovante">
+            <div class="watermark">❤️</div>
+
             <div class="header">
-              <img class="logo" src="/logo-lar.jpg" />
+              <img class="logo" src="${logoLar}" />
               <h1>Lar Batista Albertine Meador</h1>
               <p class="frase">Sua solidariedade ajuda a transformar vidas com amor, cuidado e esperança.</p>
             </div>
@@ -94,8 +254,8 @@ function PainelDoadorPublico() {
               <h2>Comprovante de Doação</h2>
               <p><span class="label">Recebedor:</span> Lar Batista Albertine Meador</p>
               <p><span class="label">CNPJ:</span> 27.363.944/0001-80</p>
+              <p><span class="label">Estado da Instituição:</span> Espírito Santo - ES</p>
               <p><span class="label">Data:</span> ${doacao.data || '-'}</p>
-              <p><span class="label">Estado:</span> ${doadorLogado.estado || '-'}</p>
             </div>
 
             <div class="section">
@@ -104,12 +264,15 @@ function PainelDoadorPublico() {
               <p><span class="label">CPF/CNPJ:</span> ${doadorLogado.documento || '-'}</p>
               <p><span class="label">E-mail:</span> ${doadorLogado.email || '-'}</p>
               <p><span class="label">Telefone:</span> ${doadorLogado.telefone || '-'}</p>
+              <p><span class="label">Município:</span> ${municipioDoador}</p>
+              <p><span class="label">Estado:</span> ${doadorLogado.estado || '-'}</p>
             </div>
 
             <div class="section">
               <h3>Dados da Doação</h3>
               <p><span class="label">Valor:</span> ${doacao.valor || 'Valor informado no banco'}</p>
               <p><span class="label">Forma:</span> ${doacao.forma || '-'}</p>
+              <p><span class="label">Banco:</span> ${doacao.banco || 'Não informado'}</p>
               <p><span class="label">Status:</span> ${doacao.status || '-'}</p>
               <p><span class="label">Código:</span> ${doacao.id || '-'}</p>
             </div>
@@ -129,6 +292,7 @@ function PainelDoadorPublico() {
   }
 
   function sair() {
+    registrarInteracao()
     localStorage.removeItem(DOADOR_LOGADO_KEY)
     navigate('/doador/login')
   }
@@ -152,16 +316,47 @@ function PainelDoadorPublico() {
           </p>
 
           <div style={styles.botoes}>
-            <button style={styles.botao} onClick={() => navigate('/doar-agora')}>
+            <button
+              style={styles.botao}
+              onClick={() => {
+                registrarInteracao()
+                navigate('/doar-agora')
+              }}
+            >
               Doar agora
             </button>
 
-            <button style={styles.botao} onClick={() => { setAba('cadastro'); setMensagem('') }}>
+            <button
+              style={styles.botao}
+              onClick={() => {
+                registrarInteracao()
+                setAba('cadastro')
+                setMensagem('')
+              }}
+            >
               Atualizar cadastro
             </button>
 
-            <button style={styles.botao} onClick={() => { setAba('historico'); setMensagem('') }}>
+            <button
+              style={styles.botao}
+              onClick={() => {
+                registrarInteracao()
+                setAba('historico')
+                setMensagem('')
+              }}
+            >
               Histórico de doações
+            </button>
+
+            <button
+              style={styles.botao}
+              onClick={() => {
+                registrarInteracao()
+                setAba('senha')
+                setMensagem('')
+              }}
+            >
+              Alterar senha
             </button>
           </div>
 
@@ -170,7 +365,11 @@ function PainelDoadorPublico() {
               <div style={styles.sectionHeader}>
                 <h2 style={styles.sectionTitle}>Meu cadastro</h2>
 
-                <button type="button" style={styles.editButton} onClick={() => setEditando(true)}>
+                <button
+                  type="button"
+                  style={styles.editButton}
+                  onClick={() => setEditando(true)}
+                >
                   ✏️ Editar
                 </button>
               </div>
@@ -188,14 +387,50 @@ function PainelDoadorPublico() {
                 <label style={styles.label}>E-mail</label>
                 <input value={email} onChange={(e) => setEmail(e.target.value)} disabled={!editando} style={editando ? styles.input : styles.inputDisabled} />
 
+                <label style={styles.label}>Município</label>
+                <input value={cidade} onChange={(e) => setCidade(e.target.value)} disabled={!editando} style={editando ? styles.input : styles.inputDisabled} />
+
+                <label style={styles.label}>Estado / UF</label>
+                <input value={estado} onChange={(e) => setEstado(e.target.value)} disabled={!editando} style={editando ? styles.input : styles.inputDisabled} />
+
                 {editando && (
                   <button type="submit" style={styles.saveButton}>
                     Salvar alterações
                   </button>
                 )}
               </form>
+            </section>
+          )}
 
-              {mensagem && <p style={styles.success}>{mensagem}</p>}
+          {aba === 'senha' && (
+            <section style={styles.section}>
+              <h2 style={styles.sectionTitle}>Alterar senha</h2>
+
+              <p style={styles.infoText}>
+                Para segurança, gere um código de recuperação pelo e-mail ou telefone cadastrado.
+              </p>
+
+              <button type="button" style={styles.recoveryButton} onClick={gerarCodigoRecuperacao}>
+                Gerar código por e-mail/telefone
+              </button>
+
+              <form onSubmit={alterarSenha} style={styles.form}>
+                <label style={styles.label}>Senha atual</label>
+                <input type="password" value={senhaAtual} onChange={(e) => setSenhaAtual(e.target.value)} style={styles.input} />
+
+                <label style={styles.label}>Código de recuperação</label>
+                <input value={codigoDigitado} onChange={(e) => setCodigoDigitado(e.target.value)} style={styles.input} />
+
+                <label style={styles.label}>Nova senha</label>
+                <input type="password" value={novaSenha} onChange={(e) => setNovaSenha(e.target.value)} style={styles.input} />
+
+                <label style={styles.label}>Confirmar nova senha</label>
+                <input type="password" value={confirmarSenha} onChange={(e) => setConfirmarSenha(e.target.value)} style={styles.input} />
+
+                <button type="submit" style={styles.saveButton}>
+                  Confirmar alteração de senha
+                </button>
+              </form>
             </section>
           )}
 
@@ -243,6 +478,8 @@ function PainelDoadorPublico() {
             </section>
           )}
 
+          {mensagem && <p style={styles.success}>{mensagem}</p>}
+
           <button onClick={sair} style={styles.sair}>Sair</button>
         </section>
       </div>
@@ -267,6 +504,8 @@ const styles = {
   input: { minHeight: '44px', borderRadius: '10px', border: '1px solid #bfdbfe', padding: '0 12px', background: '#f8fbff' },
   inputDisabled: { minHeight: '44px', borderRadius: '10px', border: '1px solid #e5e7eb', padding: '0 12px', background: '#f3f4f6', color: '#6b7280' },
   saveButton: { marginTop: '20px', background: '#166534', color: '#ffffff', border: 'none', padding: '13px', borderRadius: '10px', fontWeight: '800', cursor: 'pointer' },
+  recoveryButton: { marginTop: '14px', background: '#ffc928', color: '#002855', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: '900', cursor: 'pointer' },
+  infoText: { color: '#475569', lineHeight: '1.6' },
   success: { color: '#166534', fontWeight: '700', marginTop: '12px' },
   empty: { color: '#6b7280' },
   tableWrapper: { overflowX: 'auto', marginTop: '16px' },
