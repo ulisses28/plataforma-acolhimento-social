@@ -12,7 +12,6 @@ function NoticiasAdmin() {
   const [noticias, setNoticias] = useState([])
   const [mostrarFormulario, setMostrarFormulario] = useState(false)
   const [editandoId, setEditandoId] = useState(null)
-
   const editorRef = useRef(null)
 
   const formInicial = {
@@ -47,32 +46,29 @@ function NoticiasAdmin() {
   }
 
   async function selecionarMidias(e) {
-  const arquivos = Array.from(e.target.files || [])
-  if (arquivos.length === 0) return
+    const arquivos = Array.from(e.target.files || [])
+    if (arquivos.length === 0) return
 
-  const LIMITE_VIDEO = 20 * 1024 * 1024
+    const LIMITE_VIDEO = 20 * 1024 * 1024
 
-  for (const arquivo of arquivos) {
-    if (arquivo.type.startsWith('video') && arquivo.size > LIMITE_VIDEO) {
-      alert(
-        'Vídeo muito grande. Envie vídeos de até 20MB ou use o campo de link do YouTube.'
-      )
-
-      e.target.value = ''
-      return
+    for (const arquivo of arquivos) {
+      if (arquivo.type.startsWith('video') && arquivo.size > LIMITE_VIDEO) {
+        alert('Vídeo muito grande. Envie vídeos de até 20MB ou use o campo de link do YouTube.')
+        e.target.value = ''
+        return
+      }
     }
+
+    const midiasConvertidas = await Promise.all(
+      arquivos.map(async (arquivo) => ({
+        nome: arquivo.name,
+        tipo: arquivo.type,
+        base64: await lerMidiaComoBase64(arquivo)
+      }))
+    )
+
+    alterarCampo('midias', [...form.midias, ...midiasConvertidas])
   }
-
-  const midiasConvertidas = await Promise.all(
-    arquivos.map(async (arquivo) => ({
-      nome: arquivo.name,
-      tipo: arquivo.type,
-      base64: await lerMidiaComoBase64(arquivo)
-    }))
-  )
-
-  alterarCampo('midias', [...form.midias, ...midiasConvertidas])
-}
 
   function removerMidia(index) {
     alterarCampo(
@@ -179,9 +175,7 @@ function NoticiasAdmin() {
   function converterYoutubeEmbed(url) {
     if (!url) return ''
 
-    if (url.includes('watch?v=')) {
-      return url.replace('watch?v=', 'embed/')
-    }
+    if (url.includes('watch?v=')) return url.replace('watch?v=', 'embed/')
 
     if (url.includes('youtu.be/')) {
       const id = url.split('youtu.be/')[1].split('?')[0]
@@ -248,7 +242,7 @@ function NoticiasAdmin() {
               <option>Projeto social</option>
               <option>Prestação de contas</option>
               <option>Evento</option>
-              <option>Vagas</option>
+              <option>Campanha</option>
             </select>
 
             <label style={styles.label}>Onde publicar?</label>
@@ -279,9 +273,7 @@ function NoticiasAdmin() {
                   onChange={(e) => aplicarTamanho(e.target.value)}
                   defaultValue=""
                 >
-                  <option value="" disabled>
-                    Tamanho
-                  </option>
+                  <option value="" disabled>Tamanho</option>
                   <option value="2">Pequena</option>
                   <option value="3">Normal</option>
                   <option value="4">Média</option>
@@ -290,61 +282,20 @@ function NoticiasAdmin() {
                   <option value="7">Título grande</option>
                 </select>
 
-                <button type="button" style={styles.toolButton} onClick={() => aplicarComando('bold')}>
-                  B
-                </button>
-
-                <button type="button" style={styles.toolButton} onClick={() => aplicarComando('italic')}>
-                  I
-                </button>
-
-                <button type="button" style={styles.toolButton} onClick={() => aplicarComando('underline')}>
-                  U
-                </button>
-
-                <button type="button" style={styles.toolButton} onClick={() => aplicarComando('strikeThrough')}>
-                  S
-                </button>
-
-                <button type="button" style={styles.toolButton} onClick={() => aplicarComando('insertUnorderedList')}>
-                  • Lista
-                </button>
-
-                <button type="button" style={styles.toolButton} onClick={aplicarListaNumerada}>
-                  1. Lista
-                </button>
-
-                <button type="button" style={styles.toolButton} onClick={() => aplicarComando('justifyLeft')}>
-                  ←
-                </button>
-
-                <button type="button" style={styles.toolButton} onClick={() => aplicarComando('justifyCenter')}>
-                  ↔
-                </button>
-
-                <button type="button" style={styles.toolButton} onClick={() => aplicarComando('justifyRight')}>
-                  →
-                </button>
-
-                <button type="button" style={styles.toolButton} onClick={() => aplicarCor('#0B3D91')}>
-                  Azul
-                </button>
-
-                <button type="button" style={styles.toolButton} onClick={() => aplicarCor('#dc2626')}>
-                  Vermelho
-                </button>
-
-                <button type="button" style={styles.toolButton} onClick={() => aplicarCor('#16a34a')}>
-                  Verde
-                </button>
-
-                <button type="button" style={styles.toolButton} onClick={aplicarTitulo}>
-                  Título
-                </button>
-
-                <button type="button" style={styles.toolButton} onClick={limparFormatacao}>
-                  Limpar
-                </button>
+                <button type="button" style={styles.toolButton} onClick={() => aplicarComando('bold')}>B</button>
+                <button type="button" style={styles.toolButton} onClick={() => aplicarComando('italic')}>I</button>
+                <button type="button" style={styles.toolButton} onClick={() => aplicarComando('underline')}>U</button>
+                <button type="button" style={styles.toolButton} onClick={() => aplicarComando('strikeThrough')}>S</button>
+                <button type="button" style={styles.toolButton} onClick={() => aplicarComando('insertUnorderedList')}>• Lista</button>
+                <button type="button" style={styles.toolButton} onClick={aplicarListaNumerada}>1. Lista</button>
+                <button type="button" style={styles.toolButton} onClick={() => aplicarComando('justifyLeft')}>←</button>
+                <button type="button" style={styles.toolButton} onClick={() => aplicarComando('justifyCenter')}>↔</button>
+                <button type="button" style={styles.toolButton} onClick={() => aplicarComando('justifyRight')}>→</button>
+                <button type="button" style={styles.toolButton} onClick={() => aplicarCor('#0B3D91')}>Azul</button>
+                <button type="button" style={styles.toolButton} onClick={() => aplicarCor('#dc2626')}>Vermelho</button>
+                <button type="button" style={styles.toolButton} onClick={() => aplicarCor('#16a34a')}>Verde</button>
+                <button type="button" style={styles.toolButton} onClick={aplicarTitulo}>Título</button>
+                <button type="button" style={styles.toolButton} onClick={limparFormatacao}>Limpar</button>
               </div>
 
               <div
@@ -356,7 +307,7 @@ function NoticiasAdmin() {
               />
             </div>
 
-            <label style={styles.label}>Link do YouTube (opcional)</label>
+            <label style={styles.label}>Link do YouTube opcional</label>
             <input
               style={styles.input}
               type="text"
@@ -386,7 +337,7 @@ function NoticiasAdmin() {
             />
 
             <p style={styles.helperText}>
-              Para vídeos grandes, prefira usar o campo de link do YouTube. O navegador pode não salvar vídeos grandes no localStorage.
+              Para vídeos grandes, prefira usar o campo de link do YouTube.
             </p>
 
             {form.midias.length > 0 && (
@@ -467,23 +418,6 @@ function NoticiasAdmin() {
 
                   <p style={styles.newsText}>{item.resumo}</p>
 
-                  {item.categoria === 'Vagas' && (
-                    <div style={styles.vagasBox}>
-                      <strong style={styles.vagasTitle}>
-                        📄 Envie seu currículo para esta oportunidade
-                      </strong>
-
-                      <p style={styles.vagasText}>
-                        Clique abaixo para acessar o formulário de candidatura,
-                        anexar currículo e participar do processo seletivo.
-                      </p>
-
-                      <a href="/vagas" style={styles.vagasLink}>
-                        Enviar currículo →
-                      </a>
-                    </div>
-                  )}
-
                   <div style={styles.cardActions}>
                     <button type="button" style={styles.editButton} onClick={() => editar(item)}>
                       ✏️ Editar
@@ -504,330 +438,44 @@ function NoticiasAdmin() {
 }
 
 const styles = {
-  page: {
-    minHeight: '100vh',
-    background: '#f1f7ff',
-    padding: '40px 20px'
-  },
-
-  container: {
-    maxWidth: '1200px',
-    margin: '0 auto'
-  },
-
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    gap: '20px',
-    flexWrap: 'wrap',
-    marginBottom: '24px'
-  },
-
-  title: {
-    color: '#0B3D91',
-    fontSize: '2.4rem',
-    margin: 0
-  },
-
-  subtitle: {
-    color: '#475569',
-    lineHeight: '1.6',
-    maxWidth: '780px'
-  },
-
-  addButton: {
-    background: '#ffc928',
-    color: '#002855',
-    border: 'none',
-    borderRadius: '14px',
-    padding: '14px 20px',
-    fontWeight: '900',
-    cursor: 'pointer'
-  },
-
-  formCard: {
-    background: '#fff',
-    borderRadius: '22px',
-    padding: '28px',
-    marginBottom: '24px',
-    boxShadow: '0 8px 24px rgba(0,0,0,0.08)'
-  },
-
-  listCard: {
-    background: '#fff',
-    borderRadius: '22px',
-    padding: '28px',
-    boxShadow: '0 8px 24px rgba(0,0,0,0.08)'
-  },
-
-  sectionTitle: {
-    color: '#0B3D91',
-    marginTop: 0
-  },
-
-  label: {
-    display: 'block',
-    marginTop: '14px',
-    marginBottom: '6px',
-    color: '#334155',
-    fontWeight: '800'
-  },
-
-  input: {
-    width: '100%',
-    minHeight: '46px',
-    borderRadius: '10px',
-    border: '1px solid #bfdbfe',
-    background: '#f8fbff',
-    padding: '0 12px',
-    boxSizing: 'border-box'
-  },
-
-  textarea: {
-    width: '100%',
-    minHeight: '90px',
-    borderRadius: '10px',
-    border: '1px solid #bfdbfe',
-    background: '#f8fbff',
-    padding: '12px',
-    boxSizing: 'border-box',
-    resize: 'vertical'
-  },
-
-  editorBox: {
-    border: '1px solid #bfdbfe',
-    borderRadius: '14px',
-    overflow: 'hidden',
-    background: '#fff'
-  },
-
-  toolbar: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: '6px',
-    padding: '10px',
-    borderBottom: '1px solid #dbeafe',
-    background: '#eef6ff'
-  },
-
-  toolButton: {
-    border: '1px solid #bfdbfe',
-    background: '#fff',
-    color: '#0B3D91',
-    borderRadius: '6px',
-    padding: '6px 10px',
-    fontWeight: '800',
-    cursor: 'pointer',
-    minWidth: '42px'
-  },
-
-  toolSelect: {
-    border: '1px solid #bfdbfe',
-    background: '#fff',
-    color: '#0B3D91',
-    borderRadius: '6px',
-    padding: '6px 10px',
-    fontWeight: '800',
-    cursor: 'pointer',
-    minWidth: '120px'
-  },
-
-  editor: {
-    minHeight: '260px',
-    padding: '18px',
-    outline: 'none',
-    fontSize: '16px',
-    lineHeight: '1.7',
-    color: '#1e293b'
-  },
-
-  youtubePreview: {
-    marginTop: '12px',
-    background: '#f8fbff',
-    border: '1px solid #dbeafe',
-    borderRadius: '14px',
-    padding: '12px'
-  },
-
-  youtubeIframe: {
-    width: '100%',
-    height: '320px',
-    border: 'none',
-    borderRadius: '12px'
-  },
-
-  helperText: {
-    color: '#64748b',
-    fontSize: '13px',
-    marginTop: '8px'
-  },
-
-  previewGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-    gap: '14px',
-    marginTop: '14px'
-  },
-
-  previewItem: {
-    background: '#f8fbff',
-    border: '1px solid #dbeafe',
-    borderRadius: '14px',
-    padding: '10px'
-  },
-
-  previewMedia: {
-    width: '100%',
-    height: '150px',
-    objectFit: 'cover',
-    borderRadius: '12px'
-  },
-
-  removeMediaButton: {
-    marginTop: '8px',
-    background: '#dc2626',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '8px',
-    padding: '8px 10px',
-    cursor: 'pointer',
-    fontWeight: '800'
-  },
-
-  actions: {
-    display: 'flex',
-    gap: '12px',
-    marginTop: '20px',
-    flexWrap: 'wrap'
-  },
-
-  saveButton: {
-    background: '#16a34a',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '12px',
-    padding: '13px 18px',
-    fontWeight: '900',
-    cursor: 'pointer'
-  },
-
-  cancelButton: {
-    background: '#dc2626',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '12px',
-    padding: '13px 18px',
-    fontWeight: '900',
-    cursor: 'pointer'
-  },
-
-  emptyText: {
-    color: '#64748b'
-  },
-
-  newsGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-    gap: '18px'
-  },
-
-  newsCard: {
-    background: '#f8fbff',
-    border: '1px solid #dbeafe',
-    borderRadius: '18px',
-    padding: '18px'
-  },
-
-  cardMedia: {
-    width: '100%',
-    height: '190px',
-    objectFit: 'cover',
-    border: 'none',
-    borderRadius: '14px',
-    marginBottom: '12px'
-  },
-
-  badge: {
-    background: '#ffc928',
-    color: '#002855',
-    padding: '6px 10px',
-    borderRadius: '999px',
-    fontWeight: '900',
-    fontSize: '12px'
-  },
-
-  newsTitle: {
-    color: '#0B3D91',
-    marginBottom: '6px'
-  },
-
-  newsMeta: {
-    color: '#64748b',
-    fontSize: '14px'
-  },
-
-  newsText: {
-    color: '#334155',
-    lineHeight: '1.6'
-  },
-
-  vagasBox: {
-    background: '#eef6ff',
-    border: '1px solid #bfdbfe',
-    borderRadius: '14px',
-    padding: '14px',
-    marginTop: '14px'
-  },
-
-  vagasTitle: {
-    display: 'block',
-    color: '#0B3D91',
-    marginBottom: '8px',
-    fontSize: '15px'
-  },
-
-  vagasText: {
-    color: '#475569',
-    lineHeight: '1.5',
-    marginBottom: '12px'
-  },
-
-  vagasLink: {
-    display: 'inline-block',
-    background: '#0B3D91',
-    color: '#fff',
-    textDecoration: 'none',
-    padding: '10px 16px',
-    borderRadius: '10px',
-    fontWeight: '900'
-  },
-
-  cardActions: {
-    display: 'flex',
-    gap: '10px',
-    marginTop: '14px',
-    flexWrap: 'wrap'
-  },
-
-  editButton: {
-    background: '#16a34a',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '10px',
-    padding: '10px 14px',
-    fontWeight: '900',
-    cursor: 'pointer'
-  },
-
-  deleteButton: {
-    background: '#dc2626',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '10px',
-    padding: '10px 14px',
-    fontWeight: '900',
-    cursor: 'pointer'
-  }
+  page: { minHeight: '100vh', background: '#f1f7ff', padding: '40px 20px' },
+  container: { maxWidth: '1200px', margin: '0 auto' },
+  header: { display: 'flex', justifyContent: 'space-between', gap: '20px', flexWrap: 'wrap', marginBottom: '24px' },
+  title: { color: '#0B3D91', fontSize: '2.4rem', margin: 0 },
+  subtitle: { color: '#475569', lineHeight: '1.6', maxWidth: '780px' },
+  addButton: { background: '#ffc928', color: '#002855', border: 'none', borderRadius: '14px', padding: '14px 20px', fontWeight: '900', cursor: 'pointer' },
+  formCard: { background: '#fff', borderRadius: '22px', padding: '28px', marginBottom: '24px', boxShadow: '0 8px 24px rgba(0,0,0,0.08)' },
+  listCard: { background: '#fff', borderRadius: '22px', padding: '28px', boxShadow: '0 8px 24px rgba(0,0,0,0.08)' },
+  sectionTitle: { color: '#0B3D91', marginTop: 0 },
+  label: { display: 'block', marginTop: '14px', marginBottom: '6px', color: '#334155', fontWeight: '800' },
+  input: { width: '100%', minHeight: '46px', borderRadius: '10px', border: '1px solid #bfdbfe', background: '#f8fbff', padding: '0 12px', boxSizing: 'border-box' },
+  textarea: { width: '100%', minHeight: '90px', borderRadius: '10px', border: '1px solid #bfdbfe', background: '#f8fbff', padding: '12px', boxSizing: 'border-box', resize: 'vertical' },
+  editorBox: { border: '1px solid #bfdbfe', borderRadius: '14px', overflow: 'hidden', background: '#fff' },
+  toolbar: { display: 'flex', flexWrap: 'wrap', gap: '6px', padding: '10px', borderBottom: '1px solid #dbeafe', background: '#eef6ff' },
+  toolButton: { border: '1px solid #bfdbfe', background: '#fff', color: '#0B3D91', borderRadius: '6px', padding: '6px 10px', fontWeight: '800', cursor: 'pointer', minWidth: '42px' },
+  toolSelect: { border: '1px solid #bfdbfe', background: '#fff', color: '#0B3D91', borderRadius: '6px', padding: '6px 10px', fontWeight: '800', cursor: 'pointer', minWidth: '120px' },
+  editor: { minHeight: '260px', padding: '18px', outline: 'none', fontSize: '16px', lineHeight: '1.7', color: '#1e293b' },
+  youtubePreview: { marginTop: '12px', background: '#f8fbff', border: '1px solid #dbeafe', borderRadius: '14px', padding: '12px' },
+  youtubeIframe: { width: '100%', height: '320px', border: 'none', borderRadius: '12px' },
+  helperText: { color: '#64748b', fontSize: '13px', marginTop: '8px' },
+  previewGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px', marginTop: '14px' },
+  previewItem: { background: '#f8fbff', border: '1px solid #dbeafe', borderRadius: '14px', padding: '10px' },
+  previewMedia: { width: '100%', height: '150px', objectFit: 'cover', borderRadius: '12px' },
+  removeMediaButton: { marginTop: '8px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: '8px', padding: '8px 10px', cursor: 'pointer', fontWeight: '800' },
+  actions: { display: 'flex', gap: '12px', marginTop: '20px', flexWrap: 'wrap' },
+  saveButton: { background: '#16a34a', color: '#fff', border: 'none', borderRadius: '12px', padding: '13px 18px', fontWeight: '900', cursor: 'pointer' },
+  cancelButton: { background: '#dc2626', color: '#fff', border: 'none', borderRadius: '12px', padding: '13px 18px', fontWeight: '900', cursor: 'pointer' },
+  emptyText: { color: '#64748b' },
+  newsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '18px' },
+  newsCard: { background: '#f8fbff', border: '1px solid #dbeafe', borderRadius: '18px', padding: '18px' },
+  cardMedia: { width: '100%', height: '190px', objectFit: 'cover', border: 'none', borderRadius: '14px', marginBottom: '12px' },
+  badge: { background: '#ffc928', color: '#002855', padding: '6px 10px', borderRadius: '999px', fontWeight: '900', fontSize: '12px' },
+  newsTitle: { color: '#0B3D91', marginBottom: '6px' },
+  newsMeta: { color: '#64748b', fontSize: '14px' },
+  newsText: { color: '#334155', lineHeight: '1.6' },
+  cardActions: { display: 'flex', gap: '10px', marginTop: '14px', flexWrap: 'wrap' },
+  editButton: { background: '#16a34a', color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 14px', fontWeight: '900', cursor: 'pointer' },
+  deleteButton: { background: '#dc2626', color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 14px', fontWeight: '900', cursor: 'pointer' }
 }
 
 export default NoticiasAdmin
