@@ -1,107 +1,252 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import BackButton from '../../components/ui/BackButton'
+
 import {
-  listarCandidaturas,
-  excluirCandidatura,
-  atualizarStatusCandidatura
+  listarVagas,
+  salvarVaga,
+  atualizarVaga,
+  arquivarVaga,
+  excluirVaga,
+  lerArquivoBase64
 } from '../../services/vagasService'
 
+import {
+  salvarNoticia
+} from '../../services/noticiasService'
+
 function VagasAdmin() {
-  const [candidaturas, setCandidaturas] = useState([])
-  const [busca, setBusca] = useState('')
-  const [filtroTipo, setFiltroTipo] = useState('Todos')
-  const [filtroStatus, setFiltroStatus] = useState('Todos')
-  const [palavrasChave, setPalavrasChave] = useState('')
-  const [selecionado, setSelecionado] = useState(null)
+  const editorRef = useRef(null)
+
+  const formInicial = {
+    titulo: '',
+    tipo: 'Vaga',
+    local: '',
+    resumo: '',
+    descricao: '',
+    requisitos: '',
+    escolaridade: '',
+    experiencia: '',
+    imagem: '',
+    publicarNoticias: true
+  }
+
+  const [vagas, setVagas] = useState([])
+  const [mostrarFormulario, setMostrarFormulario] = useState(false)
+  const [editandoId, setEditandoId] = useState(null)
+
+  const [form, setForm] = useState(formInicial)
 
   useEffect(() => {
-    carregar()
+    carregarVagas()
   }, [])
 
-  function carregar() {
-    setCandidaturas(listarCandidaturas())
+  useEffect(() => {
+    if (mostrarFormulario && editorRef.current) {
+      editorRef.current.innerHTML =
+        form.descricao || ''
+    }
+  }, [mostrarFormulario, editandoId])
+
+  function carregarVagas() {
+    setVagas(listarVagas())
   }
 
-  function remover(id) {
-    if (!confirm('Deseja remover esta candidatura?')) return
-    excluirCandidatura(id)
-    carregar()
-    setSelecionado(null)
+  function alterarCampo(campo, valor) {
+    setForm((atual) => ({
+      ...atual,
+      [campo]: valor
+    }))
   }
 
-  function baixarArquivo(arquivo) {
-    const link = document.createElement('a')
-    link.href = arquivo.base64
-    link.download = arquivo.nome || 'arquivo'
-    link.click()
+  async function selecionarImagem(e) {
+    const arquivo = e.target.files?.[0]
+
+    if (!arquivo) return
+
+    const base64 =
+      await lerArquivoBase64(arquivo)
+
+    alterarCampo('imagem', base64)
   }
 
-  function mudarStatus(id, novoStatus) {
-    atualizarStatusCandidatura(id, novoStatus)
-    carregar()
+  function limparFormulario() {
+    setForm(formInicial)
 
-    if (selecionado?.id === id) {
-      const atualizada = listarCandidaturas().find((item) => item.id === id)
-      setSelecionado(atualizada)
+    setEditandoId(null)
+
+    setMostrarFormulario(false)
+
+    if (editorRef.current) {
+      editorRef.current.innerHTML = ''
     }
   }
 
-  const listaFiltrada = useMemo(() => {
-    const textoBusca = busca.toLowerCase().trim()
+  function atualizarDescricao() {
+    if (editorRef.current) {
+      alterarCampo(
+        'descricao',
+        editorRef.current.innerHTML
+      )
+    }
+  }
 
-    const keywords = palavrasChave
-      .toLowerCase()
-      .split(',')
-      .map((p) => p.trim())
-      .filter(Boolean)
+  function aplicarComando(comando) {
+    document.execCommand(comando)
+    atualizarDescricao()
+  }
 
-    return candidaturas
-      .map((item) => {
-        const textoCompleto = `
-          ${item.nome}
-          ${item.cpf}
-          ${item.email}
-          ${item.vaga}
-          ${item.tipo}
-          ${item.observacoes}
-          ${item.estado}
-          ${item.municipio}
-        `.toLowerCase()
+  function aplicarCor(cor) {
+    document.execCommand(
+      'foreColor',
+      false,
+      cor
+    )
 
-        const pontos = keywords.reduce((total, palavra) => {
-          return textoCompleto.includes(palavra) ? total + 1 : total
-        }, 0)
+    atualizarDescricao()
+  }
 
-        const percentual =
-          keywords.length === 0 ? 0 : Math.round((pontos / keywords.length) * 100)
+  function aplicarTitulo() {
+    document.execCommand(
+      'formatBlock',
+      false,
+      'h2'
+    )
 
-        return { ...item, pontos, percentual }
+    atualizarDescricao()
+  }
+
+  function salvar(e) {
+    e.preventDefault()
+
+    if (!form.titulo.trim()) {
+      return alert(
+        'Informe o título da vaga.'
+      )
+    }
+
+    if (!form.local.trim()) {
+      return alert(
+        'Informe o local da vaga.'
+      )
+    }
+
+    const dados = {
+      ...form,
+      descricao:
+        editorRef.current?.innerHTML || ''
+    }
+
+    if (editandoId) {
+      atualizarVaga({
+        ...dados,
+        id: editandoId
       })
-      .filter((item) => {
-        const textoCompleto = `
-          ${item.nome}
-          ${item.cpf}
-          ${item.email}
-          ${item.vaga}
-          ${item.tipo}
-          ${item.observacoes}
-        `.toLowerCase()
 
-        const passaBusca = !textoBusca || textoCompleto.includes(textoBusca)
-        const passaTipo = filtroTipo === 'Todos' || item.tipo === filtroTipo
-        const passaStatus = filtroStatus === 'Todos' || item.status === filtroStatus
+      alert('Vaga atualizada!')
+    } else {
+      const vagaCriada =
+        salvarVaga(dados)
 
-        return passaBusca && passaTipo && passaStatus
-      })
-      .sort((a, b) => b.percentual - a.percentual)
-  }, [candidaturas, busca, filtroTipo, filtroStatus, palavrasChave])
+      /*
+      ========================================
+      PUBLICAR EM ÚLTIMAS NOTÍCIAS
+      ========================================
+      */
 
-  const resumo = {
-    total: candidaturas.length,
-    analise: candidaturas.filter((c) => c.status === 'Em análise' || !c.status).length,
-    entrevista: candidaturas.filter((c) => c.status === 'Entrevista').length,
-    aprovados: candidaturas.filter((c) => c.status === 'Aprovado').length,
-    banco: candidaturas.filter((c) => c.status === 'Banco de talentos').length
+      if (dados.publicarNoticias) {
+        salvarNoticia({
+          titulo: dados.titulo,
+
+          categoria:
+            dados.tipo === 'Voluntário'
+              ? 'Voluntariado'
+              : 'Oportunidade',
+
+          areaPublicacao:
+            'Últimas Notícias',
+
+          resumo:
+            dados.resumo ||
+            'Nova oportunidade disponível.',
+
+          conteudo:
+            dados.descricao ||
+            dados.resumo,
+
+          midias: [],
+
+          youtubeUrl: '',
+
+          status: 'Publicado',
+
+          midia: dados.imagem || '',
+
+          tipoMidia: 'image/jpeg',
+
+          vagaRelacionada:
+            vagaCriada.id
+        })
+      }
+
+      alert('Vaga publicada!')
+    }
+
+    limparFormulario()
+
+    carregarVagas()
+  }
+
+  function editar(vaga) {
+    setForm({
+      titulo: vaga.titulo || '',
+      tipo: vaga.tipo || 'Vaga',
+      local: vaga.local || '',
+      resumo: vaga.resumo || '',
+      descricao: vaga.descricao || '',
+      requisitos: vaga.requisitos || '',
+      escolaridade:
+        vaga.escolaridade || '',
+      experiencia:
+        vaga.experiencia || '',
+      imagem: vaga.imagem || '',
+      publicarNoticias:
+        vaga.publicarNoticias || false
+    })
+
+    setEditandoId(vaga.id)
+
+    setMostrarFormulario(true)
+
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    })
+  }
+
+  function arquivar(id) {
+    if (
+      !confirm(
+        'Deseja arquivar esta vaga?'
+      )
+    )
+      return
+
+    arquivarVaga(id)
+
+    carregarVagas()
+  }
+
+  function remover(id) {
+    if (
+      !confirm(
+        'Deseja excluir esta vaga?'
+      )
+    )
+      return
+
+    excluirVaga(id)
+
+    carregarVagas()
   }
 
   return (
@@ -111,139 +256,432 @@ function VagasAdmin() {
 
         <header style={styles.header}>
           <div>
-            <h1 style={styles.title}>Banco de Currículos</h1>
+            <h1 style={styles.title}>
+              Gestão de Vagas
+            </h1>
+
             <p style={styles.subtitle}>
-              Gerencie candidaturas recebidas, currículos, cartas de apresentação,
-              status de seleção e filtros por palavras-chave.
+              Cadastre vagas, voluntariado e
+              oportunidades sociais da
+              instituição.
             </p>
           </div>
+
+          <button
+            style={styles.addButton}
+            onClick={() => {
+              limparFormulario()
+              setMostrarFormulario(true)
+            }}
+          >
+            + Nova vaga
+          </button>
         </header>
 
-        <section style={styles.summaryGrid}>
-          <ResumoCard title="Total" value={resumo.total} color="#0B3D91" />
-          <ResumoCard title="Em análise" value={resumo.analise} color="#2563eb" />
-          <ResumoCard title="Entrevistas" value={resumo.entrevista} color="#f59e0b" />
-          <ResumoCard title="Aprovados" value={resumo.aprovados} color="#16a34a" />
-          <ResumoCard title="Banco talentos" value={resumo.banco} color="#64748b" />
-        </section>
+        {mostrarFormulario && (
+          <form
+            style={styles.formCard}
+            onSubmit={salvar}
+          >
+            <h2 style={styles.sectionTitle}>
+              {editandoId
+                ? 'Editar vaga'
+                : 'Nova vaga'}
+            </h2>
 
-        <section style={styles.filterCard}>
-          <h2 style={styles.sectionTitle}>Filtros inteligentes</h2>
+            <label style={styles.label}>
+              Título da vaga *
+            </label>
 
-          <div style={styles.filterGrid}>
             <input
               style={styles.input}
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-              placeholder="Pesquisar por nome, CPF, e-mail ou vaga"
+              value={form.titulo}
+              onChange={(e) =>
+                alterarCampo(
+                  'titulo',
+                  e.target.value
+                )
+              }
+              placeholder="Ex: Auxiliar Administrativo"
             />
 
-            <select
+            <div style={styles.twoColumns}>
+              <div>
+                <label style={styles.label}>
+                  Tipo
+                </label>
+
+                <select
+                  style={styles.input}
+                  value={form.tipo}
+                  onChange={(e) =>
+                    alterarCampo(
+                      'tipo',
+                      e.target.value
+                    )
+                  }
+                >
+                  <option>Vaga</option>
+
+                  <option>
+                    Voluntário
+                  </option>
+                </select>
+              </div>
+
+              <div>
+                <label style={styles.label}>
+                  Local *
+                </label>
+
+                <input
+                  style={styles.input}
+                  value={form.local}
+                  onChange={(e) =>
+                    alterarCampo(
+                      'local',
+                      e.target.value
+                    )
+                  }
+                  placeholder="Serra - ES"
+                />
+              </div>
+            </div>
+
+            <label style={styles.label}>
+              Resumo
+            </label>
+
+            <textarea
+              style={styles.textarea}
+              value={form.resumo}
+              onChange={(e) =>
+                alterarCampo(
+                  'resumo',
+                  e.target.value
+                )
+              }
+              placeholder="Texto curto da vaga."
+            />
+
+            <label style={styles.label}>
+              Descrição da vaga
+            </label>
+
+            <div style={styles.editorBox}>
+              <div style={styles.toolbar}>
+                <button
+                  type="button"
+                  style={styles.toolButton}
+                  onClick={() =>
+                    aplicarComando(
+                      'bold'
+                    )
+                  }
+                >
+                  B
+                </button>
+
+                <button
+                  type="button"
+                  style={styles.toolButton}
+                  onClick={() =>
+                    aplicarComando(
+                      'italic'
+                    )
+                  }
+                >
+                  I
+                </button>
+
+                <button
+                  type="button"
+                  style={styles.toolButton}
+                  onClick={() =>
+                    aplicarComando(
+                      'underline'
+                    )
+                  }
+                >
+                  U
+                </button>
+
+                <button
+                  type="button"
+                  style={styles.toolButton}
+                  onClick={() =>
+                    aplicarComando(
+                      'insertUnorderedList'
+                    )
+                  }
+                >
+                  • Lista
+                </button>
+
+                <button
+                  type="button"
+                  style={styles.toolButton}
+                  onClick={() =>
+                    aplicarCor(
+                      '#0B3D91'
+                    )
+                  }
+                >
+                  Azul
+                </button>
+
+                <button
+                  type="button"
+                  style={styles.toolButton}
+                  onClick={() =>
+                    aplicarCor(
+                      '#16a34a'
+                    )
+                  }
+                >
+                  Verde
+                </button>
+
+                <button
+                  type="button"
+                  style={styles.toolButton}
+                  onClick={
+                    aplicarTitulo
+                  }
+                >
+                  Título
+                </button>
+              </div>
+
+              <div
+                ref={editorRef}
+                contentEditable
+                suppressContentEditableWarning
+                style={styles.editor}
+                onInput={
+                  atualizarDescricao
+                }
+              />
+            </div>
+
+            <div style={styles.twoColumns}>
+              <div>
+                <label style={styles.label}>
+                  Escolaridade
+                </label>
+
+                <input
+                  style={styles.input}
+                  value={
+                    form.escolaridade
+                  }
+                  onChange={(e) =>
+                    alterarCampo(
+                      'escolaridade',
+                      e.target.value
+                    )
+                  }
+                  placeholder="Ex: Ensino médio"
+                />
+              </div>
+
+              <div>
+                <label style={styles.label}>
+                  Experiência
+                </label>
+
+                <input
+                  style={styles.input}
+                  value={
+                    form.experiencia
+                  }
+                  onChange={(e) =>
+                    alterarCampo(
+                      'experiencia',
+                      e.target.value
+                    )
+                  }
+                  placeholder="Ex: 1 ano"
+                />
+              </div>
+            </div>
+
+            <label style={styles.label}>
+              Requisitos
+            </label>
+
+            <textarea
+              style={styles.textarea}
+              value={form.requisitos}
+              onChange={(e) =>
+                alterarCampo(
+                  'requisitos',
+                  e.target.value
+                )
+              }
+              placeholder="Ex: Excel, organização, atendimento..."
+            />
+
+            <label style={styles.label}>
+              Imagem da vaga
+            </label>
+
+            <input
               style={styles.input}
-              value={filtroTipo}
-              onChange={(e) => setFiltroTipo(e.target.value)}
-            >
-              <option>Todos</option>
-              <option>Vaga</option>
-              <option>Banco de Talentos</option>
-              <option>Outros</option>
-            </select>
+              type="file"
+              accept="image/*"
+              onChange={
+                selecionarImagem
+              }
+            />
 
-            <select
-              style={styles.input}
-              value={filtroStatus}
-              onChange={(e) => setFiltroStatus(e.target.value)}
-            >
-              <option>Todos</option>
-              <option>Em análise</option>
-              <option>Entrevista</option>
-              <option>Aprovado</option>
-              <option>Reprovado</option>
-              <option>Banco de talentos</option>
-            </select>
-          </div>
+            {form.imagem && (
+              <img
+                src={form.imagem}
+                alt="Preview"
+                style={
+                  styles.previewImage
+                }
+              />
+            )}
 
-          <input
-            style={styles.input}
-            value={palavrasChave}
-            onChange={(e) => setPalavrasChave(e.target.value)}
-            placeholder="Palavras-chave da vaga. Ex: administração, excel, atendimento, crianças"
-          />
+            <div style={styles.checkboxBox}>
+              <input
+                type="checkbox"
+                checked={
+                  form.publicarNoticias
+                }
+                onChange={(e) =>
+                  alterarCampo(
+                    'publicarNoticias',
+                    e.target.checked
+                  )
+                }
+              />
 
-          <p style={styles.helper}>
-            A pontuação é apenas um apoio de triagem. A decisão final deve ser
-            feita por análise humana, considerando critérios justos e objetivos.
-          </p>
-        </section>
+              <span>
+                Publicar também em
+                Últimas Notícias
+              </span>
+            </div>
+
+            <div style={styles.actions}>
+              <button
+                type="submit"
+                style={styles.saveButton}
+              >
+                {editandoId
+                  ? 'Atualizar vaga'
+                  : 'Publicar vaga'}
+              </button>
+
+              <button
+                type="button"
+                style={
+                  styles.cancelButton
+                }
+                onClick={
+                  limparFormulario
+                }
+              >
+                Cancelar
+              </button>
+            </div>
+          </form>
+        )}
 
         <section style={styles.listCard}>
-          <h2 style={styles.sectionTitle}>Currículos recebidos</h2>
+          <h2 style={styles.sectionTitle}>
+            Vagas cadastradas
+          </h2>
 
-          {listaFiltrada.length === 0 ? (
-            <p style={styles.empty}>Nenhuma candidatura encontrada.</p>
+          {vagas.length === 0 ? (
+            <p style={styles.emptyText}>
+              Nenhuma vaga cadastrada.
+            </p>
           ) : (
             <div style={styles.grid}>
-              {listaFiltrada.map((item) => (
-                <article key={item.id} style={styles.card}>
-                  <div style={styles.cardHeader}>
-                    <span style={styles.badge}>{item.tipo}</span>
+              {vagas.map((vaga) => (
+                <article
+                  key={vaga.id}
+                  style={styles.card}
+                >
+                  {vaga.imagem && (
+                    <img
+                      src={vaga.imagem}
+                      alt={vaga.titulo}
+                      style={
+                        styles.cardImage
+                      }
+                    />
+                  )}
 
-                    <span
-                      style={{
-                        ...styles.statusBadge,
-                        background: statusCor(item.status || 'Em análise')
-                      }}
-                    >
-                      {item.status || 'Em análise'}
-                    </span>
-                  </div>
+                  <span
+                    style={{
+                      ...styles.badge,
+                      background:
+                        vaga.status ===
+                        'Arquivada'
+                          ? '#dc2626'
+                          : '#16a34a'
+                    }}
+                  >
+                    {vaga.status}
+                  </span>
 
-                  <h3 style={styles.name}>{item.nome}</h3>
+                  <h3 style={styles.cardTitle}>
+                    {vaga.titulo}
+                  </h3>
 
-                  <p style={styles.meta}>
-                    <strong>Vaga/Área:</strong> {item.vaga}
+                  <p style={styles.cardMeta}>
+                    {vaga.tipo} •{' '}
+                    {vaga.local}
                   </p>
 
-                  <p style={styles.meta}>
-                    <strong>Data:</strong> {item.criadoEm}
+                  <p style={styles.cardText}>
+                    {vaga.resumo}
                   </p>
 
-                  <p style={styles.meta}>
-                    <strong>Local:</strong> {item.municipio} - {item.estado}
-                  </p>
-
-                  <div style={styles.scoreBox}>
-                    <strong>Compatibilidade por palavras-chave</strong>
-
-                    <div style={styles.scoreTrack}>
-                      <div
-                        style={{
-                          ...styles.scoreFill,
-                          width: `${item.percentual}%`
-                        }}
-                      />
-                    </div>
-
-                    <span style={styles.scoreText}>
-                      {item.percentual}% • {item.pontos} palavra(s) encontrada(s)
-                    </span>
-                  </div>
-
-                  <div style={styles.cardActions}>
+                  <div
+                    style={
+                      styles.cardActions
+                    }
+                  >
                     <button
-                      type="button"
-                      style={styles.viewButton}
-                      onClick={() => setSelecionado(item)}
+                      style={
+                        styles.editButton
+                      }
+                      onClick={() =>
+                        editar(vaga)
+                      }
                     >
-                      Ver detalhes
+                      ✏️ Editar
                     </button>
 
                     <button
-                      type="button"
-                      style={styles.deleteButton}
-                      onClick={() => remover(item.id)}
+                      style={
+                        styles.archiveButton
+                      }
+                      onClick={() =>
+                        arquivar(
+                          vaga.id
+                        )
+                      }
                     >
-                      Remover
+                      📦 Arquivar
+                    </button>
+
+                    <button
+                      style={
+                        styles.deleteButton
+                      }
+                      onClick={() =>
+                        remover(
+                          vaga.id
+                        )
+                      }
+                    >
+                      🗑 Excluir
                     </button>
                   </div>
                 </article>
@@ -252,115 +690,8 @@ function VagasAdmin() {
           )}
         </section>
       </div>
-
-      {selecionado && (
-        <div style={styles.modalOverlay}>
-          <div style={styles.modal}>
-            <div style={styles.modalHeader}>
-              <div>
-                <h2 style={styles.modalTitle}>{selecionado.nome}</h2>
-                <p style={styles.modalSubtitle}>
-                  {selecionado.vaga} • {selecionado.tipo}
-                </p>
-              </div>
-
-              <button
-                type="button"
-                style={styles.closeButton}
-                onClick={() => setSelecionado(null)}
-              >
-                Fechar
-              </button>
-            </div>
-
-            <section style={styles.modalGrid}>
-              <Info label="CPF" value={selecionado.cpf} />
-              <Info label="E-mail" value={selecionado.email} />
-              <Info label="Sexo/Gênero" value={selecionado.sexo} />
-              <Info label="Local" value={`${selecionado.municipio} - ${selecionado.estado}`} />
-              <Info label="Data de envio" value={selecionado.criadoEm} />
-              <Info label="Status atual" value={selecionado.status || 'Em análise'} />
-            </section>
-
-            <label style={styles.label}>Alterar status</label>
-            <select
-              style={styles.input}
-              value={selecionado.status || 'Em análise'}
-              onChange={(e) => mudarStatus(selecionado.id, e.target.value)}
-            >
-              <option>Em análise</option>
-              <option>Entrevista</option>
-              <option>Aprovado</option>
-              <option>Reprovado</option>
-              <option>Banco de talentos</option>
-            </select>
-
-            <section style={styles.modalSection}>
-              <h3 style={styles.modalSectionTitle}>Observações</h3>
-              <p style={styles.obs}>
-                {selecionado.observacoes || 'Sem observações adicionais.'}
-              </p>
-            </section>
-
-            <section style={styles.modalSection}>
-              <h3 style={styles.modalSectionTitle}>Arquivos anexados</h3>
-
-              {selecionado.arquivos?.length > 0 ? (
-                selecionado.arquivos.map((arquivo, index) => (
-                  <button
-                    key={index}
-                    type="button"
-                    style={styles.fileButton}
-                    onClick={() => baixarArquivo(arquivo)}
-                  >
-                    📎 {arquivo.nome || `Arquivo ${index + 1}`}
-                  </button>
-                ))
-              ) : (
-                <p style={styles.emptySmall}>Nenhum arquivo anexado.</p>
-              )}
-            </section>
-
-            <section style={styles.modalSection}>
-              <h3 style={styles.modalSectionTitle}>Histórico</h3>
-
-              {(selecionado.historico || []).map((h, index) => (
-                <p key={index} style={styles.historyItem}>
-                  {h.data} — {h.status}
-                </p>
-              ))}
-            </section>
-          </div>
-        </div>
-      )}
     </main>
   )
-}
-
-function ResumoCard({ title, value, color }) {
-  return (
-    <div style={{ ...styles.summaryCard, borderLeft: `6px solid ${color}` }}>
-      <strong style={{ color }}>{value}</strong>
-      <span>{title}</span>
-    </div>
-  )
-}
-
-function Info({ label, value }) {
-  return (
-    <div style={styles.infoBox}>
-      <strong>{label}</strong>
-      <span>{value || 'Não informado'}</span>
-    </div>
-  )
-}
-
-function statusCor(status) {
-  if (status === 'Entrevista') return '#f59e0b'
-  if (status === 'Aprovado') return '#16a34a'
-  if (status === 'Reprovado') return '#dc2626'
-  if (status === 'Banco de talentos') return '#64748b'
-  return '#2563eb'
 }
 
 const styles = {
@@ -369,61 +700,71 @@ const styles = {
     background: '#f1f7ff',
     padding: '40px 20px'
   },
+
   container: {
     maxWidth: '1200px',
     margin: '0 auto'
   },
+
   header: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    gap: '20px',
+    flexWrap: 'wrap',
     marginBottom: '24px'
   },
+
   title: {
     color: '#0B3D91',
-    fontSize: '2.4rem',
+    fontSize: '2.5rem',
     margin: 0
   },
+
   subtitle: {
     color: '#475569',
-    lineHeight: '1.6',
-    maxWidth: '760px'
+    lineHeight: '1.6'
   },
-  summaryGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
-    gap: '16px',
-    marginBottom: '24px'
+
+  addButton: {
+    background: '#ffc928',
+    color: '#002855',
+    border: 'none',
+    borderRadius: '14px',
+    padding: '14px 20px',
+    fontWeight: '900',
+    cursor: 'pointer'
   },
-  summaryCard: {
-    background: '#fff',
-    borderRadius: '18px',
-    padding: '20px',
-    boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px'
-  },
-  filterCard: {
+
+  formCard: {
     background: '#fff',
     borderRadius: '22px',
-    padding: '24px',
+    padding: '28px',
     marginBottom: '24px',
-    boxShadow: '0 8px 24px rgba(0,0,0,0.08)'
+    boxShadow:
+      '0 8px 24px rgba(0,0,0,0.08)'
   },
+
   listCard: {
     background: '#fff',
     borderRadius: '22px',
-    padding: '24px',
-    boxShadow: '0 8px 24px rgba(0,0,0,0.08)'
+    padding: '28px',
+    boxShadow:
+      '0 8px 24px rgba(0,0,0,0.08)'
   },
+
   sectionTitle: {
     color: '#0B3D91',
     marginTop: 0
   },
-  filterGrid: {
-    display: 'grid',
-    gridTemplateColumns: '2fr 1fr 1fr',
-    gap: '14px',
-    marginBottom: '14px'
+
+  label: {
+    display: 'block',
+    marginTop: '14px',
+    marginBottom: '6px',
+    color: '#334155',
+    fontWeight: '800'
   },
+
   input: {
     width: '100%',
     minHeight: '46px',
@@ -433,201 +774,186 @@ const styles = {
     padding: '0 12px',
     boxSizing: 'border-box'
   },
-  label: {
-    display: 'block',
-    marginTop: '16px',
-    marginBottom: '8px',
+
+  textarea: {
+    width: '100%',
+    minHeight: '90px',
+    borderRadius: '10px',
+    border: '1px solid #bfdbfe',
+    background: '#f8fbff',
+    padding: '12px',
+    boxSizing: 'border-box'
+  },
+
+  twoColumns: {
+    display: 'grid',
+    gridTemplateColumns:
+      '1fr 1fr',
+    gap: '14px'
+  },
+
+  editorBox: {
+    border: '1px solid #bfdbfe',
+    borderRadius: '14px',
+    overflow: 'hidden',
+    background: '#fff'
+  },
+
+  toolbar: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '6px',
+    padding: '10px',
+    borderBottom:
+      '1px solid #dbeafe',
+    background: '#eef6ff'
+  },
+
+  toolButton: {
+    border: '1px solid #bfdbfe',
+    background: '#fff',
+    color: '#0B3D91',
+    borderRadius: '6px',
+    padding: '6px 10px',
+    fontWeight: '800',
+    cursor: 'pointer'
+  },
+
+  editor: {
+    minHeight: '260px',
+    padding: '18px',
+    outline: 'none',
+    fontSize: '16px',
+    lineHeight: '1.7',
+    color: '#1e293b'
+  },
+
+  checkboxBox: {
+    display: 'flex',
+    gap: '10px',
+    alignItems: 'center',
+    marginTop: '20px',
+    color: '#334155',
+    fontWeight: '700'
+  },
+
+  previewImage: {
+    width: '100%',
+    maxHeight: '300px',
+    objectFit: 'cover',
+    borderRadius: '16px',
+    marginTop: '14px'
+  },
+
+  actions: {
+    display: 'flex',
+    gap: '12px',
+    marginTop: '24px',
+    flexWrap: 'wrap'
+  },
+
+  saveButton: {
+    background: '#16a34a',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '12px',
+    padding: '13px 18px',
     fontWeight: '900',
-    color: '#334155'
+    cursor: 'pointer'
   },
-  helper: {
-    color: '#64748b',
-    fontSize: '14px'
+
+  cancelButton: {
+    background: '#dc2626',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '12px',
+    padding: '13px 18px',
+    fontWeight: '900',
+    cursor: 'pointer'
   },
+
+  emptyText: {
+    color: '#64748b'
+  },
+
   grid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+    gridTemplateColumns:
+      'repeat(auto-fit, minmax(300px, 1fr))',
     gap: '18px'
   },
+
   card: {
     background: '#f8fbff',
     border: '1px solid #dbeafe',
     borderRadius: '18px',
-    padding: '20px'
+    padding: '18px'
   },
-  cardHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    gap: '10px',
-    flexWrap: 'wrap'
+
+  cardImage: {
+    width: '100%',
+    height: '190px',
+    objectFit: 'cover',
+    borderRadius: '14px',
+    marginBottom: '12px'
   },
+
   badge: {
-    background: '#0B3D91',
     color: '#fff',
-    borderRadius: '999px',
     padding: '6px 10px',
+    borderRadius: '999px',
     fontWeight: '900',
     fontSize: '12px'
   },
-  statusBadge: {
-    color: '#fff',
-    borderRadius: '999px',
-    padding: '6px 10px',
-    fontWeight: '900',
-    fontSize: '12px'
+
+  cardTitle: {
+    color: '#0B3D91'
   },
-  name: {
-    color: '#0B3D91',
-    marginBottom: '10px'
+
+  cardMeta: {
+    color: '#64748b'
   },
-  meta: {
+
+  cardText: {
     color: '#334155',
-    margin: '7px 0'
+    lineHeight: '1.6'
   },
-  scoreBox: {
-    background: '#fff',
-    borderRadius: '12px',
-    padding: '12px',
-    marginTop: '12px'
-  },
-  scoreTrack: {
-    height: '12px',
-    background: '#e5e7eb',
-    borderRadius: '999px',
-    overflow: 'hidden',
-    marginTop: '10px'
-  },
-  scoreFill: {
-    height: '100%',
-    background: '#16a34a',
-    borderRadius: '999px'
-  },
-  scoreText: {
-    display: 'block',
-    color: '#64748b',
-    marginTop: '8px',
-    fontSize: '14px'
-  },
+
   cardActions: {
     display: 'flex',
     gap: '10px',
     marginTop: '14px',
     flexWrap: 'wrap'
   },
-  viewButton: {
-    flex: 1,
-    background: '#0B3D91',
+
+  editButton: {
+    background: '#16a34a',
     color: '#fff',
     border: 'none',
     borderRadius: '10px',
-    padding: '11px',
+    padding: '10px 14px',
     fontWeight: '900',
     cursor: 'pointer'
   },
+
+  archiveButton: {
+    background: '#f59e0b',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '10px',
+    padding: '10px 14px',
+    fontWeight: '900',
+    cursor: 'pointer'
+  },
+
   deleteButton: {
-    flex: 1,
-    background: '#dc2626',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '10px',
-    padding: '11px',
-    fontWeight: '900',
-    cursor: 'pointer'
-  },
-  empty: {
-    color: '#64748b'
-  },
-  emptySmall: {
-    color: '#64748b',
-    fontSize: '14px'
-  },
-  modalOverlay: {
-    position: 'fixed',
-    inset: 0,
-    background: 'rgba(15, 23, 42, 0.75)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '20px',
-    zIndex: 9999
-  },
-  modal: {
-    background: '#fff',
-    width: 'min(980px, 96vw)',
-    maxHeight: '90vh',
-    overflowY: 'auto',
-    borderRadius: '22px',
-    padding: '28px',
-    boxShadow: '0 20px 60px rgba(0,0,0,0.35)'
-  },
-  modalHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    gap: '20px',
-    alignItems: 'flex-start'
-  },
-  modalTitle: {
-    color: '#0B3D91',
-    margin: 0
-  },
-  modalSubtitle: {
-    color: '#64748b'
-  },
-  closeButton: {
     background: '#dc2626',
     color: '#fff',
     border: 'none',
     borderRadius: '10px',
     padding: '10px 14px',
-    cursor: 'pointer',
-    fontWeight: '900'
-  },
-  modalGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-    gap: '12px',
-    marginTop: '20px'
-  },
-  infoBox: {
-    background: '#f8fbff',
-    border: '1px solid #dbeafe',
-    borderRadius: '12px',
-    padding: '12px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '5px'
-  },
-  modalSection: {
-    marginTop: '20px',
-    background: '#f8fbff',
-    border: '1px solid #dbeafe',
-    borderRadius: '14px',
-    padding: '16px'
-  },
-  modalSectionTitle: {
-    color: '#0B3D91',
-    marginTop: 0
-  },
-  obs: {
-    color: '#475569',
-    lineHeight: '1.6'
-  },
-  fileButton: {
-    display: 'block',
-    width: '100%',
-    marginTop: '8px',
-    background: '#eef6ff',
-    color: '#0B3D91',
-    border: '1px solid #bfdbfe',
-    borderRadius: '10px',
-    padding: '10px',
-    textAlign: 'left',
-    cursor: 'pointer',
-    fontWeight: '800'
-  },
-  historyItem: {
-    color: '#475569',
-    margin: '6px 0'
+    fontWeight: '900',
+    cursor: 'pointer'
   }
 }
 

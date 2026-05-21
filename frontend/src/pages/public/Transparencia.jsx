@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { obterTopDoadores } from '../../services/rankingService'
 import { listarPublicacoesTransparencia } from '../../services/transparenciaService'
-import { registrarInteracao } from '../../services/analyticsService'
 
 function Transparencia() {
   const hoje = new Date()
@@ -10,8 +9,8 @@ function Transparencia() {
   const [topDoadores, setTopDoadores] = useState([])
   const [publicacoes, setPublicacoes] = useState([])
   const [mes, setMes] = useState(String(hoje.getMonth() + 1).padStart(2, '0'))
-  const [ano, setAno] = useState(String(hoje.getFullYear()))
-  const [pdfAberto, setPdfAberto] = useState(null)
+  const [ano, setAno] = useState('2025')
+  
 
   useEffect(() => {
     setTopDoadores(obterTopDoadores(3, mes, ano))
@@ -23,7 +22,9 @@ function Transparencia() {
     setPublicacoes(lista)
   }, [mes, ano])
 
-  const publicacoesDoAno = publicacoes
+  const publicacoesDoAno = publicacoes.filter(
+    (item) => String(item.ano || '') === String(ano)
+  )
 
   function converterValor(valor) {
     if (!valor) return 0
@@ -46,19 +47,41 @@ function Transparencia() {
     })
   }
 
-  const totalArrecadado = publicacoes.reduce(
+
+  function abrirPdf(item) {
+  if (!item.arquivoBase64) {
+    alert('PDF não encontrado. Edite esta publicação no admin e anexe o PDF novamente.')
+    return
+  }
+
+  window.open(item.arquivoBase64, '_blank')
+  }
+
+  function baixarPdf(item) {
+  if (!item.arquivoBase64) {
+    alert('PDF não encontrado. Edite esta publicação no admin e anexe o PDF novamente.')
+    return
+  }
+
+  const link = document.createElement('a')
+  link.href = item.arquivoBase64
+  link.download = item.arquivoNome || `${item.titulo || 'documento'}.pdf`
+  link.click()
+  }
+  
+  const totalArrecadado = publicacoesDoAno.reduce(
     (acc, item) => acc + converterValor(item.valorArrecadado),
     0
   )
 
-  const totalAplicado = publicacoes.reduce(
+  const totalAplicado = publicacoesDoAno.reduce(
     (acc, item) => acc + converterValor(item.valorAplicado),
     0
   )
 
   const saldo = totalArrecadado - totalAplicado
 
-  const dadosPorPublicacao = publicacoes.map((item, index) => {
+  const dadosPorPublicacao = publicacoesDoAno.map((item, index) => {
     const arrecadado = converterValor(item.valorArrecadado)
     const aplicado = converterValor(item.valorAplicado)
     const resultado = arrecadado - aplicado
@@ -72,23 +95,12 @@ function Transparencia() {
     }
   })
 
-  function abrirPdf(item) {
-    if (!item.arquivoNome) return
-    setPdfAberto(item)
-  }
-
-  function baixarPdf(item) {
-    const link = document.createElement('a')
-    link.href = item.arquivoNome
-    link.download = `${item.titulo}.pdf`
-    link.click()
-  }
-
   return (
     <main style={styles.page}>
       <div style={styles.container}>
         <header style={styles.header}>
           <h1 style={styles.title}>Transparência</h1>
+
           <p style={styles.subtitle}>
             Acompanhe documentos, relatórios, prestações de contas e informações
             públicas sobre a atuação institucional.
@@ -97,6 +109,7 @@ function Transparencia() {
 
         <section style={styles.infoCard}>
           <h2 style={styles.sectionTitle}>Compromisso com a transparência</h2>
+
           <p style={styles.text}>
             A instituição valoriza a clareza na gestão dos recursos e disponibiliza
             informações públicas para fortalecer a confiança da sociedade,
@@ -206,24 +219,20 @@ function Transparencia() {
                     </div>
                   )}
 
-                  {item.arquivoNome && (
+                  {item.arquivoBase64 ? (
                     <div style={styles.pdfActions}>
-                      <button
-                        type="button"
-                        style={styles.viewButton}
-                        onClick={() => abrirPdf(item)}
-                      >
+                      <button type="button" style={styles.viewButton} onClick={() => abrirPdf(item)}>
                         Visualizar documento
                       </button>
 
-                      <button
-                        type="button"
-                        style={styles.downloadButton}
-                        onClick={() => baixarPdf(item)}
-                      >
+                      <button type="button" style={styles.downloadButton} onClick={() => baixarPdf(item)}>
                         Baixar PDF
                       </button>
                     </div>
+                  ) : (
+                    <p style={styles.warningText}>
+                      Documento sem PDF anexado. Atualize esta publicação no painel administrativo.
+                    </p>
                   )}
                 </article>
               ))
@@ -241,11 +250,7 @@ function Transparencia() {
             </div>
 
             <div style={styles.filters}>
-              <select
-                value={mes}
-                onChange={(e) => setMes(e.target.value)}
-                style={styles.input}
-              >
+              <select value={mes} onChange={(e) => setMes(e.target.value)} style={styles.input}>
                 <option value="01">Janeiro</option>
                 <option value="02">Fevereiro</option>
                 <option value="03">Março</option>
@@ -260,25 +265,20 @@ function Transparencia() {
                 <option value="12">Dezembro</option>
               </select>
 
-              <input
-                value={ano}
-                onChange={(e) => setAno(e.target.value)}
-                style={styles.input}
-                placeholder="Ano"
-              />
+              <input value={ano} onChange={(e) => setAno(e.target.value)} style={styles.input} placeholder="Ano" />
             </div>
           </div>
 
           <div style={styles.rankingGrid}>
             {topDoadores.length === 0 ? (
-              <p style={styles.rankingText}>
-                Ainda não há doadores destacados neste período.
-              </p>
+              <p style={styles.rankingText}>Ainda não há doadores destacados neste período.</p>
             ) : (
               topDoadores.map((doador, index) => (
                 <div key={doador.nome} style={styles.rankingCard}>
                   <div style={styles.medal}>{getMedalha(index)}</div>
+
                   <h3 style={styles.rankingPosition}>{index + 1}º lugar</h3>
+
                   <p style={styles.rankingName}>{doador.nome}</p>
 
                   <p style={styles.rankingText}>
@@ -310,43 +310,6 @@ function Transparencia() {
           </div>
         </section>
       </div>
-
-      {pdfAberto && (
-        <div style={styles.modalOverlay}>
-          <div style={styles.modal}>
-            <div style={styles.modalHeader}>
-              <div>
-                <h2 style={styles.modalTitle}>{pdfAberto.titulo}</h2>
-                <p style={styles.modalSubtitle}>
-                  Documento público de transparência institucional.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                style={styles.closeButton}
-                onClick={() => setPdfAberto(null)}
-              >
-                Fechar
-              </button>
-            </div>
-
-            <iframe
-              src={pdfAberto.arquivoNome}
-              title={pdfAberto.titulo}
-              style={styles.pdfFrame}
-            />
-
-            <button
-              type="button"
-              style={styles.downloadButton}
-              onClick={() => baixarPdf(pdfAberto)}
-            >
-              Baixar documento
-            </button>
-          </div>
-        </div>
-      )}
     </main>
   )
 }
@@ -460,14 +423,7 @@ function LinhaGrafico({ titulo, subtitulo, dados, linhas }) {
           )}
 
           {dados.map((item, index) => (
-            <text
-              key={index}
-              x={getX(index)}
-              y={altura - 8}
-              textAnchor="middle"
-              fontSize="11"
-              fill="#475569"
-            >
+            <text key={index} x={getX(index)} y={altura - 8} textAnchor="middle" fontSize="11" fill="#475569">
               {index + 1}
             </text>
           ))}
@@ -503,6 +459,12 @@ const styles = {
   },
   sectionTitle: { margin: 0, color: '#0B3D91' },
   text: { marginTop: '12px', color: '#374151', lineHeight: '1.7' },
+  warningText: {
+    marginTop: '14px',
+    color: '#dc2626',
+    fontWeight: '800',
+    fontSize: '14px'
+  },
   cardsResumo: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',

@@ -284,25 +284,46 @@ function HomeCard({ image, title, text, link, button }) {
   )
 }
 
-function NewsCard({ image, date, title, text, categoria, id }) {
+function NewsCard({
+  image,
+  date,
+  title,
+  text,
+  categoria,
+  id
+}) {
+  const resumo =
+    text?.length > 120
+      ? text.slice(0, 120) + '...'
+      : text
+
   return (
     <article className="news-card">
       <img src={image} alt={title} />
 
       <span>{date}</span>
 
-      <div>
+      <div className="news-content">
         <h3>{title}</h3>
-        <p>{text}</p>
+
+        <p className="news-resumo">
+          {resumo}
+        </p>
 
         <div className="news-card-links">
-          <Link to={`/noticias/${id}`} className="news-read-link">
-            Leia mais →
+          <Link
+            to={`/noticias/${id}`}
+            className="news-read-link"
+          >
+            Ler mais →
           </Link>
 
           {categoria === 'Vagas' && (
-            <Link to="/vagas" className="news-job-link">
-              Envie-nos seu currículo aqui →
+            <Link
+              to="/vagas"
+              className="news-job-link"
+            >
+              Enviar currículo →
             </Link>
           )}
         </div>
