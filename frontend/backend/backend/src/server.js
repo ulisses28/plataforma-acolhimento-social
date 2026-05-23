@@ -1,29 +1,29 @@
 import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
-import mongoose from 'mongoose'
+
+import { conectarBanco } from './config/db.js'
+import noticiaRoutes from './routes/noticiaRoutes.js'
+import vagaRoutes from './routes/vagaRoutes.js'
 
 dotenv.config()
 
 const app = express()
 
 app.use(cors())
-app.use(express.json())
+app.use(express.json({ limit: '10mb' }))
 
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log('✅ MongoDB conectado')
-  })
-  .catch((error) => {
-    console.log('❌ Erro MongoDB:', error)
-  })
+app.use('/api/noticias', noticiaRoutes)
+app.use('/api/vagas', vagaRoutes)
 
 app.get('/', (req, res) => {
   res.json({
-    status: 'Backend funcionando 🚀'
+    status: 'Backend funcionando 🚀',
+    banco: 'MongoDB conectado ✅'
   })
 })
+
+await conectarBanco()
 
 const PORT = process.env.PORT || 3333
 
