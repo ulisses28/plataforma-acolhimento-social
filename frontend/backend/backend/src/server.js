@@ -7,6 +7,7 @@ import noticiaRoutes from './routes/noticiaRoutes.js'
 import vagaRoutes from './routes/vagaRoutes.js'
 import curriculoRoutes from './routes/curriculoRoutes.js'
 import necessidadeRoutes from './routes/necessidadeRoutes.js'
+import parceiroRoutes from './routes/parceiroRoutes.js'
 
 dotenv.config()
 
@@ -19,6 +20,7 @@ app.use('/api/noticias', noticiaRoutes)
 app.use('/api/vagas', vagaRoutes)
 app.use('/api/curriculos', curriculoRoutes)
 app.use('/api/necessidades', necessidadeRoutes)
+app.use('/api/parceiros', parceiroRoutes)
 
 app.get('/', (req, res) => {
   res.json({
