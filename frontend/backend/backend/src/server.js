@@ -9,6 +9,8 @@ import curriculoRoutes from './routes/curriculoRoutes.js'
 import necessidadeRoutes from './routes/necessidadeRoutes.js'
 import parceiroRoutes from './routes/parceiroRoutes.js'
 import transparenciaRoutes from './routes/transparenciaRoutes.js'
+import authRoutes from './routes/authRoutes.js'
+import uploadRoutes from './routes/uploadRoutes.js'
 
 dotenv.config()
 
@@ -23,6 +25,9 @@ app.use('/api/curriculos', curriculoRoutes)
 app.use('/api/necessidades', necessidadeRoutes)
 app.use('/api/parceiros', parceiroRoutes)
 app.use('/api/transparencia',transparenciaRoutes)
+app.use('/api/auth', authRoutes)
+app.use('/api/upload', uploadRoutes)
+app.use('/uploads', express.static('src/uploads'))
 
 app.get('/', (req, res) => {
   res.json({

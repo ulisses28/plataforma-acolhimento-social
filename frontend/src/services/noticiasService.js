@@ -1,43 +1,23 @@
-const STORAGE_KEY = 'noticias_lar_batista'
+import { apiGet, apiPost, apiPut, apiDelete } from './api'
 
 export function listarNoticias() {
-  const dados = localStorage.getItem(STORAGE_KEY)
-  return dados ? JSON.parse(dados) : []
+  return apiGet('/noticias')
 }
 
 export function buscarNoticiaPorId(id) {
-  const noticias = listarNoticias()
-  return noticias.find((item) => String(item.id) === String(id))
+  return apiGet(`/noticias/${id}`)
 }
 
 export function salvarNoticia(noticia) {
-  const noticias = listarNoticias()
-
-  const novaNoticia = {
-    id: Date.now(),
-    ...noticia,
-    criadoEm: new Date().toLocaleString('pt-BR')
-  }
-
-  localStorage.setItem(STORAGE_KEY, JSON.stringify([novaNoticia, ...noticias]))
-  return novaNoticia
+  return apiPost('/noticias', noticia)
 }
 
 export function atualizarNoticia(noticiaAtualizada) {
-  const noticias = listarNoticias()
-
-  const atualizadas = noticias.map((item) =>
-    item.id === noticiaAtualizada.id ? noticiaAtualizada : item
-  )
-
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(atualizadas))
+  return apiPut(`/noticias/${noticiaAtualizada._id || noticiaAtualizada.id}`, noticiaAtualizada)
 }
 
 export function excluirNoticia(id) {
-  const noticias = listarNoticias()
-  const atualizadas = noticias.filter((item) => item.id !== id)
-
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(atualizadas))
+  return apiDelete(`/noticias/${id}`)
 }
 
 export function lerMidiaComoBase64(arquivo) {
