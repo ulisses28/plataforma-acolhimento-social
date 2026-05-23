@@ -8,6 +8,7 @@ import vagaRoutes from './routes/vagaRoutes.js'
 import curriculoRoutes from './routes/curriculoRoutes.js'
 import necessidadeRoutes from './routes/necessidadeRoutes.js'
 import parceiroRoutes from './routes/parceiroRoutes.js'
+import transparenciaRoutes from './routes/transparenciaRoutes.js'
 
 dotenv.config()
 
@@ -21,6 +22,7 @@ app.use('/api/vagas', vagaRoutes)
 app.use('/api/curriculos', curriculoRoutes)
 app.use('/api/necessidades', necessidadeRoutes)
 app.use('/api/parceiros', parceiroRoutes)
+app.use('/api/transparencia',transparenciaRoutes)
 
 app.get('/', (req, res) => {
   res.json({
