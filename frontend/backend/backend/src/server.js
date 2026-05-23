@@ -5,6 +5,7 @@ import dotenv from 'dotenv'
 import { conectarBanco } from './config/db.js'
 import noticiaRoutes from './routes/noticiaRoutes.js'
 import vagaRoutes from './routes/vagaRoutes.js'
+import curriculoRoutes from './routes/curriculoRoutes.js'
 
 dotenv.config()
 
@@ -15,6 +16,7 @@ app.use(express.json({ limit: '10mb' }))
 
 app.use('/api/noticias', noticiaRoutes)
 app.use('/api/vagas', vagaRoutes)
+app.use('/api/curriculos', curriculoRoutes) 
 
 app.get('/', (req, res) => {
   res.json({
