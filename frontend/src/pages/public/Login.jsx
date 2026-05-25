@@ -11,16 +11,7 @@ function Login() {
         </p>
 
         <div style={styles.cards}>
-          <div style={styles.card}>
-            <h2 style={styles.cardTitle}>Administrador</h2>
-            <p style={styles.cardText}>
-              Acesso da instituição para gerenciar doadores, parceiros, notícias,
-              necessidades e informações do site.
-            </p>
-            <Link to="/admin/login" style={styles.primaryButton}>
-              Entrar como administrador
-            </Link>
-          </div>
+          
 
           <div style={styles.card}>
             <h2 style={styles.cardTitle}>Doador</h2>
@@ -63,16 +54,18 @@ const styles = {
     marginBottom: '35px'
   },
   cards: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-    gap: '24px'
+  maxWidth: '620px',
+  margin: '35px auto 0',
+  display: 'flex',
+  justifyContent: 'center'
   },
+
   card: {
-    backgroundColor: '#ffffff',
-    borderRadius: '20px',
-    padding: '30px',
-    boxShadow: '0 4px 18px rgba(0,0,0,0.08)',
-    textAlign: 'left'
+    width: '100%',
+    background: '#fff',
+    borderRadius: '22px',
+    padding: '34px',
+    boxShadow: '0 10px 28px rgba(0,0,0,0.08)'
   },
   cardTitle: {
     color: '#0B3D91',

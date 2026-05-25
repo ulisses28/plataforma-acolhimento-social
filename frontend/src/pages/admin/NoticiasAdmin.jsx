@@ -12,6 +12,7 @@ function NoticiasAdmin() {
   const [noticias, setNoticias] = useState([])
   const [mostrarFormulario, setMostrarFormulario] = useState(false)
   const [editandoId, setEditandoId] = useState(null)
+  const [carregando, setCarregando] = useState(false)
   const editorRef = useRef(null)
 
   const formInicial = {
@@ -32,13 +33,22 @@ function NoticiasAdmin() {
   }, [])
 
   useEffect(() => {
-    if (mostrarFormulario && editorRef.current) {
-      editorRef.current.innerHTML = form.conteudo || ''
-    }
+  if (mostrarFormulario && editorRef.current) {
+    editorRef.current.innerHTML = form.conteudo || ''
+  }
   }, [mostrarFormulario, editandoId])
 
-  function carregarNoticias() {
-    setNoticias(listarNoticias())
+  async function carregarNoticias() {
+    try {
+      setCarregando(true)
+      const dados = await listarNoticias()
+      setNoticias(Array.isArray(dados) ? dados : [])
+    } catch (error) {
+      console.error('Erro ao carregar notícias:', error)
+      setNoticias([])
+    } finally {
+      setCarregando(false)
+    }
   }
 
   function alterarCampo(campo, valor) {
@@ -87,7 +97,7 @@ function NoticiasAdmin() {
     }
   }
 
-  function salvar(e) {
+  async function salvar(e) {
     e.preventDefault()
 
     if (!form.titulo.trim()) return alert('Informe o título.')
@@ -95,22 +105,33 @@ function NoticiasAdmin() {
     if (!form.conteudo.trim()) return alert('Informe o conteúdo.')
 
     const dados = {
-      ...form,
+      titulo: form.titulo,
+      categoria: form.categoria,
+      areaPublicacao: form.areaPublicacao,
+      resumo: form.resumo,
+      conteudo: form.conteudo,
       youtubeUrl: form.youtubeUrl || '',
+      midias: form.midias || [],
       midia: form.midias?.[0]?.base64 || '',
-      tipoMidia: form.midias?.[0]?.tipo || ''
+      tipoMidia: form.midias?.[0]?.tipo || '',
+      status: form.status
     }
 
-    if (editandoId) {
-      atualizarNoticia({ ...dados, id: editandoId })
-      alert('Publicação atualizada com sucesso!')
-    } else {
-      salvarNoticia(dados)
-      alert('Publicação cadastrada com sucesso!')
-    }
+    try {
+      if (editandoId) {
+        await atualizarNoticia({ ...dados, _id: editandoId })
+        alert('Publicação atualizada com sucesso!')
+      } else {
+        await salvarNoticia(dados)
+        alert('Publicação cadastrada com sucesso!')
+      }
 
-    limparFormulario()
-    carregarNoticias()
+      limparFormulario()
+      await carregarNoticias()
+    } catch (error) {
+      console.error('Erro ao salvar notícia:', error)
+      alert('Erro ao salvar publicação. Verifique se o backend está rodando.')
+    }
   }
 
   function editar(item) {
@@ -125,15 +146,21 @@ function NoticiasAdmin() {
       status: item.status || 'Publicado'
     })
 
-    setEditandoId(item.id)
+    setEditandoId(item._id || item.id)
     setMostrarFormulario(true)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  function remover(id) {
+  async function remover(id) {
     if (!confirm('Deseja remover esta publicação?')) return
-    excluirNoticia(id)
-    carregarNoticias()
+
+    try {
+      await excluirNoticia(id)
+      await carregarNoticias()
+    } catch (error) {
+      console.error('Erro ao remover notícia:', error)
+      alert('Erro ao remover publicação.')
+    }
   }
 
   function aplicarComando(comando) {
@@ -188,6 +215,14 @@ function NoticiasAdmin() {
     }
 
     return url
+  }
+
+  function formatarData(item) {
+    if (item.createdAt) {
+      return new Date(item.createdAt).toLocaleDateString('pt-BR')
+    }
+
+    return item.criadoEm || 'Publicação'
   }
 
   return (
@@ -299,12 +334,13 @@ function NoticiasAdmin() {
               </div>
 
               <div
-                ref={editorRef}
-                contentEditable
-                suppressContentEditableWarning
-                style={styles.editor}
-                onInput={atualizarConteudoEditor}
-              />
+              ref={editorRef}
+              contentEditable
+              suppressContentEditableWarning
+              spellCheck={true}
+              style={styles.editor}
+              onInput={atualizarConteudoEditor}
+            />
             </div>
 
             <label style={styles.label}>Link do YouTube opcional</label>
@@ -387,12 +423,14 @@ function NoticiasAdmin() {
         <section style={styles.listCard}>
           <h2 style={styles.sectionTitle}>Publicações cadastradas</h2>
 
-          {noticias.length === 0 ? (
+          {carregando ? (
+            <p style={styles.emptyText}>Carregando publicações...</p>
+          ) : noticias.length === 0 ? (
             <p style={styles.emptyText}>Nenhuma publicação cadastrada ainda.</p>
           ) : (
             <div style={styles.newsGrid}>
               {noticias.map((item) => (
-                <article key={item.id} style={styles.newsCard}>
+                <article key={item._id || item.id} style={styles.newsCard}>
                   {item.youtubeUrl ? (
                     <iframe
                       src={converterYoutubeEmbed(item.youtubeUrl)}
@@ -413,7 +451,7 @@ function NoticiasAdmin() {
                   <h3 style={styles.newsTitle}>{item.titulo}</h3>
 
                   <p style={styles.newsMeta}>
-                    {item.categoria} • {item.areaPublicacao || 'Últimas Notícias'} • {item.criadoEm}
+                    {item.categoria} • {item.areaPublicacao || 'Últimas Notícias'} • {formatarData(item)}
                   </p>
 
                   <p style={styles.newsText}>{item.resumo}</p>
@@ -423,7 +461,11 @@ function NoticiasAdmin() {
                       ✏️ Editar
                     </button>
 
-                    <button type="button" style={styles.deleteButton} onClick={() => remover(item.id)}>
+                    <button
+                      type="button"
+                      style={styles.deleteButton}
+                      onClick={() => remover(item._id || item.id)}
+                    >
                       🗑 Remover
                     </button>
                   </div>
@@ -451,10 +493,10 @@ const styles = {
   input: { width: '100%', minHeight: '46px', borderRadius: '10px', border: '1px solid #bfdbfe', background: '#f8fbff', padding: '0 12px', boxSizing: 'border-box' },
   textarea: { width: '100%', minHeight: '90px', borderRadius: '10px', border: '1px solid #bfdbfe', background: '#f8fbff', padding: '12px', boxSizing: 'border-box', resize: 'vertical' },
   editorBox: { border: '1px solid #bfdbfe', borderRadius: '14px', overflow: 'hidden', background: '#fff' },
-  toolbar: { display: 'flex', flexWrap: 'wrap', gap: '6px', padding: '10px', borderBottom: '1px solid #dbeafe', background: '#eef6ff' },
+  toolbar: {display: 'flex', flexWrap: 'wrap', gap: '10px', padding: '14px', borderBottom: '1px solid #dbeafe', background: '#f8fbff', position: 'sticky', top: 0, zIndex: 10 },
   toolButton: { border: '1px solid #bfdbfe', background: '#fff', color: '#0B3D91', borderRadius: '6px', padding: '6px 10px', fontWeight: '800', cursor: 'pointer', minWidth: '42px' },
   toolSelect: { border: '1px solid #bfdbfe', background: '#fff', color: '#0B3D91', borderRadius: '6px', padding: '6px 10px', fontWeight: '800', cursor: 'pointer', minWidth: '120px' },
-  editor: { minHeight: '260px', padding: '18px', outline: 'none', fontSize: '16px', lineHeight: '1.7', color: '#1e293b' },
+  editor: {minHeight: '320px', padding: '22px', outline: 'none', fontSize: '17px', lineHeight: '1.9', color: '#1e293b', background: '#ffffff', caretColor: '#0B3D91', overflowY: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: 'Arial, sans-serif'},
   youtubePreview: { marginTop: '12px', background: '#f8fbff', border: '1px solid #dbeafe', borderRadius: '14px', padding: '12px' },
   youtubeIframe: { width: '100%', height: '320px', border: 'none', borderRadius: '12px' },
   helperText: { color: '#64748b', fontSize: '13px', marginTop: '8px' },
@@ -466,13 +508,13 @@ const styles = {
   saveButton: { background: '#16a34a', color: '#fff', border: 'none', borderRadius: '12px', padding: '13px 18px', fontWeight: '900', cursor: 'pointer' },
   cancelButton: { background: '#dc2626', color: '#fff', border: 'none', borderRadius: '12px', padding: '13px 18px', fontWeight: '900', cursor: 'pointer' },
   emptyText: { color: '#64748b' },
-  newsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '18px' },
-  newsCard: { background: '#f8fbff', border: '1px solid #dbeafe', borderRadius: '18px', padding: '18px' },
-  cardMedia: { width: '100%', height: '190px', objectFit: 'cover', border: 'none', borderRadius: '14px', marginBottom: '12px' },
+  newsGrid: {display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '24px' },
+  newsCard: {background: '#ffffff', border: '1px solid #dbeafe', borderRadius: '22px', padding: '22px', boxShadow: '0 8px 20px rgba(15,23,42,0.06)', transition: '0.3s' },
+  cardMedia: {width: '100%', height: '260px', objectFit: 'contain', background: '#ffffff', border: '1px solid #dbeafe', borderRadius: '16px', marginBottom: '14px', padding: '8px' },
   badge: { background: '#ffc928', color: '#002855', padding: '6px 10px', borderRadius: '999px', fontWeight: '900', fontSize: '12px' },
-  newsTitle: { color: '#0B3D91', marginBottom: '6px' },
+  newsTitle: {color: '#0B3D91', marginBottom: '10px', fontSize: '1.7rem', lineHeight: '1.4', fontWeight: '900'},
   newsMeta: { color: '#64748b', fontSize: '14px' },
-  newsText: { color: '#334155', lineHeight: '1.6' },
+  newsText: {color: '#475569', lineHeight: '1.8', marginTop: '12px', minHeight: '90px', fontSize: '15px'},
   cardActions: { display: 'flex', gap: '10px', marginTop: '14px', flexWrap: 'wrap' },
   editButton: { background: '#16a34a', color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 14px', fontWeight: '900', cursor: 'pointer' },
   deleteButton: { background: '#dc2626', color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 14px', fontWeight: '900', cursor: 'pointer' }

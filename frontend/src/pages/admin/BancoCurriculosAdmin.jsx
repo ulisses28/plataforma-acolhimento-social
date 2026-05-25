@@ -26,12 +26,26 @@ function BancoCurriculosAdmin() {
     setCurriculos(lista)
   }
 
-  const vagas = useMemo(() => {
-    const noticias = listarNoticias()
+  const [vagas, setVagas] = useState([])
 
-    return noticias.filter(
-      (item) => item.tipo === 'vaga'
-    )
+  useEffect(() => {
+    async function carregarVagas() {
+      try {
+        const noticias = await listarNoticias()
+
+        const vagasFiltradas = noticias.filter(
+          (item) =>
+            item.tipo === 'vaga' ||
+            item.categoria === 'Vagas'
+        )
+
+        setVagas(vagasFiltradas)
+      } catch (error) {
+        console.error(error)
+      }
+    }
+
+    carregarVagas()
   }, [])
 
   function alterarStatus(id, status) {

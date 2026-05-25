@@ -2,6 +2,11 @@ const API_URL = 'http://localhost:3333/api'
 
 export async function apiGet(endpoint) {
   const response = await fetch(`${API_URL}${endpoint}`)
+
+  if (!response.ok) {
+    throw new Error('Erro ao buscar dados da API')
+  }
+
   return response.json()
 }
 
@@ -13,6 +18,10 @@ export async function apiPost(endpoint, data) {
     },
     body: JSON.stringify(data)
   })
+
+  if (!response.ok) {
+    throw new Error('Erro ao salvar dados na API')
+  }
 
   return response.json()
 }
