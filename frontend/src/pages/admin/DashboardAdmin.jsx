@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 import BackButton from '../../components/ui/BackButton'
 
@@ -36,6 +36,13 @@ function DashboardAdmin() {
   useEffect(() => {
     carregarDashboard()
   }, [])
+  const navigate = useNavigate()
+
+  function logoutAdmin() {
+  localStorage.removeItem('admin-auth')
+
+  navigate('/admin/login')
+  }
 
   function carregarDashboard() {
     setDoacoes([...listarDoacoes()])
@@ -139,15 +146,23 @@ function DashboardAdmin() {
         <BackButton />
 
         <header style={styles.header}>
-          <h1 style={styles.title}>
-            Dashboard Administrativo
-          </h1>
+        <h1 style={styles.title}>
+          Dashboard Administrativo
+        </h1>
 
-          <p style={styles.subtitle}>
-            Gerencie a operação da instituição
-            e acompanhe indicadores em tempo real.
-          </p>
-        </header>
+        <p style={styles.subtitle}>
+          Gerencie a operação da instituição
+          e acompanhe indicadores em tempo real.
+        </p>
+
+        <button
+          type="button"
+          onClick={logoutAdmin}
+          style={styles.logoutButton}
+        >
+          Sair do painel
+        </button>
+      </header>
 
         {/* INDICADORES */}
 
@@ -966,7 +981,17 @@ historyLink: {
   padding: '12px 16px',
   borderRadius: '10px',
   fontWeight: '900'
-}
+},
+logoutButton: {
+  marginTop: '18px',
+  background: '#dc2626',
+  color: '#fff',
+  border: 'none',
+  borderRadius: '10px',
+  padding: '12px 18px',
+  fontWeight: '800',
+  cursor: 'pointer'
+},
 }
 
 export default DashboardAdmin

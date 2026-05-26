@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+
 import Navbar from './components/layout/Navbar'
 import Footer from './components/layout/Footer'
 
@@ -10,15 +11,17 @@ import Voluntario from './pages/public/Voluntario'
 import Parceiros from './pages/public/Parceiros'
 import Login from './pages/public/Login'
 import DoarAgora from './pages/public/DoarAgora'
-import AdminLogin from './pages/admin/AdminLogin'
 import DoadorLogin from './pages/public/DoadorLogin'
 import PainelDoadorPublico from './pages/public/PainelDoadorPublico'
 import Vagas from './pages/public/Vagas'
 import Noticias from './pages/public/Noticias'
 import NoticiaDetalhe from './pages/public/NoticiaDetalhe'
-import AssistenteVirtual from './components/ui/AssistenteVirtual'
 import Tutorial from './pages/public/Tutorial'
+import NossasNecessidades from './pages/public/NossasNecessidades'
 
+import AssistenteVirtual from './components/ui/AssistenteVirtual'
+
+import AdminLogin from './pages/admin/AdminLogin'
 import DashboardAdmin from './pages/admin/DashboardAdmin'
 import ParceirosAdmin from './pages/admin/ParceirosAdmin'
 import DoadoresAdmin from './pages/admin/DoadoresAdmin'
@@ -27,11 +30,12 @@ import RelatoriosAdmin from './pages/admin/RelatoriosAdmin'
 import PendentesAdmin from './pages/admin/PendentesAdmin'
 import DoadorDetalheAdmin from './pages/admin/DoadorDetalheAdmin'
 import GraficosAdmin from './pages/admin/GraficosAdmin'
-import NossasNecessidades from './pages/public/NossasNecessidades'
 import NoticiasAdmin from './pages/admin/NoticiasAdmin'
 import VagasAdmin from './pages/admin/VagasAdmin'
 import BancoCurriculosAdmin from './pages/admin/BancoCurriculosAdmin'
 import HistoricoNecessidadesAdmin from './pages/admin/HistoricoNecessidadesAdmin'
+
+import ProtectedAdminRoute from './routes/ProtectedAdminRoute'
 
 function Layout() {
   const location = useLocation()
@@ -46,41 +50,205 @@ function Layout() {
       {mostrarLayoutPublico && <Navbar />}
 
       <Routes>
+        {/* ROTAS PÚBLICAS */}
+
         <Route path="/" element={<Home />} />
-        <Route path="/quem-somos" element={<QuemSomos />} />
-        <Route path="/projetos" element={<Projetos />} />
-        <Route path="/transparencia" element={<Transparencia />} />
-        <Route path="/voluntario" element={<Voluntario />} />
-        <Route path="/parceiros" element={<Parceiros />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/doar-agora" element={<DoarAgora />} />
-        <Route path="/necessidades" element={<NossasNecessidades />} />
-        <Route path="/admin/login" element={<AdminLogin />} />
-        <Route path="/doador/login" element={<DoadorLogin />} />
-        <Route path="/doador/painel" element={<PainelDoadorPublico />} />
-        <Route path="/vagas" element={<Vagas />} />
-        <Route path="/noticias" element={<Noticias />} />
-        <Route path="/noticias/:id" element={<NoticiaDetalhe />} />
-        <Route path="/tutorial" element={<Tutorial />} />
 
-        <Route path="/admin/dashboard" element={<DashboardAdmin />} />
-        <Route path="/admin/parceiros" element={<ParceirosAdmin />} />
-        <Route path="/admin/doadores" element={<DoadoresAdmin />} />
-        <Route path="/admin/doadores/:id" element={<DoadorDetalheAdmin />} />
-        <Route path="/admin/prestacao-contas" element={<PrestacaoContasAdmin />} />
-        <Route path="/admin/relatorios" element={<RelatoriosAdmin />} />
-        <Route path="/admin/pendentes" element={<PendentesAdmin />} />
-        <Route path="/admin/graficos" element={<GraficosAdmin />} />
-        <Route path="/nossas-necessidades" element={<NossasNecessidades />} />
-        <Route path="/admin/noticias" element={<NoticiasAdmin />} />
-        <Route path="/admin/vagas" element={<VagasAdmin />} />
-        <Route path="/admin/banco-curriculos" element={<BancoCurriculosAdmin />} />
-        <Route path="/admin/necessidades/historico" element={<HistoricoNecessidadesAdmin />}/>
+        <Route
+          path="/quem-somos"
+          element={<QuemSomos />}
+        />
 
-      
+        <Route
+          path="/projetos"
+          element={<Projetos />}
+        />
+
+        <Route
+          path="/transparencia"
+          element={<Transparencia />}
+        />
+
+        <Route
+          path="/voluntario"
+          element={<Voluntario />}
+        />
+
+        <Route
+          path="/parceiros"
+          element={<Parceiros />}
+        />
+
+        <Route
+          path="/login"
+          element={<Login />}
+        />
+
+        <Route
+          path="/doar-agora"
+          element={<DoarAgora />}
+        />
+
+        <Route
+          path="/necessidades"
+          element={<NossasNecessidades />}
+        />
+
+        <Route
+          path="/nossas-necessidades"
+          element={<NossasNecessidades />}
+        />
+
+        <Route
+          path="/doador/login"
+          element={<DoadorLogin />}
+        />
+
+        <Route
+          path="/doador/painel"
+          element={<PainelDoadorPublico />}
+        />
+
+        <Route
+          path="/vagas"
+          element={<Vagas />}
+        />
+
+        <Route
+          path="/noticias"
+          element={<Noticias />}
+        />
+
+        <Route
+          path="/noticias/:id"
+          element={<NoticiaDetalhe />}
+        />
+
+        <Route
+          path="/tutorial"
+          element={<Tutorial />}
+        />
+
+        {/* LOGIN ADMIN */}
+
+        <Route
+          path="/admin/login"
+          element={<AdminLogin />}
+        />
+
+        {/* ROTAS ADMIN PROTEGIDAS */}
+
+        <Route
+          path="/admin/dashboard"
+          element={
+            <ProtectedAdminRoute>
+              <DashboardAdmin />
+            </ProtectedAdminRoute>
+          }
+        />
+
+        <Route
+          path="/admin/parceiros"
+          element={
+            <ProtectedAdminRoute>
+              <ParceirosAdmin />
+            </ProtectedAdminRoute>
+          }
+        />
+
+        <Route
+          path="/admin/doadores"
+          element={
+            <ProtectedAdminRoute>
+              <DoadoresAdmin />
+            </ProtectedAdminRoute>
+          }
+        />
+
+        <Route
+          path="/admin/doadores/:id"
+          element={
+            <ProtectedAdminRoute>
+              <DoadorDetalheAdmin />
+            </ProtectedAdminRoute>
+          }
+        />
+
+        <Route
+          path="/admin/prestacao-contas"
+          element={
+            <ProtectedAdminRoute>
+              <PrestacaoContasAdmin />
+            </ProtectedAdminRoute>
+          }
+        />
+
+        <Route
+          path="/admin/relatorios"
+          element={
+            <ProtectedAdminRoute>
+              <RelatoriosAdmin />
+            </ProtectedAdminRoute>
+          }
+        />
+
+        <Route
+          path="/admin/pendentes"
+          element={
+            <ProtectedAdminRoute>
+              <PendentesAdmin />
+            </ProtectedAdminRoute>
+          }
+        />
+
+        <Route
+          path="/admin/graficos"
+          element={
+            <ProtectedAdminRoute>
+              <GraficosAdmin />
+            </ProtectedAdminRoute>
+          }
+        />
+
+        <Route
+          path="/admin/noticias"
+          element={
+            <ProtectedAdminRoute>
+              <NoticiasAdmin />
+            </ProtectedAdminRoute>
+          }
+        />
+
+        <Route
+          path="/admin/vagas"
+          element={
+            <ProtectedAdminRoute>
+              <VagasAdmin />
+            </ProtectedAdminRoute>
+          }
+        />
+
+        <Route
+          path="/admin/banco-curriculos"
+          element={
+            <ProtectedAdminRoute>
+              <BancoCurriculosAdmin />
+            </ProtectedAdminRoute>
+          }
+        />
+
+        <Route
+          path="/admin/necessidades/historico"
+          element={
+            <ProtectedAdminRoute>
+              <HistoricoNecessidadesAdmin />
+            </ProtectedAdminRoute>
+          }
+        />
       </Routes>
 
       {mostrarLayoutPublico && <Footer />}
+
       {!isAdmin && <AssistenteVirtual />}
     </>
   )
