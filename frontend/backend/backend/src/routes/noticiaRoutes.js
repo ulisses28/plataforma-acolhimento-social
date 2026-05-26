@@ -11,9 +11,13 @@ import {
 const router = express.Router()
 
 router.get('/', listarNoticias)
+
 router.post('/', criarNoticia)
+
 router.get('/:id', buscarNoticia)
+
 router.put('/:id', atualizarNoticia)
+
 router.delete('/:id', excluirNoticia)
 
 export default router

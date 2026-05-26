@@ -1,42 +1,60 @@
 import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
+import mongoose from 'mongoose'
 
-import { conectarBanco } from './config/db.js'
 import noticiaRoutes from './routes/noticiaRoutes.js'
-import vagaRoutes from './routes/vagaRoutes.js'
-import curriculoRoutes from './routes/curriculoRoutes.js'
-import necessidadeRoutes from './routes/necessidadeRoutes.js'
-import parceiroRoutes from './routes/parceiroRoutes.js'
-import transparenciaRoutes from './routes/transparenciaRoutes.js'
-import authRoutes from './routes/authRoutes.js'
-import uploadRoutes from './routes/uploadRoutes.js'
 
 dotenv.config()
 
 const app = express()
 
 app.use(cors())
-app.use(express.json({ limit: '10mb' }))
 
-app.use('/api/noticias', noticiaRoutes)
-app.use('/api/vagas', vagaRoutes)
-app.use('/api/curriculos', curriculoRoutes)
-app.use('/api/necessidades', necessidadeRoutes)
-app.use('/api/parceiros', parceiroRoutes)
-app.use('/api/transparencia',transparenciaRoutes)
-app.use('/api/auth', authRoutes)
-app.use('/api/upload', uploadRoutes)
-app.use('/uploads', express.static('src/uploads'))
+app.use(express.json({
+  limit: '50mb'
+}))
+
+/*
+|--------------------------------------------------------------------------
+| CONEXÃO MONGODB
+|--------------------------------------------------------------------------
+*/
+
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log('✅ MongoDB conectado')
+  })
+  .catch((error) => {
+    console.log('❌ Erro MongoDB:', error)
+  })
+
+/*
+|--------------------------------------------------------------------------
+| ROTA TESTE
+|--------------------------------------------------------------------------
+*/
 
 app.get('/', (req, res) => {
-  res.json({
-    status: 'Backend funcionando 🚀',
-    banco: 'MongoDB conectado ✅'
+  return res.json({
+    status: 'Backend funcionando 🚀'
   })
 })
 
-await conectarBanco()
+/*
+|--------------------------------------------------------------------------
+| ROTAS API
+|--------------------------------------------------------------------------
+*/
+
+app.use('/api/noticias', noticiaRoutes)
+
+/*
+|--------------------------------------------------------------------------
+| PORTA
+|--------------------------------------------------------------------------
+*/
 
 const PORT = process.env.PORT || 3333
 

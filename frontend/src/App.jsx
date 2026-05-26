@@ -18,6 +18,8 @@ import Noticias from './pages/public/Noticias'
 import NoticiaDetalhe from './pages/public/NoticiaDetalhe'
 import Tutorial from './pages/public/Tutorial'
 import NossasNecessidades from './pages/public/NossasNecessidades'
+import DoadorDoar from './pages/public/DoadorDoar'
+import GovernancaInstitucional from './pages/public/GovernancaInstitucional'
 
 import AssistenteVirtual from './components/ui/AssistenteVirtual'
 
@@ -34,7 +36,7 @@ import NoticiasAdmin from './pages/admin/NoticiasAdmin'
 import VagasAdmin from './pages/admin/VagasAdmin'
 import BancoCurriculosAdmin from './pages/admin/BancoCurriculosAdmin'
 import HistoricoNecessidadesAdmin from './pages/admin/HistoricoNecessidadesAdmin'
-
+import GovernancaAdmin from './pages/admin/GovernancaAdmin'
 import ProtectedAdminRoute from './routes/ProtectedAdminRoute'
 
 function Layout() {
@@ -88,7 +90,7 @@ function Layout() {
           path="/doar-agora"
           element={<DoarAgora />}
         />
-
+        <Route path="/doador/doar" element={<DoadorDoar />} />
         <Route
           path="/necessidades"
           element={<NossasNecessidades />}
@@ -128,7 +130,10 @@ function Layout() {
           path="/tutorial"
           element={<Tutorial />}
         />
-
+        <Route
+          path="/governanca-institucional"
+          element={<GovernancaInstitucional />}
+        />
         {/* LOGIN ADMIN */}
 
         <Route
@@ -245,6 +250,15 @@ function Layout() {
             </ProtectedAdminRoute>
           }
         />
+        <Route
+          path="/admin/governanca"
+          element={
+            <ProtectedAdminRoute>
+              <GovernancaAdmin />
+            </ProtectedAdminRoute>
+          }
+        />
+
       </Routes>
 
       {mostrarLayoutPublico && <Footer />}

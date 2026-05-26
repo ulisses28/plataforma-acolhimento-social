@@ -320,7 +320,7 @@ function PainelDoadorPublico() {
               style={styles.botao}
               onClick={() => {
                 registrarInteracao()
-                navigate('/doar-agora')
+                navigate('/doador/doar')
               }}
             >
               Doar agora

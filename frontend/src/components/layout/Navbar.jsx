@@ -14,35 +14,39 @@ function Navbar() {
       </Link>
 
       <nav style={styles.nav}>
-        <Link style={styles.navLink} to="/" onClick={registrarClique}>
-          Home
-        </Link>
+      <Link style={styles.navLink} to="/" onClick={registrarClique}>
+        Home
+      </Link>
 
-        <Link style={styles.navLink} to="/quem-somos" onClick={registrarClique}>
-          Quem Somos
-        </Link>
+      <Link style={styles.navLink} to="/quem-somos" onClick={registrarClique}>
+        Quem Somos
+      </Link>
 
-        <Link style={styles.navLink} to="/projetos" onClick={registrarClique}>
-          Projetos
-        </Link>
+      <Link style={styles.navLink} to="/projetos" onClick={registrarClique}>
+        Projetos
+      </Link>
 
-        <Link style={styles.navLink} to="/transparencia" onClick={registrarClique}>
-          Transparência
-        </Link>
+      <Link style={styles.navLink} to="/transparencia" onClick={registrarClique}>
+        Transparência
+      </Link>
 
-        <Link style={styles.navLink} to="/voluntario" onClick={registrarClique}>
-          Seja um Voluntário
-        </Link>
+      <Link style={styles.navLink} to="/voluntario" onClick={registrarClique}>
+        Seja um Voluntário
+      </Link>
 
-        <Link style={styles.navLink} to="/parceiros" onClick={registrarClique}>
-          Parceiros
-        </Link>
+      <Link style={styles.navLink} to="/parceiros" onClick={registrarClique}>
+        Parceiros
+      </Link>
 
-        <Link style={styles.navLink} to="/tutorial" onClick={registrarClique}>
-          Tutorial
-        </Link>
+      <Link style={styles.navLink} to="/governanca-institucional" onClick={registrarClique}>
+        Governança
+      </Link>
+
+      <Link style={styles.navLink} to="/tutorial" onClick={registrarClique}>
+        Tutorial
+      </Link>
       </nav>
-
+      
       <Link to="/login" style={styles.button} onClick={registrarClique}>
         Entrar
       </Link>

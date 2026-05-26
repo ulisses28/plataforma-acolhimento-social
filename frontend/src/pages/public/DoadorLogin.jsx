@@ -1,3 +1,9 @@
+import {
+  validarCPF,
+  validarCNPJ,
+  validarEmail,
+  validarTelefone
+} from '../../utils/validacoes'
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import BackButton from '../../components/ui/BackButton'
@@ -123,6 +129,28 @@ function DoadorLogin() {
     if (!documento.trim()) return mostrarErro('Informe CPF/RG ou CNPJ.')
     if (!telefone.trim()) return mostrarErro('Informe o telefone.')
     if (!email.trim()) return mostrarErro('Informe o e-mail.')
+    if (!validarEmail(email)) {
+      return mostrarErro('Informe um e-mail válido.')
+    }
+
+    if (!validarTelefone(telefone)) {
+      return mostrarErro('Informe um telefone válido com DDD.')
+    }
+
+    if (
+      tipoPessoa === 'fisica' &&
+      !validarCPF(documento)
+    ) {
+      return mostrarErro('CPF inválido.')
+    }
+
+    if (
+      tipoPessoa === 'juridica' &&
+      !validarCNPJ(documento)
+    ) {
+      return mostrarErro('CNPJ inválido.')
+    }
+
     if (!pais) return mostrarErro('Selecione o país.')
 
     if (pais === 'BR' && !estadoId) return mostrarErro('Selecione o estado.')

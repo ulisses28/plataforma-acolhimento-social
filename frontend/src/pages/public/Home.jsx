@@ -79,7 +79,9 @@ function Home() {
               <Link to="/transparencia">Transparência</Link>
               <Link to="/voluntario">Seja um Voluntário</Link>
               <Link to="/parceiros">Parceiros</Link>
+              <Link to="/governanca-institucional">Governança</Link>
               <Link to="/tutorial">Tutorial</Link>
+
             </nav>
 
             <Link to="/login" className="login-top">Entrar</Link>

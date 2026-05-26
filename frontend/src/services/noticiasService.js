@@ -1,4 +1,9 @@
-import { apiGet, apiPost, apiPut, apiDelete } from './api'
+import {
+  apiGet,
+  apiPost,
+  apiPut,
+  apiDelete
+} from './api'
 
 export function listarNoticias() {
   return apiGet('/noticias')
@@ -12,8 +17,11 @@ export function salvarNoticia(noticia) {
   return apiPost('/noticias', noticia)
 }
 
-export function atualizarNoticia(noticiaAtualizada) {
-  return apiPut(`/noticias/${noticiaAtualizada._id || noticiaAtualizada.id}`, noticiaAtualizada)
+export function atualizarNoticia(noticia) {
+  return apiPut(
+    `/noticias/${noticia._id}`,
+    noticia
+  )
 }
 
 export function excluirNoticia(id) {
@@ -24,8 +32,13 @@ export function lerMidiaComoBase64(arquivo) {
   return new Promise((resolve, reject) => {
     const leitor = new FileReader()
 
-    leitor.onload = () => resolve(leitor.result)
-    leitor.onerror = () => reject(new Error('Erro ao ler arquivo'))
+    leitor.onload = () => {
+      resolve(leitor.result)
+    }
+
+    leitor.onerror = () => {
+      reject(new Error('Erro ao ler arquivo'))
+    }
 
     leitor.readAsDataURL(arquivo)
   })

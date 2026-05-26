@@ -283,6 +283,14 @@ function DashboardAdmin() {
             title="Banco de Currículos"
             descricao="Gestão de candidatos cadastrados."
           />
+
+          <CardLink
+            to="/admin/governanca"
+            icon="🏛️"
+            title="Governança Institucional"
+            descricao="Documentos de transparência, ética, equidade e responsabilidade institucional."
+          />
+
         </section>
 
         {/* NECESSIDADES */}

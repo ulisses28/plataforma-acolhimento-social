@@ -1,35 +1,77 @@
 import Noticia from '../models/Noticia.js'
 
 export async function listarNoticias(req, res) {
-  const noticias = await Noticia.find().sort({ createdAt: -1 })
-  return res.json(noticias)
+  try {
+    const noticias = await Noticia.find().sort({
+      createdAt: -1
+    })
+
+    return res.json(noticias)
+  } catch (error) {
+    return res.status(500).json({
+      mensagem: 'Erro ao listar notícias'
+    })
+  }
 }
 
 export async function criarNoticia(req, res) {
-  const noticia = await Noticia.create(req.body)
-  return res.status(201).json(noticia)
+  try {
+    const noticia = await Noticia.create(req.body)
+
+    return res.status(201).json(noticia)
+  } catch (error) {
+    return res.status(500).json({
+      mensagem: 'Erro ao criar notícia'
+    })
+  }
 }
 
 export async function buscarNoticia(req, res) {
-  const noticia = await Noticia.findById(req.params.id)
+  try {
+    const noticia = await Noticia.findById(req.params.id)
 
-  if (!noticia) {
-    return res.status(404).json({ mensagem: 'Notícia não encontrada' })
+    if (!noticia) {
+      return res.status(404).json({
+        mensagem: 'Notícia não encontrada'
+      })
+    }
+
+    return res.json(noticia)
+  } catch (error) {
+    return res.status(500).json({
+      mensagem: 'Erro ao buscar notícia'
+    })
   }
-
-  return res.json(noticia)
 }
 
 export async function atualizarNoticia(req, res) {
-  const noticia = await Noticia.findByIdAndUpdate(req.params.id, req.body, {
-    new: true
-  })
+  try {
+    const noticia = await Noticia.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      {
+        new: true
+      }
+    )
 
-  return res.json(noticia)
+    return res.json(noticia)
+  } catch (error) {
+    return res.status(500).json({
+      mensagem: 'Erro ao atualizar notícia'
+    })
+  }
 }
 
 export async function excluirNoticia(req, res) {
-  await Noticia.findByIdAndDelete(req.params.id)
+  try {
+    await Noticia.findByIdAndDelete(req.params.id)
 
-  return res.json({ mensagem: 'Notícia excluída com sucesso' })
+    return res.json({
+      mensagem: 'Notícia excluída com sucesso'
+    })
+  } catch (error) {
+    return res.status(500).json({
+      mensagem: 'Erro ao excluir notícia'
+    })
+  }
 }
