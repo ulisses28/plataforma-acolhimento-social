@@ -6,6 +6,7 @@ import BackButton from '../../components/ui/BackButton'
 import { listarDoacoes } from '../../services/doacoesService'
 
 import { obterTopDoadores } from '../../services/rankingService'
+import { exportarBackupSistema } from '../../services/backupService'
 
 import {
   listarNecessidadesAtivas,
@@ -155,6 +156,15 @@ function DashboardAdmin() {
           e acompanhe indicadores em tempo real.
         </p>
 
+        <div style={styles.headerActions}>
+        <button
+          type="button"
+          onClick={exportarBackupSistema}
+          style={styles.backupButton}
+        >
+          Exportar Backup
+        </button>
+
         <button
           type="button"
           onClick={logoutAdmin}
@@ -162,6 +172,7 @@ function DashboardAdmin() {
         >
           Sair do painel
         </button>
+      </div>
       </header>
 
         {/* INDICADORES */}
@@ -989,6 +1000,22 @@ historyLink: {
   padding: '12px 16px',
   borderRadius: '10px',
   fontWeight: '900'
+},
+headerActions: {
+  display: 'flex',
+  gap: '12px',
+  marginTop: '18px',
+  flexWrap: 'wrap'
+},
+
+backupButton: {
+  background: '#0B3D91',
+  color: '#fff',
+  border: 'none',
+  borderRadius: '10px',
+  padding: '12px 18px',
+  fontWeight: '800',
+  cursor: 'pointer'
 },
 logoutButton: {
   marginTop: '18px',

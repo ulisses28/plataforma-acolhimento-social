@@ -1,5 +1,4 @@
-const API_URL = 'http://localhost:3333/api'
-
+const API_URL = 'https://backend-abrigo.onrender.com/api'
 export async function apiGet(endpoint) {
   const response = await fetch(`${API_URL}${endpoint}`)
 
