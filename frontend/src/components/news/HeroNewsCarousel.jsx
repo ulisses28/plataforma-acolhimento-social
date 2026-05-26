@@ -66,6 +66,7 @@ function HeroNewsCarousel({ noticias = [] }) {
       </Swiper>
     </section>
   )
+
 }
 
 export default HeroNewsCarousel
