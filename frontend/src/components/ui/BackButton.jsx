@@ -1,15 +1,35 @@
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 
-function BackButton() {
+function BackButton({ label = '← Voltar' }) {
   const navigate = useNavigate()
+  const location = useLocation()
+
+  function voltar() {
+    const estaNoAdmin = location.pathname.startsWith('/admin')
+    const estaNoDashboard = location.pathname === '/admin/dashboard'
+    const estaNoLoginAdmin = location.pathname === '/admin/login'
+
+    if (estaNoDashboard) {
+      const confirmar = confirm('Tem certeza que deseja sair do sistema?')
+
+      if (!confirmar) return
+
+      localStorage.removeItem('admin-auth')
+      navigate('/admin/login')
+      return
+    }
+
+    if (estaNoAdmin && !estaNoLoginAdmin) {
+      navigate('/admin/dashboard')
+      return
+    }
+
+    navigate('/')
+  }
 
   return (
-    <button
-      type="button"
-      onClick={() => navigate('/')}
-      style={styles.button}
-    >
-      ← Voltar
+    <button type="button" onClick={voltar} style={styles.button}>
+      {label}
     </button>
   )
 }
@@ -20,9 +40,9 @@ const styles = {
     border: 'none',
     color: '#0B3D91',
     fontWeight: '900',
-    fontSize: '1.1rem',
     cursor: 'pointer',
-    marginBottom: '24px'
+    marginBottom: '20px',
+    fontSize: '1rem'
   }
 }
 
