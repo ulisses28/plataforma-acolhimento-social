@@ -1,4 +1,4 @@
-import imgQuemSomos from '../../assets/quemSomos.jpg'
+import imgQuemSomos from '../../assets/quemSomos1.png'
 import imgMissao1 from '../../assets/missao1.jpg'
 import imgMissao2 from '../../assets/missao2.jpg'
 import { registrarInteracao } from '../../services/analyticsService'

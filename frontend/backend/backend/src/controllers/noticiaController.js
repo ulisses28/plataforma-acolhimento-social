@@ -2,14 +2,17 @@ import Noticia from '../models/Noticia.js'
 
 export async function listarNoticias(req, res) {
   try {
-    const noticias = await Noticia.find().sort({
-      createdAt: -1
-    })
+    const noticias = await Noticia
+      .find()
+      .sort({ createdAt: -1 })
 
     return res.json(noticias)
   } catch (error) {
+    console.error('Erro ao listar notícias:', error)
+
     return res.status(500).json({
-      mensagem: 'Erro ao listar notícias'
+      mensagem: 'Erro ao listar notícias',
+      erro: error.message
     })
   }
 }

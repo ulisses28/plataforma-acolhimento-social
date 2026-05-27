@@ -3,10 +3,10 @@ import { Link } from 'react-router-dom'
 import './home.css'
 
 import logoLar from '../../assets/logo-lar.jpg'
-import heroImg from '../../assets/quemSomos.jpg'
+import heroImg from '../../assets/banerHome.png'
 import missao1 from '../../assets/Missao1.jpg'
 import missao2 from '../../assets/Missao2.jpg'
-import quemSomos from '../../assets/quemSomos.jpg'
+import quemSomos from '../../assets/quemSomos1.png'
 import HeroNewsCarousel from '../../components/news/HeroNewsCarousel'
 
 import { listarNoticias } from '../../services/noticiasService'
@@ -29,9 +29,7 @@ function Home() {
     carregarNoticias()
   }, [])
 
-  const noticiasPublicadas = noticias.filter(
-    (item) => String(item.status).trim().toLowerCase() === 'publicado'
-  )
+  const noticiasPublicadas = noticias
 
   const noticiaDestaque =
     noticiasPublicadas.find(
@@ -249,8 +247,8 @@ function Home() {
       </section>
 
       <section className="numbers-section">
-        <div><strong>+250</strong><span>Vidas impactadas</span></div>
-        <div><strong>+10</strong><span>Anos de história</span></div>
+        <div><strong>+70</strong><span>Vidas impactadas por ano</span></div>
+        <div><strong>+70</strong><span>Anos de história</span></div>
         <div><strong>+50</strong><span>Parceiros</span></div>
         <div><strong>+5</strong><span>Cidades atendidas</span></div>
       </section>
