@@ -16,6 +16,11 @@ const adminSchema = new mongoose.Schema(
     senha: {
       type: String,
       required: true
+    },
+
+    ultimaTrocaSenha: {
+      type: Date,
+      default: Date.now
     }
   },
   {
@@ -23,7 +28,4 @@ const adminSchema = new mongoose.Schema(
   }
 )
 
-export default mongoose.model(
-  'Admin',
-  adminSchema
-)
+export default mongoose.model('Admin', adminSchema)

@@ -4,9 +4,10 @@ import './home.css'
 
 import logoLar from '../../assets/logo-lar.jpg'
 import heroImg from '../../assets/banerHome.png'
-import missao1 from '../../assets/Missao1.jpg'
-import missao2 from '../../assets/Missao2.jpg'
+import nossosProjetosImg from '../../assets/nossosProjetos1.png'
+import transparenciaImg from '../../assets/transparencia1.png'
 import quemSomos from '../../assets/quemSomos1.png'
+import doeAgoraImg from '../../assets/doeAgora.png'
 import HeroNewsCarousel from '../../components/news/HeroNewsCarousel'
 
 import { listarNoticias } from '../../services/noticiasService'
@@ -214,7 +215,7 @@ function Home() {
 
       <section className="navigation-section">
         <HomeCard
-          image={missao1}
+          image={nossosProjetosImg}
           title="Nossos projetos"
           text="Conheça as ações que transformam vidas todos os dias."
           link="/projetos"
@@ -222,7 +223,7 @@ function Home() {
         />
 
         <HomeCard
-          image={missao2}
+          image={transparenciaImg}
           title="Transparência"
           text="Acesse relatórios, prestação de contas e veja como as doações são utilizadas."
           link="/transparencia"
@@ -238,7 +239,7 @@ function Home() {
         />
 
         <HomeCard
-          image={heroImg}
+          image={doeAgoraImg}
           title="Como ajudar"
           text="Existem muitas formas de fazer parte dessa missão de amor."
           link="/voluntario"
@@ -300,7 +301,7 @@ function Home() {
               />
 
               <NewsCard
-                image={missao1}
+                image={quemSomos}
                 date="05 Mai 2025"
                 title="Atividades educativas"
                 text="Ações que estimulam o aprendizado, a convivência e o desenvolvimento humano."
