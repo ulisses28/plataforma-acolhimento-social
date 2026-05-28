@@ -159,8 +159,13 @@ function DoadorLogin() {
     if (!senha.trim()) return mostrarErro('Crie uma senha.')
     if (!confirmarSenha.trim()) return mostrarErro('Confirme sua senha.')
 
-    if (senha.trim().length < 6) {
-      return mostrarErro('A senha deve ter no mínimo 6 caracteres.')
+    const senhaForte =
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.#_-]).{8,}$/
+
+    if (!senhaForte.test(senha.trim())) {
+      return mostrarErro(
+        'A senha deve conter no mínimo 8 caracteres, letra maiúscula, minúscula, número e caractere especial.'
+      )
     }
 
     if (senha.trim() !== confirmarSenha.trim()) {
@@ -424,7 +429,7 @@ function DoadorLogin() {
                 value={senha}
                 onChange={(e) => setSenha(e.target.value)}
                 style={styles.input}
-                placeholder="Mínimo de 6 caracteres"
+                placeholder="Senha forte"
               />
 
               <label style={styles.label}>Confirmar senha</label>
@@ -667,33 +672,23 @@ const styles = {
     fontWeight: '800',
     cursor: 'pointer'
   },
-  message: { marginTop: '16px', fontWeight: '700' },
-  button: {
-  marginTop: '24px',
-  background: '#0B3D91',
-  color: '#fff',
-  border: 'none',
-  padding: '14px',
-  borderRadius: '12px',
-  fontWeight: '800',
-  cursor: 'pointer'
-},
+  
 
-linkButton: {
-  background: 'transparent',
-  border: 'none',
-  color: '#0B3D91',
-  fontWeight: '800',
-  cursor: 'pointer',
-  textDecoration: 'underline',
-  marginTop: '12px',
-  alignSelf: 'flex-start'
-},
+  linkButton: {
+    background: 'transparent',
+    border: 'none',
+    color: '#0B3D91',
+    fontWeight: '800',
+    cursor: 'pointer',
+    textDecoration: 'underline',
+    marginTop: '12px',
+    alignSelf: 'flex-start'
+  },
 
-message: {
-  marginTop: '16px',
-  fontWeight: '700'
-}
+  message: {
+    marginTop: '16px',
+    fontWeight: '700'
+  },
 }
 
 export default DoadorLogin

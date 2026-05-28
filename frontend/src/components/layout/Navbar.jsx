@@ -1,32 +1,66 @@
 import { Link } from 'react-router-dom'
+import { useState } from 'react'
 import logoLar from '../../assets/logo-lar.jpg'
 import { registrarInteracao } from '../../services/analyticsService'
+import './navbar.css'
 
 function Navbar() {
+  const [menuAberto, setMenuAberto] = useState(false)
+
   function registrarClique() {
     registrarInteracao()
   }
-
+  function fecharMenu() {
+  setMenuAberto(false)
+  }
   return (
     <header style={styles.header}>
       <Link to="/" style={styles.logoLink} onClick={registrarClique}>
         <img src={logoLar} alt="Lar Batista Albertine Meador" style={styles.logo} />
       </Link>
 
-      <nav style={styles.nav}>
-      <Link style={styles.navLink} to="/" onClick={registrarClique}>
+      <button
+        type="button"
+        style={styles.menuButton}
+        onClick={() => setMenuAberto(!menuAberto)}
+      >
+        ☰
+      </button>
+      <nav
+        style={{
+          ...styles.nav,
+          ...(menuAberto ? styles.navMobileOpen : {})
+        }}
+      >
+      <Link style={styles.navLink} to="/" 
+        onClick={() => {
+          registrarClique()
+          fecharMenu()
+        }}>
         Home
       </Link>
 
-      <Link style={styles.navLink} to="/quem-somos" onClick={registrarClique}>
+      <Link style={styles.navLink} to="/quem-somos" 
+          onClick={() => {
+            registrarClique()
+            fecharMenu()
+        }}>
         Quem Somos
       </Link>
 
-      <Link style={styles.navLink} to="/projetos" onClick={registrarClique}>
+      <Link style={styles.navLink} to="/projetos" 
+      onClick={() => {
+        registrarClique()
+        fecharMenu()
+      }}>
         Projetos
       </Link>
 
-      <Link style={styles.navLink} to="/transparencia" onClick={registrarClique}>
+      <Link style={styles.navLink} to="/transparencia" 
+      onClick={() => {
+        registrarClique()
+        fecharMenu()
+      }}>
         Transparência
       </Link>
 
@@ -34,20 +68,36 @@ function Navbar() {
         Seja um Voluntário
       </Link>
 
-      <Link style={styles.navLink} to="/parceiros" onClick={registrarClique}>
+      <Link style={styles.navLink} to="/parceiros" 
+      onClick={() => {
+        registrarClique()
+        fecharMenu()
+      }}>
         Parceiros
       </Link>
 
-      <Link style={styles.navLink} to="/governanca-institucional" onClick={registrarClique}>
+      <Link style={styles.navLink} to="/governanca-institucional" 
+      onClick={() => {
+        registrarClique()
+        fecharMenu()
+      }}>
         Governança
       </Link>
 
-      <Link style={styles.navLink} to="/tutorial" onClick={registrarClique}>
+      <Link style={styles.navLink} to="/tutorial" 
+      onClick={() => {
+        registrarClique()
+        fecharMenu()
+      }}>
         Tutorial
       </Link>
       </nav>
       
-      <Link to="/login" style={styles.button} onClick={registrarClique}>
+      <Link to="/login" style={styles.button} 
+      onClick={() => {
+        registrarClique()
+        fecharMenu()
+      }}>
         Entrar
       </Link>
     </header>
@@ -56,13 +106,15 @@ function Navbar() {
 
 const styles = {
   header: {
-    background: 'linear-gradient(90deg, #002855, #0B3D91)',
-    minHeight: '110px',
-    padding: '18px 7%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: '24px'
+  background: 'linear-gradient(90deg, #002855, #0B3D91)',
+  minHeight: '110px',
+  padding: '18px 5%',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: '24px',
+  flexWrap: 'wrap',
+  position: 'relative'
   },
 
   logoLink: {
@@ -84,12 +136,12 @@ const styles = {
   },
 
   nav: {
-    display: 'flex',
-    gap: '26px',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexWrap: 'wrap',
-    flex: 1
+  display: 'flex',
+  gap: '22px',
+  alignItems: 'center',
+  justifyContent: 'center',
+  flexWrap: 'wrap',
+  flex: 1
   },
 
   navLink: {
@@ -130,6 +182,30 @@ logoSub: {
   color: '#ff6b00',
   marginTop: '4px',
   letterSpacing: '1px'
+},
+menuButton: {
+  display: 'none',
+  background: '#ffc928',
+  border: 'none',
+  color: '#002855',
+  fontSize: '28px',
+  borderRadius: '12px',
+  padding: '8px 14px',
+  cursor: 'pointer',
+  fontWeight: '900'
+},
+
+navMobileOpen: {
+  display: 'flex',
+  position: 'absolute',
+  top: '110px',
+  left: 0,
+  right: 0,
+  background: '#0B3D91',
+  flexDirection: 'column',
+  padding: '30px',
+  zIndex: 999,
+  boxShadow: '0 8px 24px rgba(0,0,0,0.25)'
 },
 }
 

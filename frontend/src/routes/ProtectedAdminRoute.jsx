@@ -1,4 +1,8 @@
 import { Navigate, useLocation } from 'react-router-dom'
+import {
+  limparSessaoAdmin,
+  sessaoAdminExpirada
+} from '../utils/sessaoAdmin'
 
 function ProtectedAdminRoute({ children }) {
   const location = useLocation()
@@ -6,7 +10,8 @@ function ProtectedAdminRoute({ children }) {
   const adminLogado = localStorage.getItem('admin-auth')
   const precisaTrocarSenha = localStorage.getItem('admin-trocar-senha')
 
-  if (!adminLogado) {
+  if (!adminLogado || sessaoAdminExpirada()) {
+    limparSessaoAdmin()
     return <Navigate to="/admin/login" />
   }
 

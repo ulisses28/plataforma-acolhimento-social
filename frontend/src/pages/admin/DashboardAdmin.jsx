@@ -7,6 +7,8 @@ import { listarDoacoes } from '../../services/doacoesService'
 
 import { obterTopDoadores } from '../../services/rankingService'
 import { exportarBackupSistema } from '../../services/backupService'
+import { limparSessaoAdmin } from '../../utils/sessaoAdmin'
+
 
 import {
   listarNecessidadesAtivas,
@@ -40,8 +42,7 @@ function DashboardAdmin() {
   const navigate = useNavigate()
 
   function logoutAdmin() {
-  localStorage.removeItem('admin-auth')
-
+  limparSessaoAdmin()
   navigate('/admin/login')
   }
 
@@ -575,7 +576,9 @@ function DashboardAdmin() {
             Últimas Doações
           </h2>
 
-          <table style={styles.table}>
+          <div style={styles.tableWrapper}>
+            <table style={styles.table}>
+              
             <thead>
               <tr>
                 <th style={styles.th}>Data</th>
@@ -607,6 +610,7 @@ function DashboardAdmin() {
               ))}
             </tbody>
           </table>
+          </div>
         </section>
       </div>
     </main>
@@ -701,10 +705,10 @@ const styles = {
   },
 
   summaryGrid: {
-    display: 'grid',
-    gridTemplateColumns:
-      'repeat(auto-fit, minmax(210px, 1fr))',
-    gap: '20px'
+  display: 'grid',
+  gridTemplateColumns:
+    'repeat(auto-fit, minmax(180px, 1fr))',
+  gap: '16px'
   },
 
   summaryCard: {
@@ -729,10 +733,10 @@ const styles = {
   },
 
   grid: {
-    display: 'grid',
-    gridTemplateColumns:
-      'repeat(auto-fit, minmax(250px, 1fr))',
-    gap: '24px'
+  display: 'grid',
+  gridTemplateColumns:
+    'repeat(auto-fit, minmax(240px, 1fr))',
+  gap: '18px'
   },
 
   card: {
@@ -867,9 +871,10 @@ const styles = {
   },
 
   formActions: {
-    display: 'flex',
-    gap: '12px',
-    marginTop: '24px'
+  display: 'flex',
+  gap: '12px',
+  marginTop: '24px',
+  flexWrap: 'wrap'
   },
 
   saveButton: {
@@ -952,8 +957,14 @@ const styles = {
       '0 8px 24px rgba(0,0,0,0.08)'
   },
 
+  tableWrapper: {
+  overflowX: 'auto',
+  width: '100%'
+  },
+
   table: {
     width: '100%',
+    minWidth: '650px',
     borderCollapse: 'collapse'
   },
 
@@ -1010,7 +1021,8 @@ headerActions: {
   display: 'flex',
   gap: '12px',
   marginTop: '18px',
-  flexWrap: 'wrap'
+  flexWrap: 'wrap',
+  alignItems: 'center'
 },
 
 backupButton: {
@@ -1023,7 +1035,7 @@ backupButton: {
   cursor: 'pointer'
 },
 logoutButton: {
-  marginTop: '18px',
+  marginTop: 0,
   background: '#dc2626',
   color: '#fff',
   border: 'none',
@@ -1032,6 +1044,8 @@ logoutButton: {
   fontWeight: '800',
   cursor: 'pointer'
 },
+  
 }
+
 
 export default DashboardAdmin

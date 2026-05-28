@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 
 import BackButton from '../../components/ui/BackButton'
 import { apiPost } from '../../services/api'
+import { iniciarSessaoAdmin } from '../../utils/sessaoAdmin'
 
 function AdminLogin() {
   const navigate = useNavigate()
@@ -37,6 +38,8 @@ function AdminLogin() {
       localStorage.setItem('admin-auth', 'true')
       localStorage.setItem('admin-token', resposta.token)
       localStorage.setItem('admin-data', JSON.stringify(resposta.admin))
+      
+      iniciarSessaoAdmin()
 
       if (resposta.precisaTrocarSenha) {
         localStorage.setItem('admin-trocar-senha', 'true')
