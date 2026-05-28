@@ -38,6 +38,7 @@ import BancoCurriculosAdmin from './pages/admin/BancoCurriculosAdmin'
 import HistoricoNecessidadesAdmin from './pages/admin/HistoricoNecessidadesAdmin'
 import GovernancaAdmin from './pages/admin/GovernancaAdmin'
 import ProtectedAdminRoute from './routes/ProtectedAdminRoute'
+import AlterarSenhaAdmin from './pages/admin/AlterarSenhaAdmin'
 
 function Layout() {
   const location = useLocation()
@@ -258,7 +259,14 @@ function Layout() {
             </ProtectedAdminRoute>
           }
         />
-
+        <Route
+          path="/admin/alterar-senha"
+          element={
+            <ProtectedAdminRoute>
+              <AlterarSenhaAdmin />
+            </ProtectedAdminRoute>
+          }
+        />
       </Routes>
 
       {mostrarLayoutPublico && <Footer />}

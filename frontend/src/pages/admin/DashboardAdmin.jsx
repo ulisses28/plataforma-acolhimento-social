@@ -301,7 +301,12 @@ function DashboardAdmin() {
             title="Governança Institucional"
             descricao="Documentos de transparência, ética, equidade e responsabilidade institucional."
           />
-
+          <CardLink
+            to="/admin/alterar-senha"
+            icon="🔐"
+            title="Segurança"
+            descricao="Alteração de senha, validade de acesso e proteção administrativa."
+          />
         </section>
 
         {/* NECESSIDADES */}

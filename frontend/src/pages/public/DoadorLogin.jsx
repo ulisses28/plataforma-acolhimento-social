@@ -280,8 +280,20 @@ function DoadorLogin() {
               />
 
               <button type="submit" style={styles.button}>Acessar painel</button>
+              <button
+                type="button"
+                style={styles.linkButton}
+                onClick={() =>
+                  mostrarErro(
+                    'Para recuperar sua senha, solicite suporte da instituição ou utilize a futura recuperação por e-mail.'
+                  )
+                }
+              >
+                Esqueci minha senha
+            </button>
             </form>
           ) : (
+            
             <form onSubmit={cadastrarDoador} style={styles.form}>
               <label style={styles.label}>Nome ou razão social</label>
               <input
@@ -655,7 +667,33 @@ const styles = {
     fontWeight: '800',
     cursor: 'pointer'
   },
-  message: { marginTop: '16px', fontWeight: '700' }
+  message: { marginTop: '16px', fontWeight: '700' },
+  button: {
+  marginTop: '24px',
+  background: '#0B3D91',
+  color: '#fff',
+  border: 'none',
+  padding: '14px',
+  borderRadius: '12px',
+  fontWeight: '800',
+  cursor: 'pointer'
+},
+
+linkButton: {
+  background: 'transparent',
+  border: 'none',
+  color: '#0B3D91',
+  fontWeight: '800',
+  cursor: 'pointer',
+  textDecoration: 'underline',
+  marginTop: '12px',
+  alignSelf: 'flex-start'
+},
+
+message: {
+  marginTop: '16px',
+  fontWeight: '700'
+}
 }
 
 export default DoadorLogin
