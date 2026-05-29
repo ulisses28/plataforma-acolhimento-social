@@ -78,17 +78,34 @@ export async function login(req, res) {
         mensagem: 'Usuário inválido'
       })
     }
+    if (admin.bloqueadoAte && admin.bloqueadoAte > new Date()) {
+      return res.status(429).json({
+        mensagem: 'Conta temporariamente bloqueada. Tente novamente mais tarde.'
+      })
+    }
 
     const senhaValida = await bcrypt.compare(senha, admin.senha)
 
     if (!senhaValida) {
+      admin.tentativasLogin = (admin.tentativasLogin || 0) + 1
+
+      if (admin.tentativasLogin >= 5) {
+        admin.bloqueadoAte = new Date(Date.now() + 15 * 60 * 1000)
+        admin.tentativasLogin = 0
+      }
+
+      await admin.save()
+
       return res.status(400).json({
         mensagem: 'Senha inválida'
       })
     }
     
     const precisaTrocarSenha = senhaExpirada(admin.ultimaTrocaSenha)
-
+    admin.tentativasLogin = 0
+    admin.bloqueadoAte = null
+    await admin.save()
+    
     const token = jwt.sign(
       {
         id: admin._id,

@@ -21,6 +21,15 @@ const adminSchema = new mongoose.Schema(
     ultimaTrocaSenha: {
       type: Date,
       default: Date.now
+    },
+    tentativasLogin: {
+      type: Number,
+      default: 0
+    },
+
+    bloqueadoAte: {
+      type: Date,
+      default: null
     }
   },
   {
