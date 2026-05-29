@@ -2,8 +2,7 @@ import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 
 import Admin from '../models/Admin.js'
-// Se você já criou o service de auditoria, descomente esta linha:
-// import { registrarAuditoria } from '../services/auditoriaService.js'
+import { registrarAuditoria } from '../services/auditoriaService.js'
 
 /*
   Controller de autenticação administrativa
@@ -16,6 +15,7 @@ import Admin from '../models/Admin.js'
   - bloquear conta após tentativas inválidas
   - exigir troca de senha a cada 45 dias
   - permitir alteração de senha
+  - registrar auditoria de login e alteração de senha
 */
 
 function senhaForte(senha) {
@@ -72,6 +72,13 @@ export async function registrar(req, res) {
       bloqueadoAte: null
     })
 
+    await registrarAuditoria(
+      admin.email,
+      'REGISTRO_ADMIN',
+      'Administrador cadastrado no sistema.',
+      req.ip
+    )
+
     return res.status(201).json({
       mensagem: 'Administrador criado com sucesso.',
       admin: {
@@ -110,8 +117,8 @@ export async function login(req, res) {
 
     /*
       Bloqueio temporário:
-      se o administrador errou várias vezes, a conta fica bloqueada
-      por 15 minutos.
+      se o administrador errar a senha 5 vezes,
+      a conta fica bloqueada por 15 minutos.
     */
     if (admin.bloqueadoAte && admin.bloqueadoAte > new Date()) {
       return res.status(429).json({
@@ -122,9 +129,9 @@ export async function login(req, res) {
     const senhaValida = await bcrypt.compare(senha, admin.senha)
 
     /*
-      Se a senha estiver errada:
-      - soma uma tentativa
-      - ao atingir 5 tentativas, bloqueia por 15 minutos
+      Senha inválida:
+      - incrementa tentativas
+      - bloqueia temporariamente ao atingir 5 erros
     */
     if (!senhaValida) {
       admin.tentativasLogin = (admin.tentativasLogin || 0) + 1
@@ -142,10 +149,10 @@ export async function login(req, res) {
     }
 
     /*
-      Se a senha estiver correta:
+      Login correto:
       - limpa tentativas inválidas
       - remove bloqueio
-      - verifica se a senha venceu em 45 dias
+      - verifica se a senha tem mais de 45 dias
     */
     admin.tentativasLogin = 0
     admin.bloqueadoAte = null
@@ -153,6 +160,13 @@ export async function login(req, res) {
     const precisaTrocarSenha = senhaExpirada(admin.ultimaTrocaSenha)
 
     await admin.save()
+
+    await registrarAuditoria(
+      admin.email,
+      'LOGIN_ADMIN',
+      'Administrador acessou o sistema.',
+      req.ip
+    )
 
     const token = jwt.sign(
       {
@@ -164,9 +178,6 @@ export async function login(req, res) {
         expiresIn: '7d'
       }
     )
-
-    // Se você criou auditoria, pode ativar:
-    // await registrarAuditoria(admin.email, 'LOGIN', 'Administrador acessou o sistema.')
 
     return res.json({
       token,
@@ -222,11 +233,11 @@ export async function alterarSenha(req, res) {
     }
 
     /*
-      Ao alterar senha:
+      Alteração de senha:
       - criptografa a nova senha
       - atualiza data da última troca
-      - limpa bloqueios
       - limpa tentativas inválidas
+      - remove bloqueio temporário
     */
     admin.senha = await bcrypt.hash(novaSenha, 10)
     admin.ultimaTrocaSenha = new Date()
@@ -235,8 +246,12 @@ export async function alterarSenha(req, res) {
 
     await admin.save()
 
-    // Se você criou auditoria, pode ativar:
-    // await registrarAuditoria(admin.email, 'ALTERACAO_SENHA', 'Senha administrativa alterada.')
+    await registrarAuditoria(
+      admin.email,
+      'ALTERACAO_SENHA_ADMIN',
+      'Administrador alterou a senha.',
+      req.ip
+    )
 
     return res.json({
       mensagem: 'Senha alterada com sucesso.'

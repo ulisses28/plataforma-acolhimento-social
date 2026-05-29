@@ -1,17 +1,14 @@
 import Auditoria from '../models/Auditoria.js'
 
-export async function registrarAuditoria(
-  admin,
-  acao,
-  detalhes = ''
-) {
+export async function registrarAuditoria(admin, acao, detalhes = '', ip = '') {
   try {
     await Auditoria.create({
       admin,
       acao,
-      detalhes
+      detalhes,
+      ip
     })
   } catch (error) {
-    console.error(error)
+    console.error('Erro ao registrar auditoria:', error.message)
   }
 }

@@ -2,15 +2,24 @@ import mongoose from 'mongoose'
 
 const auditoriaSchema = new mongoose.Schema(
   {
-    admin: String,
+    admin: {
+      type: String,
+      required: true
+    },
 
-    acao: String,
+    acao: {
+      type: String,
+      required: true
+    },
 
-    detalhes: String,
+    detalhes: {
+      type: String,
+      default: ''
+    },
 
-    data: {
-      type: Date,
-      default: Date.now
+    ip: {
+      type: String,
+      default: ''
     }
   },
   {
@@ -18,7 +27,4 @@ const auditoriaSchema = new mongoose.Schema(
   }
 )
 
-export default mongoose.model(
-  'Auditoria',
-  auditoriaSchema
-)
+export default mongoose.model('Auditoria', auditoriaSchema)
