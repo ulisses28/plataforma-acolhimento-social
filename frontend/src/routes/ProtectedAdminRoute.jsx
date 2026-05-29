@@ -1,7 +1,9 @@
 import { Navigate, useLocation } from 'react-router-dom'
 import {
   limparSessaoAdmin,
-  sessaoAdminExpirada
+  registrarAtividadeAdmin,
+  sessaoAdminExpirada,
+  sessaoAdminInativa
 } from '../utils/sessaoAdmin'
 
 function ProtectedAdminRoute({ children }) {
@@ -10,16 +12,18 @@ function ProtectedAdminRoute({ children }) {
   const adminLogado = localStorage.getItem('admin-auth')
   const precisaTrocarSenha = localStorage.getItem('admin-trocar-senha')
 
-  if (!adminLogado || sessaoAdminExpirada()) {
+  if (!adminLogado || sessaoAdminExpirada() || sessaoAdminInativa()) {
     limparSessaoAdmin()
-    return <Navigate to="/admin/login" />
+    return <Navigate to="/admin/login" replace />
   }
+
+  registrarAtividadeAdmin()
 
   if (
     precisaTrocarSenha === 'true' &&
     location.pathname !== '/admin/alterar-senha'
   ) {
-    return <Navigate to="/admin/alterar-senha" />
+    return <Navigate to="/admin/alterar-senha" replace />
   }
 
   return children
