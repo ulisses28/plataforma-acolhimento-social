@@ -86,8 +86,23 @@ export async function login(req, res) {
         mensagem: 'Senha inválida'
       })
     }
+    const DIAS_VALIDADE = 45
 
-    const precisaTrocarSenha = senhaExpirada(admin.ultimaTrocaSenha)
+    const ultimaTroca = new Date(
+      admin.ultimaTrocaSenha
+    )
+
+    const hoje = new Date()
+
+    const diasSemTrocar =
+      Math.floor(
+        (hoje - ultimaTroca) /
+          (1000 * 60 * 60 * 24)
+      )
+
+    const precisaTrocarSenha =
+      diasSemTrocar >= DIAS_VALIDADE
+        const precisaTrocarSenha = senhaExpirada(admin.ultimaTrocaSenha)
 
     const token = jwt.sign(
       {
@@ -102,12 +117,13 @@ export async function login(req, res) {
 
     return res.json({
       token,
+
       precisaTrocarSenha,
+
       admin: {
         id: admin._id,
         nome: admin.nome,
-        email: admin.email,
-        ultimaTrocaSenha: admin.ultimaTrocaSenha
+        email: admin.email
       }
     })
   } catch (error) {

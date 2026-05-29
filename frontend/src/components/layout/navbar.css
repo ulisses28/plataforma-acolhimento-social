@@ -1,18 +1,19 @@
-
 @media (max-width: 980px) {
-  .navbar-menu {
+  .navbar-menu:not(.navbar-open) {
     display: none !important;
   }
 
-  .navbar-menu-open {
+  .navbar-menu.navbar-open {
     display: flex !important;
-  }
-
-  .navbar-button {
-    display: none !important;
   }
 
   .navbar-mobile-button {
     display: block !important;
+  }
+
+  .navbar-enter-button {
+    width: 100%;
+    text-align: center;
+    box-sizing: border-box;
   }
 }

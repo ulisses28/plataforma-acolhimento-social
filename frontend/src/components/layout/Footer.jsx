@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import logoLar from '../../assets/logo-lar.jpg'
 
+
 function Footer() {
   return (
     <footer style={styles.footer}>
