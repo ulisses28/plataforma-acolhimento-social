@@ -8,6 +8,7 @@ import { listarDoacoes } from '../../services/doacoesService'
 import { obterTopDoadores } from '../../services/rankingService'
 import { exportarBackupSistema } from '../../services/backupService'
 import { limparSessaoAdmin } from '../../utils/sessaoAdmin'
+import { registrarAuditoriaFrontend } from '../../services/auditoriaFrontendService'
 
 
 import {
@@ -42,7 +43,13 @@ function DashboardAdmin() {
   const navigate = useNavigate()
 
   function logoutAdmin() {
+  registrarAuditoriaFrontend(
+    'LOGOUT_ADMIN',
+    'Administrador encerrou a sessão.'
+  )
+
   limparSessaoAdmin()
+
   navigate('/admin/login')
   }
 
@@ -87,6 +94,10 @@ function DashboardAdmin() {
       prioridade,
       quantidade
     })
+    registrarAuditoriaFrontend(
+      'CADASTRO_NECESSIDADE',
+      `${categoriaSelecionada} - ${descricaoNecessidade}`
+    )
 
     setDescricaoNecessidade('')
     setPrioridade('MEDIA')
@@ -141,6 +152,14 @@ function DashboardAdmin() {
       (item) =>
         item.categoria === categoriaSelecionada
     )
+  function exportarBackupComAuditoria() {
+  registrarAuditoriaFrontend(
+    'EXPORTACAO_BACKUP',
+    'Backup manual exportado.'
+  )
+
+  exportarBackupSistema()
+  }
 
   return (
     <main style={styles.page}>
@@ -160,7 +179,7 @@ function DashboardAdmin() {
         <div style={styles.headerActions}>
         <button
           type="button"
-          onClick={exportarBackupSistema}
+          onClick={exportarBackupComAuditoria}
           style={styles.backupButton}
         >
           Exportar Backup
@@ -307,6 +326,12 @@ function DashboardAdmin() {
             icon="🔐"
             title="Segurança"
             descricao="Alteração de senha, validade de acesso e proteção administrativa."
+          />
+          <CardLink
+            to="/admin/auditoria"
+            icon="🧾"
+            title="Auditoria"
+            descricao="Logs de login, segurança e ações administrativas."
           />
         </section>
 
@@ -502,7 +527,10 @@ function DashboardAdmin() {
                           )
 
                           if (!ok) return
-
+                          registrarAuditoriaFrontend(
+                            'CONCLUSAO_NECESSIDADE',
+                            item.descricao
+                          )
                           concluirNecessidade(item.id)
                           carregarDashboard()
                         }}

@@ -39,6 +39,7 @@ import HistoricoNecessidadesAdmin from './pages/admin/HistoricoNecessidadesAdmin
 import GovernancaAdmin from './pages/admin/GovernancaAdmin'
 import ProtectedAdminRoute from './routes/ProtectedAdminRoute'
 import AlterarSenhaAdmin from './pages/admin/AlterarSenhaAdmin'
+import AuditoriaAdmin from './pages/admin/AuditoriaAdmin'
 
 function Layout() {
   const location = useLocation()
@@ -266,7 +267,15 @@ function Layout() {
               <AlterarSenhaAdmin />
             </ProtectedAdminRoute>
           }
-        />
+          />
+          <Route
+            path="/admin/auditoria"
+            element={
+              <ProtectedAdminRoute>
+                <AuditoriaAdmin />
+              </ProtectedAdminRoute>
+            }
+          />
       </Routes>
 
       {mostrarLayoutPublico && <Footer />}

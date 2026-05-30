@@ -2,12 +2,14 @@ import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import mongoose from 'mongoose'
-
 import noticiaRoutes from './routes/noticiaRoutes.js'
+import auditoriaRoutes from './routes/auditoriaRoutes.js'
 
 dotenv.config()
 
 const app = express()
+
+app.use('/api/auditoria', auditoriaRoutes)
 
 app.use(cors())
 
