@@ -62,6 +62,7 @@ function NoticiasAdmin() {
 
   const LIMITE_IMAGEM = 5 * 1024 * 1024
   const LIMITE_VIDEO = 100 * 1024 * 1024
+  const ALERTA_VIDEO_GRANDE = 50 * 1024 * 1024
 
   for (const arquivo of arquivos) {
     const tamanhoMB = (arquivo.size / (1024 * 1024)).toFixed(2)
@@ -79,18 +80,18 @@ function NoticiasAdmin() {
     if (arquivo.type.startsWith('video') && arquivo.size > LIMITE_VIDEO) {
       alert(
         `O vídeo "${arquivo.name}" possui ${tamanhoMB} MB.\n\n` +
-        'Para evitar lentidão no sistema, envie vídeos de até 100 MB.\n\n' +
-        'Para vídeos maiores, recomendamos publicar no YouTube e colar o link no campo "Link do YouTube opcional".'
+        'Para evitar lentidão, envie vídeos de até 100 MB.\n\n' +
+        'Para vídeos maiores, publique no YouTube e cole o link no campo "Link do YouTube opcional".'
       )
 
       e.target.value = ''
       return
     }
 
-    if (arquivo.type.startsWith('video') && arquivo.size > 50 * 1024 * 1024) {
+    if (arquivo.type.startsWith('video') && arquivo.size > ALERTA_VIDEO_GRANDE) {
       const continuar = confirm(
         `O vídeo "${arquivo.name}" possui ${tamanhoMB} MB.\n\n` +
-        'Arquivos grandes podem deixar o carregamento mais lento.\n\n' +
+        'Arquivos grandes podem deixar a publicação mais lenta.\n\n' +
         'Deseja continuar mesmo assim?'
       )
 
@@ -406,9 +407,11 @@ function NoticiasAdmin() {
               onChange={selecionarMidias}
             />
 
-            <p style={styles.helperText}>
-              Imagens: até 5 MB. Vídeos: até 100 MB. Para vídeos maiores, publique no YouTube e cole o link acima.
-            </p>
+            {midia.tamanhoMB && (
+              <p style={styles.mediaSize}>
+                Tamanho: {midia.tamanhoMB} MB
+              </p>
+            )}
 
             {form.midias.length > 0 && (
               <div style={styles.previewGrid}>
