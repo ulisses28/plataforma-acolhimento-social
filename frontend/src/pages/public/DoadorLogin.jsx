@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom'
 import BackButton from '../../components/ui/BackButton'
 import { criarDoacao } from '../../services/doacoesService'
 import { registrarInteracao } from '../../services/analyticsService'
+import { registrarSolicitacaoRecuperacao } from '../../services/recuperacaoSenhaService'
 
 import {
   listarPaises,
@@ -242,7 +243,22 @@ function DoadorLogin() {
       navigate('/doador/painel')
     }, 1800)
   }
+  function solicitarRecuperacaoSenhaDoador() {
+  if (!emailLogin.trim()) {
+    mostrarErro('Digite seu e-mail cadastrado antes de solicitar recuperação de senha.')
+    return
+  }
 
+  registrarSolicitacaoRecuperacao({
+    email: emailLogin.trim().toLowerCase(),
+    perfil: 'Doador',
+    mensagem: 'Doador solicitou recuperação de senha pela tela de login.'
+  })
+
+  mostrarSucesso(
+    'Solicitação registrada com sucesso. A instituição analisará seu pedido de recuperação de senha.'
+  )
+  }
   return (
     <main style={styles.page}>
       <div style={styles.container}>
@@ -288,14 +304,10 @@ function DoadorLogin() {
               <button
                 type="button"
                 style={styles.linkButton}
-                onClick={() =>
-                  mostrarErro(
-                    'Para recuperar sua senha, solicite suporte da instituição ou utilize a futura recuperação por e-mail.'
-                  )
-                }
+                onClick={solicitarRecuperacaoSenhaDoador}
               >
                 Esqueci minha senha
-            </button>
+              </button>
             </form>
           ) : (
             

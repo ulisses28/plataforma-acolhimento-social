@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import BackButton from '../../components/ui/BackButton'
 import { apiPost } from '../../services/api'
 import { iniciarSessaoAdmin } from '../../utils/sessaoAdmin'
+import { registrarSolicitacaoRecuperacao } from '../../services/recuperacaoSenhaService'
 
 function AdminLogin() {
   const navigate = useNavigate()
@@ -55,7 +56,20 @@ function AdminLogin() {
       setCarregando(false)
     }
   }
+  function solicitarRecuperacaoSenhaAdmin() {
+  if (!email.trim()) {
+    setMensagem('Digite o e-mail administrativo antes de solicitar recuperação.')
+    return
+  }
 
+  registrarSolicitacaoRecuperacao({
+    email: email.trim().toLowerCase(),
+    perfil: 'Administrador',
+    mensagem: 'Administrador solicitou recuperação de senha pela tela de login.'
+  })
+
+  setMensagem('Solicitação registrada. O responsável técnico deverá validar a recuperação.')
+  }
   return (
     <main style={styles.page}>
       <div style={styles.wrapper}>
@@ -92,9 +106,7 @@ function AdminLogin() {
             <button
               type="button"
               style={styles.linkButton}
-              onClick={() =>
-                alert('Solicite a recuperação de senha ao responsável técnico do sistema.')
-              }
+              onClick={solicitarRecuperacaoSenhaAdmin}
             >
               Esqueci minha senha
             </button>
