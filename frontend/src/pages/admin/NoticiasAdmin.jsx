@@ -1,12 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react'
 import BackButton from '../../components/ui/BackButton'
 import { registrarAuditoriaFrontend } from '../../services/auditoriaFrontendService'
+import { processarArquivos } from '../../services/uploadService'
 import {
   listarNoticias,
   salvarNoticia,
   atualizarNoticia,
-  excluirNoticia,
-  lerMidiaComoBase64
+  excluirNoticia
 } from '../../services/noticiasService'
 
 function NoticiasAdmin() {
@@ -57,63 +57,24 @@ function NoticiasAdmin() {
   }
 
   async function selecionarMidias(e) {
-  const arquivos = Array.from(e.target.files || [])
+  try {
+    const midiasConvertidas = await processarArquivos({
+      arquivos: e.target.files,
+      tiposPermitidos: ['image', 'video'],
+      limiteImagemMB: 5,
+      limiteVideoMB: 100,
+      alertaVideoMB: 50
+    })
 
-  if (arquivos.length === 0) return
-
-  const LIMITE_IMAGEM = 5 * 1024 * 1024
-  const LIMITE_VIDEO = 100 * 1024 * 1024
-  const ALERTA_VIDEO_GRANDE = 50 * 1024 * 1024
-
-  for (const arquivo of arquivos) {
-    const tamanhoMB = (arquivo.size / (1024 * 1024)).toFixed(2)
-
-    if (arquivo.type.startsWith('image') && arquivo.size > LIMITE_IMAGEM) {
-      alert(
-        `A imagem "${arquivo.name}" possui ${tamanhoMB} MB.\n\n` +
-        'Para manter o sistema rápido, envie imagens de até 5 MB.'
-      )
-
-      e.target.value = ''
-      return
-    }
-
-    if (arquivo.type.startsWith('video') && arquivo.size > LIMITE_VIDEO) {
-      alert(
-        `O vídeo "${arquivo.name}" possui ${tamanhoMB} MB.\n\n` +
-        'Para evitar lentidão, envie vídeos de até 100 MB.\n\n' +
-        'Para vídeos maiores, publique no YouTube e cole o link no campo "Link do YouTube opcional".'
-      )
-
-      e.target.value = ''
-      return
-    }
-
-    if (arquivo.type.startsWith('video') && arquivo.size > ALERTA_VIDEO_GRANDE) {
-      const continuar = confirm(
-        `O vídeo "${arquivo.name}" possui ${tamanhoMB} MB.\n\n` +
-        'Arquivos grandes podem deixar a publicação mais lenta.\n\n' +
-        'Deseja continuar mesmo assim?'
-      )
-
-      if (!continuar) {
-        e.target.value = ''
-        return
-      }
-    }
+    alterarCampo('midias', [
+      ...form.midias,
+      ...midiasConvertidas
+    ])
+  } catch (error) {
+    alert(error.message)
+  } finally {
+    e.target.value = ''
   }
-
-  const midiasConvertidas = await Promise.all(
-    arquivos.map(async (arquivo) => ({
-      nome: arquivo.name,
-      tipo: arquivo.type,
-      tamanho: arquivo.size,
-      tamanhoMB: (arquivo.size / (1024 * 1024)).toFixed(2),
-      base64: await lerMidiaComoBase64(arquivo)
-    }))
-  )
-
-  alterarCampo('midias', [...form.midias, ...midiasConvertidas])
   }
 
   function removerMidia(index) {
@@ -420,12 +381,6 @@ function NoticiasAdmin() {
               onChange={selecionarMidias}
             />
 
-            {midia.tamanhoMB && (
-              <p style={styles.mediaSize}>
-                Tamanho: {midia.tamanhoMB} MB
-              </p>
-            )}
-
             {form.midias.length > 0 && (
               <div style={styles.previewGrid}>
                 {form.midias.map((midia, index) => (
@@ -443,6 +398,12 @@ function NoticiasAdmin() {
                     >
                       Remover
                     </button>
+
+                    {midia.tamanhoMB && (
+                      <p style={styles.mediaSize}>
+                        Tamanho: {midia.tamanhoMB} MB
+                      </p>
+                    )}
                     {midia.tamanhoMB && (
                       <p style={styles.mediaSize}>
                         Tamanho: {midia.tamanhoMB} MB
@@ -533,6 +494,7 @@ function NoticiasAdmin() {
     </main>
   )
 }
+
 
 const styles = {
   page: { minHeight: '100vh', background: '#f1f7ff', padding: '40px 20px' },
