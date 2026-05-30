@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import BackButton from '../../components/ui/BackButton'
+import { registrarAuditoriaFrontend } from '../../services/auditoriaFrontendService'
 import {
   listarNoticias,
   salvarNoticia,
@@ -155,9 +156,17 @@ function NoticiasAdmin() {
     try {
       if (editandoId) {
         await atualizarNoticia({ ...dados, _id: editandoId })
+        registrarAuditoriaFrontend(
+          'ATUALIZACAO_NOTICIA',
+          dados.titulo
+        )
         alert('Publicação atualizada com sucesso!')
       } else {
         await salvarNoticia(dados)
+        registrarAuditoriaFrontend(
+          'CRIACAO_NOTICIA',
+          dados.titulo
+        )
         alert('Publicação cadastrada com sucesso!')
       }
 
@@ -191,6 +200,10 @@ function NoticiasAdmin() {
 
     try {
       await excluirNoticia(id)
+      registrarAuditoriaFrontend(
+        'EXCLUSAO_NOTICIA',
+        `Publicação removida: ${id}`
+      )
       await carregarNoticias()
     } catch (error) {
       console.error('Erro ao remover notícia:', error)
