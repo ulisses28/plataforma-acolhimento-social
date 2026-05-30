@@ -56,28 +56,62 @@ function NoticiasAdmin() {
   }
 
   async function selecionarMidias(e) {
-    const arquivos = Array.from(e.target.files || [])
-    if (arquivos.length === 0) return
+  const arquivos = Array.from(e.target.files || [])
 
-    const LIMITE_VIDEO = 20 * 1024 * 1024
+  if (arquivos.length === 0) return
 
-    for (const arquivo of arquivos) {
-      if (arquivo.type.startsWith('video') && arquivo.size > LIMITE_VIDEO) {
-        alert('Vídeo muito grande. Envie vídeos de até 20MB ou use o campo de link do YouTube.')
+  const LIMITE_IMAGEM = 5 * 1024 * 1024
+  const LIMITE_VIDEO = 100 * 1024 * 1024
+
+  for (const arquivo of arquivos) {
+    const tamanhoMB = (arquivo.size / (1024 * 1024)).toFixed(2)
+
+    if (arquivo.type.startsWith('image') && arquivo.size > LIMITE_IMAGEM) {
+      alert(
+        `A imagem "${arquivo.name}" possui ${tamanhoMB} MB.\n\n` +
+        'Para manter o sistema rápido, envie imagens de até 5 MB.'
+      )
+
+      e.target.value = ''
+      return
+    }
+
+    if (arquivo.type.startsWith('video') && arquivo.size > LIMITE_VIDEO) {
+      alert(
+        `O vídeo "${arquivo.name}" possui ${tamanhoMB} MB.\n\n` +
+        'Para evitar lentidão no sistema, envie vídeos de até 100 MB.\n\n' +
+        'Para vídeos maiores, recomendamos publicar no YouTube e colar o link no campo "Link do YouTube opcional".'
+      )
+
+      e.target.value = ''
+      return
+    }
+
+    if (arquivo.type.startsWith('video') && arquivo.size > 50 * 1024 * 1024) {
+      const continuar = confirm(
+        `O vídeo "${arquivo.name}" possui ${tamanhoMB} MB.\n\n` +
+        'Arquivos grandes podem deixar o carregamento mais lento.\n\n' +
+        'Deseja continuar mesmo assim?'
+      )
+
+      if (!continuar) {
         e.target.value = ''
         return
       }
     }
+  }
 
-    const midiasConvertidas = await Promise.all(
-      arquivos.map(async (arquivo) => ({
-        nome: arquivo.name,
-        tipo: arquivo.type,
-        base64: await lerMidiaComoBase64(arquivo)
-      }))
-    )
+  const midiasConvertidas = await Promise.all(
+    arquivos.map(async (arquivo) => ({
+      nome: arquivo.name,
+      tipo: arquivo.type,
+      tamanho: arquivo.size,
+      tamanhoMB: (arquivo.size / (1024 * 1024)).toFixed(2),
+      base64: await lerMidiaComoBase64(arquivo)
+    }))
+  )
 
-    alterarCampo('midias', [...form.midias, ...midiasConvertidas])
+  alterarCampo('midias', [...form.midias, ...midiasConvertidas])
   }
 
   function removerMidia(index) {
@@ -373,7 +407,7 @@ function NoticiasAdmin() {
             />
 
             <p style={styles.helperText}>
-              Para vídeos grandes, prefira usar o campo de link do YouTube.
+              Imagens: até 5 MB. Vídeos: até 100 MB. Para vídeos maiores, publique no YouTube e cole o link acima.
             </p>
 
             {form.midias.length > 0 && (
@@ -393,6 +427,11 @@ function NoticiasAdmin() {
                     >
                       Remover
                     </button>
+                    {midia.tamanhoMB && (
+                      <p style={styles.mediaSize}>
+                        Tamanho: {midia.tamanhoMB} MB
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>
@@ -517,7 +556,13 @@ const styles = {
   newsText: {color: '#475569', lineHeight: '1.8', marginTop: '12px', minHeight: '90px', fontSize: '15px'},
   cardActions: { display: 'flex', gap: '10px', marginTop: '14px', flexWrap: 'wrap' },
   editButton: { background: '#16a34a', color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 14px', fontWeight: '900', cursor: 'pointer' },
-  deleteButton: { background: '#dc2626', color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 14px', fontWeight: '900', cursor: 'pointer' }
+  deleteButton: { background: '#dc2626', color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 14px', fontWeight: '900', cursor: 'pointer' },
+  mediaSize: {
+  color: '#64748b',
+  fontSize: '12px',
+  marginTop: '6px',
+  fontWeight: '700'
+},
 }
 
 export default NoticiasAdmin
