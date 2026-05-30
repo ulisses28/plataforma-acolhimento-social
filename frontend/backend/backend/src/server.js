@@ -4,6 +4,7 @@ import dotenv from 'dotenv'
 import mongoose from 'mongoose'
 import noticiaRoutes from './routes/noticiaRoutes.js'
 import auditoriaRoutes from './routes/auditoriaRoutes.js'
+import doadorAuthRoutes from './routes/doadorAuthRoutes.js'
 
 dotenv.config()
 
@@ -16,7 +17,7 @@ app.use(cors())
 app.use(express.json({
   limit: '50mb'
 }))
-
+app.use('/api/doador-auth', doadorAuthRoutes)
 /*
 |--------------------------------------------------------------------------
 | CONEXÃO MONGODB

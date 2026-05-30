@@ -4,12 +4,18 @@ import {
   validarEmail,
   validarTelefone
 } from '../../utils/validacoes'
+
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import BackButton from '../../components/ui/BackButton'
 import { criarDoacao } from '../../services/doacoesService'
-import { registrarInteracao } from '../../services/analyticsService'
-import { registrarSolicitacaoRecuperacao } from '../../services/recuperacaoSenhaService'
+
+import {
+  registrarDoadorBackend,
+  loginDoadorBackend,
+  solicitarCodigoRecuperacao,
+  redefinirSenhaDoador
+} from '../../services/doadorAuthService'
 
 import {
   listarPaises,
@@ -26,9 +32,15 @@ function DoadorLogin() {
   const [modo, setModo] = useState('login')
   const [mensagem, setMensagem] = useState('')
   const [tipoMensagem, setTipoMensagem] = useState('erro')
+  const [carregando, setCarregando] = useState(false)
 
   const [emailLogin, setEmailLogin] = useState('')
   const [senhaLogin, setSenhaLogin] = useState('')
+
+  const [codigoRecuperacao, setCodigoRecuperacao] = useState('')
+  const [novaSenhaRecuperacao, setNovaSenhaRecuperacao] = useState('')
+  const [confirmarNovaSenhaRecuperacao, setConfirmarNovaSenhaRecuperacao] =
+    useState('')
 
   const [nome, setNome] = useState('')
   const [tipoPessoa, setTipoPessoa] = useState('fisica')
@@ -77,12 +89,12 @@ function DoadorLogin() {
     carregarMunicipios()
   }, [estadoId])
 
-  function listarDoadores() {
+  function listarDoadoresLocais() {
     const dados = localStorage.getItem(DOADORES_KEY)
     return dados ? JSON.parse(dados) : []
   }
 
-  function salvarDoadores(lista) {
+  function salvarDoadoresLocais(lista) {
     localStorage.setItem(DOADORES_KEY, JSON.stringify(lista))
   }
 
@@ -96,7 +108,18 @@ function DoadorLogin() {
     setMensagem(texto)
   }
 
-  function entrarComoDoador(e) {
+  function senhaForte(valor) {
+    return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.#_-]).{8,}$/.test(
+      valor
+    )
+  }
+
+  /*
+    LOGIN DO DOADOR
+    Agora o login não compara senha no localStorage.
+    Ele chama o backend, que valida a senha criptografada com bcrypt.
+  */
+  async function entrarComoDoador(e) {
     e.preventDefault()
     setMensagem('')
 
@@ -105,24 +128,31 @@ function DoadorLogin() {
       return
     }
 
-    const doadores = listarDoadores()
+    try {
+      setCarregando(true)
 
-    const encontrado = doadores.find(
-      (d) =>
-        d.email === emailLogin.trim().toLowerCase() &&
-        d.senha === senhaLogin.trim()
-    )
+      const resposta = await loginDoadorBackend({
+        email: emailLogin.trim().toLowerCase(),
+        senha: senhaLogin.trim()
+      })
 
-    if (!encontrado) {
+      localStorage.setItem('doador-token', resposta.token)
+      localStorage.setItem(DOADOR_LOGADO_KEY, JSON.stringify(resposta.doador))
+
+      navigate('/doador/painel')
+    } catch (error) {
       mostrarErro('E-mail ou senha inválidos.')
-      return
+    } finally {
+      setCarregando(false)
     }
-
-    localStorage.setItem(DOADOR_LOGADO_KEY, JSON.stringify(encontrado))
-    navigate('/doador/painel')
   }
 
-  function cadastrarDoador(e) {
+  /*
+    CADASTRO DO DOADOR
+    O cadastro principal vai para o backend/MongoDB.
+    O localStorage fica apenas como cópia de compatibilidade para telas antigas.
+  */
+  async function cadastrarDoador(e) {
     e.preventDefault()
     setMensagem('')
 
@@ -130,40 +160,30 @@ function DoadorLogin() {
     if (!documento.trim()) return mostrarErro('Informe CPF/RG ou CNPJ.')
     if (!telefone.trim()) return mostrarErro('Informe o telefone.')
     if (!email.trim()) return mostrarErro('Informe o e-mail.')
-    if (!validarEmail(email)) {
-      return mostrarErro('Informe um e-mail válido.')
-    }
 
+    if (!validarEmail(email)) return mostrarErro('Informe um e-mail válido.')
     if (!validarTelefone(telefone)) {
       return mostrarErro('Informe um telefone válido com DDD.')
     }
 
-    if (
-      tipoPessoa === 'fisica' &&
-      !validarCPF(documento)
-    ) {
+    if (tipoPessoa === 'fisica' && !validarCPF(documento)) {
       return mostrarErro('CPF inválido.')
     }
 
-    if (
-      tipoPessoa === 'juridica' &&
-      !validarCNPJ(documento)
-    ) {
+    if (tipoPessoa === 'juridica' && !validarCNPJ(documento)) {
       return mostrarErro('CNPJ inválido.')
     }
 
     if (!pais) return mostrarErro('Selecione o país.')
-
     if (pais === 'BR' && !estadoId) return mostrarErro('Selecione o estado.')
-    if (pais === 'BR' && !municipio) return mostrarErro('Selecione o município.')
+    if (pais === 'BR' && !municipio) {
+      return mostrarErro('Selecione o município.')
+    }
 
     if (!senha.trim()) return mostrarErro('Crie uma senha.')
     if (!confirmarSenha.trim()) return mostrarErro('Confirme sua senha.')
 
-    const senhaForte =
-    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.#_-]).{8,}$/
-
-    if (!senhaForte.test(senha.trim())) {
+    if (!senhaForte(senha.trim())) {
       return mostrarErro(
         'A senha deve conter no mínimo 8 caracteres, letra maiúscula, minúscula, número e caractere especial.'
       )
@@ -189,17 +209,8 @@ function DoadorLogin() {
       return mostrarErro('Informe o valor da TED.')
     }
 
-    const doadores = listarDoadores()
-
-    const existe = doadores.some(
-      (d) => d.email === email.trim().toLowerCase()
-    )
-
-    if (existe) {
-      return mostrarErro('Este e-mail já está cadastrado.')
-    }
-
-    const paisSelecionado = paises.find((p) => p.codigo === pais)?.nome || pais
+    const paisSelecionado =
+      paises.find((p) => p.codigo === pais)?.nome || pais
 
     const novoDoador = {
       id: Date.now(),
@@ -209,7 +220,6 @@ function DoadorLogin() {
       documento: documento.trim(),
       telefone: telefone.trim(),
       email: email.trim().toLowerCase(),
-      senha: senha.trim(),
       paisCodigo: pais,
       pais: paisSelecionado,
       estadoId,
@@ -220,45 +230,142 @@ function DoadorLogin() {
       criadoEm: new Date().toLocaleDateString('pt-BR')
     }
 
-    doadores.push(novoDoador)
-    salvarDoadores(doadores)
+    try {
+      setCarregando(true)
 
-    if (querDoar === 'sim') {
-      criarDoacao({
-        doador: novoDoador,
-        tipoDoacao: 'Financeira',
-        forma,
-        valor: forma === 'TED' ? valorTED : '',
-        comprovante,
-        lgpdAceito: true,
-        lgpdAceitoEm: new Date().toLocaleString('pt-BR')
+      const resposta = await registrarDoadorBackend({
+        nome: novoDoador.nome,
+        email: novoDoador.email,
+        senha: senha.trim(),
+        telefone: novoDoador.telefone,
+        documento: novoDoador.documento,
+        tipoPessoa: novoDoador.tipoPessoa,
+        pais: novoDoador.pais,
+        estado: novoDoador.estado,
+        municipio: novoDoador.municipio
       })
+
+      const doadorSeguro = {
+        ...novoDoador,
+        id: resposta.doador?.id || novoDoador.id
+      }
+
+      const doadores = listarDoadoresLocais()
+
+      const semDuplicado = doadores.filter(
+        (d) => d.email !== doadorSeguro.email
+      )
+
+      salvarDoadoresLocais([doadorSeguro, ...semDuplicado])
+
+      if (querDoar === 'sim') {
+        criarDoacao({
+          doador: doadorSeguro,
+          tipoDoacao: 'Financeira',
+          forma,
+          valor: forma === 'TED' ? valorTED : '',
+          comprovante,
+          lgpdAceito: true,
+          lgpdAceitoEm: new Date().toLocaleString('pt-BR')
+        })
+      }
+
+      localStorage.setItem(DOADOR_LOGADO_KEY, JSON.stringify(doadorSeguro))
+
+      mostrarSucesso(
+        'Usuário cadastrado com sucesso! Redirecionando para o painel...'
+      )
+
+      setTimeout(() => {
+        navigate('/doador/painel')
+      }, 1800)
+    } catch (error) {
+      mostrarErro(
+        'Erro ao cadastrar doador. Verifique se o e-mail já existe ou se o backend está funcionando.'
+      )
+    } finally {
+      setCarregando(false)
+    }
+  }
+
+  /*
+    PRIMEIRA ETAPA DA RECUPERAÇÃO:
+    envia um código de 6 dígitos para o e-mail cadastrado.
+  */
+  async function solicitarRecuperacaoSenhaDoador() {
+    if (!emailLogin.trim()) {
+      mostrarErro(
+        'Digite seu e-mail cadastrado antes de solicitar recuperação de senha.'
+      )
+      return
     }
 
-    localStorage.setItem(DOADOR_LOGADO_KEY, JSON.stringify(novoDoador))
+    try {
+      setCarregando(true)
 
-    mostrarSucesso('Usuário cadastrado com sucesso! Redirecionando para o painel...')
+      await solicitarCodigoRecuperacao(emailLogin.trim().toLowerCase())
 
-    setTimeout(() => {
-      navigate('/doador/painel')
-    }, 1800)
+      mostrarSucesso('Código enviado para o e-mail cadastrado.')
+      setModo('recuperar')
+    } catch (error) {
+      mostrarErro(
+        'Não foi possível enviar o código. Verifique o e-mail informado.'
+      )
+    } finally {
+      setCarregando(false)
+    }
   }
-  function solicitarRecuperacaoSenhaDoador() {
-  if (!emailLogin.trim()) {
-    mostrarErro('Digite seu e-mail cadastrado antes de solicitar recuperação de senha.')
-    return
+
+  /*
+    SEGUNDA ETAPA DA RECUPERAÇÃO:
+    usuário informa código recebido + nova senha.
+  */
+  async function confirmarRedefinicaoSenha(e) {
+    e.preventDefault()
+    setMensagem('')
+
+    if (!emailLogin.trim()) return mostrarErro('Informe o e-mail.')
+    if (!codigoRecuperacao.trim()) {
+      return mostrarErro('Informe o código recebido por e-mail.')
+    }
+
+    if (!novaSenhaRecuperacao.trim() || !confirmarNovaSenhaRecuperacao.trim()) {
+      return mostrarErro('Informe e confirme a nova senha.')
+    }
+
+    if (!senhaForte(novaSenhaRecuperacao.trim())) {
+      return mostrarErro(
+        'A nova senha deve conter no mínimo 8 caracteres, letra maiúscula, minúscula, número e caractere especial.'
+      )
+    }
+
+    if (novaSenhaRecuperacao.trim() !== confirmarNovaSenhaRecuperacao.trim()) {
+      return mostrarErro('As senhas não conferem.')
+    }
+
+    try {
+      setCarregando(true)
+
+      await redefinirSenhaDoador({
+        email: emailLogin.trim().toLowerCase(),
+        codigo: codigoRecuperacao.trim(),
+        novaSenha: novaSenhaRecuperacao.trim()
+      })
+
+      mostrarSucesso('Senha redefinida com sucesso. Faça login com a nova senha.')
+
+      setSenhaLogin('')
+      setCodigoRecuperacao('')
+      setNovaSenhaRecuperacao('')
+      setConfirmarNovaSenhaRecuperacao('')
+      setModo('login')
+    } catch (error) {
+      mostrarErro('Código inválido, expirado ou senha fora do padrão.')
+    } finally {
+      setCarregando(false)
+    }
   }
 
-  registrarSolicitacaoRecuperacao({
-    email: emailLogin.trim().toLowerCase(),
-    perfil: 'Doador',
-    mensagem: 'Doador solicitou recuperação de senha pela tela de login.'
-  })
-
-  mostrarSucesso(
-    'Solicitação registrada com sucesso. A instituição analisará seu pedido de recuperação de senha.'
-  )
-  }
   return (
     <main style={styles.page}>
       <div style={styles.container}>
@@ -266,16 +373,25 @@ function DoadorLogin() {
 
         <section style={styles.card}>
           <h1 style={styles.title}>Área do Doador</h1>
+
           <p style={styles.subtitle}>
             Acesse seu painel ou cadastre-se para acompanhar suas doações.
           </p>
 
           <div style={styles.tabs}>
-            <button type="button" style={styles.tabButton} onClick={() => setModo('login')}>
+            <button
+              type="button"
+              style={styles.tabButton}
+              onClick={() => setModo('login')}
+            >
               Entrar como doador
             </button>
 
-            <button type="button" style={styles.tabButton} onClick={() => setModo('cadastro')}>
+            <button
+              type="button"
+              style={styles.tabButton}
+              onClick={() => setModo('cadastro')}
+            >
               Cadastrar-se
             </button>
           </div>
@@ -300,17 +416,69 @@ function DoadorLogin() {
                 placeholder="Digite sua senha"
               />
 
-              <button type="submit" style={styles.button}>Acessar painel</button>
+              <button type="submit" style={styles.button} disabled={carregando}>
+                {carregando ? 'Acessando...' : 'Acessar painel'}
+              </button>
+
               <button
                 type="button"
                 style={styles.linkButton}
                 onClick={solicitarRecuperacaoSenhaDoador}
+                disabled={carregando}
               >
                 Esqueci minha senha
               </button>
             </form>
+          ) : modo === 'recuperar' ? (
+            <form onSubmit={confirmarRedefinicaoSenha} style={styles.form}>
+              <label style={styles.label}>E-mail cadastrado</label>
+              <input
+                type="email"
+                value={emailLogin}
+                onChange={(e) => setEmailLogin(e.target.value)}
+                style={styles.input}
+                placeholder="Digite seu e-mail"
+              />
+
+              <label style={styles.label}>Código recebido por e-mail</label>
+              <input
+                value={codigoRecuperacao}
+                onChange={(e) => setCodigoRecuperacao(e.target.value)}
+                style={styles.input}
+                placeholder="Ex: 123456"
+              />
+
+              <label style={styles.label}>Nova senha</label>
+              <input
+                type="password"
+                value={novaSenhaRecuperacao}
+                onChange={(e) => setNovaSenhaRecuperacao(e.target.value)}
+                style={styles.input}
+                placeholder="Nova senha forte"
+              />
+
+              <label style={styles.label}>Confirmar nova senha</label>
+              <input
+                type="password"
+                value={confirmarNovaSenhaRecuperacao}
+                onChange={(e) => setConfirmarNovaSenhaRecuperacao(e.target.value)}
+                style={styles.input}
+                placeholder="Confirme a nova senha"
+              />
+
+              <button type="submit" style={styles.button} disabled={carregando}>
+                {carregando ? 'Redefinindo...' : 'Redefinir senha'}
+              </button>
+
+              <button
+                type="button"
+                style={styles.linkButton}
+                onClick={() => setModo('login')}
+              >
+                Voltar para login
+              </button>
+            </form>
           ) : (
-            
             <form onSubmit={cadastrarDoador} style={styles.form}>
               <label style={styles.label}>Nome ou razão social</label>
               <input
@@ -344,13 +512,17 @@ function DoadorLogin() {
               </div>
 
               <label style={styles.label}>
-                {tipoPessoa === 'juridica' ? 'CNPJ obrigatório' : 'CPF ou RG obrigatório'}
+                {tipoPessoa === 'juridica'
+                  ? 'CNPJ obrigatório'
+                  : 'CPF obrigatório'}
               </label>
               <input
                 value={documento}
                 onChange={(e) => setDocumento(e.target.value)}
                 style={styles.input}
-                placeholder={tipoPessoa === 'juridica' ? 'Digite o CNPJ' : 'Digite CPF/RG'}
+                placeholder={
+                  tipoPessoa === 'juridica' ? 'Digite o CNPJ' : 'Digite o CPF'
+                }
               />
 
               <label style={styles.label}>Telefone</label>
@@ -358,7 +530,7 @@ function DoadorLogin() {
                 value={telefone}
                 onChange={(e) => setTelefone(e.target.value)}
                 style={styles.input}
-                placeholder="Telefone"
+                placeholder="Telefone com DDD"
               />
 
               <label style={styles.label}>E-mail</label>
@@ -400,7 +572,8 @@ function DoadorLogin() {
                       onChange={(e) => {
                         const novoEstadoId = e.target.value
                         const selecionado = estados.find(
-                          (estado) => String(estado.id) === String(novoEstadoId)
+                          (estado) =>
+                            String(estado.id) === String(novoEstadoId)
                         )
 
                         setEstadoId(novoEstadoId)
@@ -441,7 +614,7 @@ function DoadorLogin() {
                 value={senha}
                 onChange={(e) => setSenha(e.target.value)}
                 style={styles.input}
-                placeholder="Senha forte"
+                placeholder="Mínimo 8 caracteres, número e símbolo"
               />
 
               <label style={styles.label}>Confirmar senha</label>
@@ -532,7 +705,10 @@ function DoadorLogin() {
                         <p><strong>Banco:</strong> Banestes</p>
                         <p><strong>Agência:</strong> 059</p>
                         <p><strong>Conta corrente:</strong> 6.948.103</p>
-                        <p><strong>Razão Social:</strong> Lar Batista Albertine Meador</p>
+                        <p>
+                          <strong>Razão Social:</strong> Lar Batista Albertine
+                          Meador
+                        </p>
                         <p><strong>CNPJ:</strong> 27.363.944/0001-80</p>
                       </div>
 
@@ -547,7 +723,9 @@ function DoadorLogin() {
                       <label style={styles.label}>Anexar comprovante</label>
                       <input
                         type="file"
-                        onChange={(e) => setComprovante(e.target.files?.[0]?.name || '')}
+                        onChange={(e) =>
+                          setComprovante(e.target.files?.[0]?.name || '')
+                        }
                         style={styles.input}
                       />
                     </div>
@@ -559,9 +737,9 @@ function DoadorLogin() {
                 <h3 style={styles.smallTitle}>Termo LGPD</h3>
 
                 <p style={styles.note}>
-                  Ao continuar, você autoriza o Lar Batista Albertine Meador a armazenar seus
-                  dados para fins de cadastro, histórico de doações, comunicação institucional
-                  e prestação de contas, conforme a Lei Geral de Proteção de Dados.
+                  Ao continuar, você autoriza o Lar Batista Albertine Meador a
+                  armazenar seus dados para fins de cadastro, histórico de
+                  doações, comunicação institucional e prestação de contas.
                 </p>
 
                 <label style={styles.lgpdCheck}>
@@ -574,7 +752,9 @@ function DoadorLogin() {
                 </label>
               </section>
 
-              <button type="submit" style={styles.button}>Criar cadastro</button>
+              <button type="submit" style={styles.button} disabled={carregando}>
+                {carregando ? 'Cadastrando...' : 'Criar cadastro'}
+              </button>
             </form>
           )}
 
@@ -616,7 +796,12 @@ const styles = {
     cursor: 'pointer'
   },
   form: { display: 'flex', flexDirection: 'column' },
-  label: { marginTop: '14px', marginBottom: '6px', color: '#374151', fontWeight: '700' },
+  label: {
+    marginTop: '14px',
+    marginBottom: '6px',
+    color: '#374151',
+    fontWeight: '700'
+  },
   input: {
     width: '100%',
     minHeight: '48px',
@@ -626,7 +811,13 @@ const styles = {
     padding: '0 12px',
     boxSizing: 'border-box'
   },
-  radioGroup: { display: 'flex', gap: '18px', flexWrap: 'wrap', color: '#374151', fontWeight: '600' },
+  radioGroup: {
+    display: 'flex',
+    gap: '18px',
+    flexWrap: 'wrap',
+    color: '#374151',
+    fontWeight: '600'
+  },
   locationBox: {
     marginTop: '16px',
     background: '#f8fbff',
@@ -684,8 +875,6 @@ const styles = {
     fontWeight: '800',
     cursor: 'pointer'
   },
-  
-
   linkButton: {
     background: 'transparent',
     border: 'none',
@@ -696,11 +885,10 @@ const styles = {
     marginTop: '12px',
     alignSelf: 'flex-start'
   },
-
   message: {
     marginTop: '16px',
     fontWeight: '700'
-  },
+  }
 }
 
 export default DoadorLogin
