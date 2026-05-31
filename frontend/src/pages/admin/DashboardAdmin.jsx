@@ -9,6 +9,7 @@ import { obterTopDoadores } from '../../services/rankingService'
 import { exportarBackupSistema } from '../../services/backupService'
 import { limparSessaoAdmin } from '../../utils/sessaoAdmin'
 import { registrarAuditoriaFrontend } from '../../services/auditoriaFrontendService'
+import { listarNoticias } from '../../services/noticiasService'
 
 
 import {
@@ -21,6 +22,8 @@ import {
 function DashboardAdmin() {
   const [doacoes, setDoacoes] = useState([])
   const [topDoadores, setTopDoadores] = useState([])
+
+  const [noticias, setNoticias] = useState([])
 
   const [necessidades, setNecessidades] = useState([])
   const [graficoNecessidades, setGraficoNecessidades] = useState({})
@@ -63,7 +66,14 @@ function DashboardAdmin() {
     setGraficoNecessidades(
       contarNecessidadesPorCategoria()
     )
-  }
+    listarNoticias()
+      .then((dados) => {
+        setNoticias(Array.isArray(dados) ? dados : [])
+      })
+      .catch(() => {
+        setNoticias([])
+      })
+    }
 
   function abrirCategoria(categoria) {
     setCategoriaSelecionada(categoria)
@@ -143,9 +153,31 @@ function DashboardAdmin() {
       currency: 'BRL'
     })
 
+  const totalNoticias = noticias.length
+
+  const noticiasPublicadas =
+    noticias.filter(
+      (n) => n.status === 'Publicado'
+    )
+
+  const noticiasRevisao =
+    noticias.filter(
+      (n) => n.status === 'Em Revisão'
+    )
+
+  const noticiasRascunho =
+    noticias.filter(
+      (n) => n.status === 'Rascunho'
+    )
+
+  const noticiasArquivadas =
+    noticias.filter(
+      (n) => n.status === 'Arquivado'
+    )
+
   const ultimasDoacoes = [...doacoes]
-    .slice(-5)
-    .reverse()
+      .slice(-5)
+      .reverse()
 
   const necessidadesDaCategoria =
     necessidades.filter(
@@ -212,6 +244,29 @@ function DashboardAdmin() {
             icon="📦"
             label="Doações registradas"
             value={totalDoacoes}
+          />
+          <SummaryCard
+            icon="📰"
+            label="Notícias"
+            value={totalNoticias}
+          />
+
+          <SummaryCard
+            icon="✅"
+            label="Publicadas"
+            value={noticiasPublicadas.length}
+          />
+
+          <SummaryCard
+            icon="🟡"
+            label="Em revisão"
+            value={noticiasRevisao.length}
+          />
+
+          <SummaryCard
+            icon="📁"
+            label="Arquivadas"
+            value={noticiasArquivadas.length}
           />
 
           <SummaryCard
@@ -558,6 +613,37 @@ function DashboardAdmin() {
             Ver histórico →
           </Link>
         </div>
+        <section style={styles.alertCard}>
+          <h2 style={styles.tableTitle}>
+            Notícias Pendentes
+          </h2>
+
+          <p style={styles.subtitle}>
+            Publicações aguardando aprovação.
+          </p>
+
+          {noticiasRevisao.length === 0 ? (
+            <p style={styles.needMeta}>
+              Nenhuma notícia aguardando revisão.
+            </p>
+          ) : (
+            noticiasRevisao.map((item) => (
+              <div
+                key={item._id}
+                style={styles.pendingItem}
+              >
+                <strong>
+                  {item.titulo}
+                </strong>
+
+                <p style={styles.needMeta}>
+                  Categoria: {item.categoria}
+                </p>
+              </div>
+            ))
+          )}
+        </section>
+
         {/* TOP DOADORES */}
 
         <section style={styles.rankingCard}>
@@ -1072,7 +1158,23 @@ logoutButton: {
   fontWeight: '800',
   cursor: 'pointer'
 },
-  
+alertCard: {
+  marginTop: '35px',
+  background: '#fff7ed',
+  border: '1px solid #fed7aa',
+  borderRadius: '24px',
+  padding: '28px',
+  boxShadow:
+    '0 8px 24px rgba(0,0,0,0.08)'
+},
+
+pendingItem: {
+  background: '#fff',
+  borderLeft: '6px solid #f59e0b',
+  borderRadius: '14px',
+  padding: '16px',
+  marginTop: '12px'
+}, 
 }
 
 

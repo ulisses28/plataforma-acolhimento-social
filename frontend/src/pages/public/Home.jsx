@@ -30,7 +30,12 @@ function Home() {
     carregarNoticias()
   }, [])
 
-  const noticiasPublicadas = noticias
+  const noticiasPublicadas = noticias.filter(
+  (item) =>
+    String(item.status || '')
+      .trim()
+      .toLowerCase() === 'publicado'
+  )
 
   const noticiaDestaque =
     noticiasPublicadas.find(

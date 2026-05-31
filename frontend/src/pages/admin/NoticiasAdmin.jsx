@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import BackButton from '../../components/ui/BackButton'
 import { registrarAuditoriaFrontend } from '../../services/auditoriaFrontendService'
 import { processarArquivos } from '../../services/uploadService'
+
 import {
   listarNoticias,
   salvarNoticia,
@@ -14,6 +15,8 @@ function NoticiasAdmin() {
   const [mostrarFormulario, setMostrarFormulario] = useState(false)
   const [editandoId, setEditandoId] = useState(null)
   const [carregando, setCarregando] = useState(false)
+  const [filtroStatus, setFiltroStatus] = useState('Todos')
+
   const editorRef = useRef(null)
 
   const formInicial = {
@@ -34,9 +37,9 @@ function NoticiasAdmin() {
   }, [])
 
   useEffect(() => {
-  if (mostrarFormulario && editorRef.current) {
-    editorRef.current.innerHTML = form.conteudo || ''
-  }
+    if (mostrarFormulario && editorRef.current) {
+      editorRef.current.innerHTML = form.conteudo || ''
+    }
   }, [mostrarFormulario, editandoId])
 
   async function carregarNoticias() {
@@ -53,28 +56,31 @@ function NoticiasAdmin() {
   }
 
   function alterarCampo(campo, valor) {
-    setForm((atual) => ({ ...atual, [campo]: valor }))
+    setForm((atual) => ({
+      ...atual,
+      [campo]: valor
+    }))
   }
 
   async function selecionarMidias(e) {
-  try {
-    const midiasConvertidas = await processarArquivos({
-      arquivos: e.target.files,
-      tiposPermitidos: ['image', 'video'],
-      limiteImagemMB: 5,
-      limiteVideoMB: 100,
-      alertaVideoMB: 50
-    })
+    try {
+      const midiasConvertidas = await processarArquivos({
+        arquivos: e.target.files,
+        tiposPermitidos: ['image', 'video'],
+        limiteImagemMB: 5,
+        limiteVideoMB: 100,
+        alertaVideoMB: 50
+      })
 
-    alterarCampo('midias', [
-      ...form.midias,
-      ...midiasConvertidas
-    ])
-  } catch (error) {
-    alert(error.message)
-  } finally {
-    e.target.value = ''
-  }
+      alterarCampo('midias', [
+        ...form.midias,
+        ...midiasConvertidas
+      ])
+    } catch (error) {
+      alert(error.message)
+    } finally {
+      e.target.value = ''
+    }
   }
 
   function removerMidia(index) {
@@ -116,18 +122,25 @@ function NoticiasAdmin() {
 
     try {
       if (editandoId) {
-        await atualizarNoticia({ ...dados, _id: editandoId })
+        await atualizarNoticia({
+          ...dados,
+          _id: editandoId
+        })
+
         registrarAuditoriaFrontend(
           'ATUALIZACAO_NOTICIA',
           dados.titulo
         )
+
         alert('Publicação atualizada com sucesso!')
       } else {
         await salvarNoticia(dados)
+
         registrarAuditoriaFrontend(
           'CRIACAO_NOTICIA',
           dados.titulo
         )
+
         alert('Publicação cadastrada com sucesso!')
       }
 
@@ -146,7 +159,11 @@ function NoticiasAdmin() {
       areaPublicacao: item.areaPublicacao || 'Últimas Notícias',
       resumo: item.resumo || '',
       conteudo: item.conteudo || '',
-      midias: item.midias || (item.midia ? [{ base64: item.midia, tipo: item.tipoMidia }] : []),
+      midias:
+        item.midias ||
+        (item.midia
+          ? [{ base64: item.midia, tipo: item.tipoMidia }]
+          : []),
       youtubeUrl: item.youtubeUrl || '',
       status: item.status || 'Rascunho'
     })
@@ -161,10 +178,12 @@ function NoticiasAdmin() {
 
     try {
       await excluirNoticia(id)
+
       registrarAuditoriaFrontend(
         'EXCLUSAO_NOTICIA',
         `Publicação removida: ${id}`
       )
+
       await carregarNoticias()
     } catch (error) {
       console.error('Erro ao remover notícia:', error)
@@ -211,7 +230,9 @@ function NoticiasAdmin() {
   function converterYoutubeEmbed(url) {
     if (!url) return ''
 
-    if (url.includes('watch?v=')) return url.replace('watch?v=', 'embed/')
+    if (url.includes('watch?v=')) {
+      return url.replace('watch?v=', 'embed/')
+    }
 
     if (url.includes('youtu.be/')) {
       const id = url.split('youtu.be/')[1].split('?')[0]
@@ -233,45 +254,53 @@ function NoticiasAdmin() {
 
     return item.criadoEm || 'Publicação'
   }
+
   async function alterarStatusPublicacao(item, novoStatus) {
-  try {
-    const id = item._id || item.id
+    try {
+      const id = item._id || item.id
 
-    await atualizarNoticia({
-      ...item,
-      _id: id,
-      status: novoStatus
-    })
+      await atualizarNoticia({
+        ...item,
+        _id: id,
+        status: novoStatus
+      })
 
-    registrarAuditoriaFrontend(
-      'ALTERACAO_STATUS_NOTICIA',
-      `${item.titulo} alterada para ${novoStatus}`
-    )
+      registrarAuditoriaFrontend(
+        'ALTERACAO_STATUS_NOTICIA',
+        `${item.titulo} alterada para ${novoStatus}`
+      )
 
-    await carregarNoticias()
-  } catch (error) {
-    console.error('Erro ao alterar status:', error)
-    alert('Erro ao alterar status da publicação.')
+      await carregarNoticias()
+    } catch (error) {
+      console.error('Erro ao alterar status:', error)
+      alert('Erro ao alterar status da publicação.')
+    }
   }
+
   function corStatus(status) {
-  switch(status) {
-    case 'Rascunho':
-      return '#64748b'
+    switch (status) {
+      case 'Rascunho':
+        return '#64748b'
 
-    case 'Em Revisão':
-      return '#f59e0b'
+      case 'Em Revisão':
+        return '#f59e0b'
 
-    case 'Publicado':
-      return '#16a34a'
+      case 'Publicado':
+        return '#16a34a'
 
-    case 'Arquivado':
-      return '#dc2626'
+      case 'Arquivado':
+        return '#dc2626'
 
-    default:
-      return '#64748b'
+      default:
+        return '#64748b'
+    }
   }
-  }
-  }
+
+  const noticiasFiltradas =
+    filtroStatus === 'Todos'
+      ? noticias
+      : noticias.filter((item) => item.status === filtroStatus)
+
   return (
     <main style={styles.page}>
       <div style={styles.container}>
@@ -280,6 +309,7 @@ function NoticiasAdmin() {
         <header style={styles.header}>
           <div>
             <h1 style={styles.title}>Publicar Notícias</h1>
+
             <p style={styles.subtitle}>
               Cadastre notícias, mensagens do dia, histórias de vida, avisos,
               fotos, vídeos e links do YouTube para exibição no site.
@@ -355,7 +385,9 @@ function NoticiasAdmin() {
                   onChange={(e) => aplicarTamanho(e.target.value)}
                   defaultValue=""
                 >
-                  <option value="" disabled>Tamanho</option>
+                  <option value="" disabled>
+                    Tamanho
+                  </option>
                   <option value="2">Pequena</option>
                   <option value="3">Normal</option>
                   <option value="4">Média</option>
@@ -381,13 +413,13 @@ function NoticiasAdmin() {
               </div>
 
               <div
-              ref={editorRef}
-              contentEditable
-              suppressContentEditableWarning
-              spellCheck={true}
-              style={styles.editor}
-              onInput={atualizarConteudoEditor}
-            />
+                ref={editorRef}
+                contentEditable
+                suppressContentEditableWarning
+                spellCheck={true}
+                style={styles.editor}
+                onInput={atualizarConteudoEditor}
+              />
             </div>
 
             <label style={styles.label}>Link do YouTube opcional</label>
@@ -474,13 +506,32 @@ function NoticiasAdmin() {
         <section style={styles.listCard}>
           <h2 style={styles.sectionTitle}>Publicações cadastradas</h2>
 
+          <div style={styles.filterBox}>
+            {['Todos', 'Rascunho', 'Em Revisão', 'Publicado', 'Arquivado'].map(
+              (status) => (
+                <button
+                  key={status}
+                  type="button"
+                  style={
+                    filtroStatus === status
+                      ? styles.filterButtonActive
+                      : styles.filterButton
+                  }
+                  onClick={() => setFiltroStatus(status)}
+                >
+                  {status}
+                </button>
+              )
+            )}
+          </div>
+
           {carregando ? (
             <p style={styles.emptyText}>Carregando publicações...</p>
-          ) : noticias.length === 0 ? (
+          ) : noticiasFiltradas.length === 0 ? (
             <p style={styles.emptyText}>Nenhuma publicação cadastrada ainda.</p>
           ) : (
             <div style={styles.newsGrid}>
-              {noticias.map((item) => (
+              {noticiasFiltradas.map((item) => (
                 <article key={item._id || item.id} style={styles.newsCard}>
                   {item.youtubeUrl ? (
                     <iframe
@@ -497,7 +548,15 @@ function NoticiasAdmin() {
                     )
                   ) : null}
 
-                  <span style={{ ...styles.badge, background: corStatus(item.status), color: '#fff'}} ></span>
+                  <span
+                    style={{
+                      ...styles.badge,
+                      background: corStatus(item.status),
+                      color: '#fff'
+                    }}
+                  >
+                    {item.status || 'Rascunho'}
+                  </span>
 
                   <h3 style={styles.newsTitle}>{item.titulo}</h3>
 
@@ -509,35 +568,40 @@ function NoticiasAdmin() {
 
                   <div style={styles.cardActions}>
                     {item.status === 'Rascunho' && (
-                    <button
-                      type="button"
-                      style={styles.reviewButton}
-                      onClick={() => alterarStatusPublicacao(item, 'Em Revisão')}
-                    >
-                      Enviar para revisão
-                    </button>
-                  )}
+                      <button
+                        type="button"
+                        style={styles.reviewButton}
+                        onClick={() => alterarStatusPublicacao(item, 'Em Revisão')}
+                      >
+                        Enviar para revisão
+                      </button>
+                    )}
 
-                  {item.status === 'Em Revisão' && (
-                    <button
-                      type="button"
-                      style={styles.approveButton}
-                      onClick={() => alterarStatusPublicacao(item, 'Publicado')}
-                    >
-                      Aprovar
-                    </button>
-                  )}
+                    {item.status === 'Em Revisão' && (
+                      <button
+                        type="button"
+                        style={styles.approveButton}
+                        onClick={() => alterarStatusPublicacao(item, 'Publicado')}
+                      >
+                        Aprovar
+                      </button>
+                    )}
 
-                  {item.status === 'Publicado' && (
+                    {item.status === 'Publicado' && (
+                      <button
+                        type="button"
+                        style={styles.archiveButton}
+                        onClick={() => alterarStatusPublicacao(item, 'Arquivado')}
+                      >
+                        Arquivar
+                      </button>
+                    )}
+
                     <button
                       type="button"
-                      style={styles.archiveButton}
-                      onClick={() => alterarStatusPublicacao(item, 'Arquivado')}
+                      style={styles.editButton}
+                      onClick={() => editar(item)}
                     >
-                      Arquivar
-                    </button>
-                  )}
-                    <button type="button" style={styles.editButton} onClick={() => editar(item)}>
                       ✏️ Editar
                     </button>
 
@@ -559,7 +623,6 @@ function NoticiasAdmin() {
   )
 }
 
-
 const styles = {
   page: { minHeight: '100vh', background: '#f1f7ff', padding: '40px 20px' },
   container: { maxWidth: '1200px', margin: '0 auto' },
@@ -574,13 +637,12 @@ const styles = {
   input: { width: '100%', minHeight: '46px', borderRadius: '10px', border: '1px solid #bfdbfe', background: '#f8fbff', padding: '0 12px', boxSizing: 'border-box' },
   textarea: { width: '100%', minHeight: '90px', borderRadius: '10px', border: '1px solid #bfdbfe', background: '#f8fbff', padding: '12px', boxSizing: 'border-box', resize: 'vertical' },
   editorBox: { border: '1px solid #bfdbfe', borderRadius: '14px', overflow: 'hidden', background: '#fff' },
-  toolbar: {display: 'flex', flexWrap: 'wrap', gap: '10px', padding: '14px', borderBottom: '1px solid #dbeafe', background: '#f8fbff', position: 'sticky', top: 0, zIndex: 10 },
+  toolbar: { display: 'flex', flexWrap: 'wrap', gap: '10px', padding: '14px', borderBottom: '1px solid #dbeafe', background: '#f8fbff', position: 'sticky', top: 0, zIndex: 10 },
   toolButton: { border: '1px solid #bfdbfe', background: '#fff', color: '#0B3D91', borderRadius: '6px', padding: '6px 10px', fontWeight: '800', cursor: 'pointer', minWidth: '42px' },
   toolSelect: { border: '1px solid #bfdbfe', background: '#fff', color: '#0B3D91', borderRadius: '6px', padding: '6px 10px', fontWeight: '800', cursor: 'pointer', minWidth: '120px' },
-  editor: {minHeight: '320px', padding: '22px', outline: 'none', fontSize: '17px', lineHeight: '1.9', color: '#1e293b', background: '#ffffff', caretColor: '#0B3D91', overflowY: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: 'Arial, sans-serif'},
+  editor: { minHeight: '320px', padding: '22px', outline: 'none', fontSize: '17px', lineHeight: '1.9', color: '#1e293b', background: '#ffffff', caretColor: '#0B3D91', overflowY: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontFamily: 'Arial, sans-serif' },
   youtubePreview: { marginTop: '12px', background: '#f8fbff', border: '1px solid #dbeafe', borderRadius: '14px', padding: '12px' },
   youtubeIframe: { width: '100%', height: '320px', border: 'none', borderRadius: '12px' },
-  helperText: { color: '#64748b', fontSize: '13px', marginTop: '8px' },
   previewGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px', marginTop: '14px' },
   previewItem: { background: '#f8fbff', border: '1px solid #dbeafe', borderRadius: '14px', padding: '10px' },
   previewMedia: { width: '100%', height: '150px', objectFit: 'cover', borderRadius: '12px' },
@@ -589,51 +651,47 @@ const styles = {
   saveButton: { background: '#16a34a', color: '#fff', border: 'none', borderRadius: '12px', padding: '13px 18px', fontWeight: '900', cursor: 'pointer' },
   cancelButton: { background: '#dc2626', color: '#fff', border: 'none', borderRadius: '12px', padding: '13px 18px', fontWeight: '900', cursor: 'pointer' },
   emptyText: { color: '#64748b' },
-  newsGrid: {display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '24px' },
-  newsCard: {background: '#ffffff', border: '1px solid #dbeafe', borderRadius: '22px', padding: '22px', boxShadow: '0 8px 20px rgba(15,23,42,0.06)', transition: '0.3s' },
-  cardMedia: {width: '100%', height: '260px', objectFit: 'contain', background: '#ffffff', border: '1px solid #dbeafe', borderRadius: '16px', marginBottom: '14px', padding: '8px' },
-  badge: { background: '#ffc928', color: '#002855', padding: '6px 10px', borderRadius: '999px', fontWeight: '900', fontSize: '12px' },
-  newsTitle: {color: '#0B3D91', marginBottom: '10px', fontSize: '1.7rem', lineHeight: '1.4', fontWeight: '900'},
+  newsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '24px' },
+  newsCard: { background: '#ffffff', border: '1px solid #dbeafe', borderRadius: '22px', padding: '22px', boxShadow: '0 8px 20px rgba(15,23,42,0.06)', transition: '0.3s' },
+  cardMedia: { width: '100%', height: '260px', objectFit: 'contain', background: '#ffffff', border: '1px solid #dbeafe', borderRadius: '16px', marginBottom: '14px', padding: '8px' },
+  badge: { display: 'inline-block', background: '#ffc928', color: '#002855', padding: '6px 10px', borderRadius: '999px', fontWeight: '900', fontSize: '12px' },
+  newsTitle: { color: '#0B3D91', marginBottom: '10px', fontSize: '1.7rem', lineHeight: '1.4', fontWeight: '900' },
   newsMeta: { color: '#64748b', fontSize: '14px' },
-  newsText: {color: '#475569', lineHeight: '1.8', marginTop: '12px', minHeight: '90px', fontSize: '15px'},
+  newsText: { color: '#475569', lineHeight: '1.8', marginTop: '12px', minHeight: '90px', fontSize: '15px' },
   cardActions: { display: 'flex', gap: '10px', marginTop: '14px', flexWrap: 'wrap' },
   editButton: { background: '#16a34a', color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 14px', fontWeight: '900', cursor: 'pointer' },
   deleteButton: { background: '#dc2626', color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 14px', fontWeight: '900', cursor: 'pointer' },
-  mediaSize: {
-  color: '#64748b',
-  fontSize: '12px',
-  marginTop: '6px',
-  fontWeight: '700'
-},
-  reviewButton: {
-  background: '#f59e0b',
-  color: '#fff',
-  border: 'none',
-  borderRadius: '10px',
-  padding: '10px 14px',
-  fontWeight: '900',
-  cursor: 'pointer'
-},
+  mediaSize: { color: '#64748b', fontSize: '12px', marginTop: '6px', fontWeight: '700' },
+  reviewButton: { background: '#f59e0b', color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 14px', fontWeight: '900', cursor: 'pointer' },
+  approveButton: { background: '#16a34a', color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 14px', fontWeight: '900', cursor: 'pointer' },
+  archiveButton: { background: '#64748b', color: '#fff', border: 'none', borderRadius: '10px', padding: '10px 14px', fontWeight: '900', cursor: 'pointer' },
 
-approveButton: {
-  background: '#16a34a',
-  color: '#fff',
-  border: 'none',
-  borderRadius: '10px',
-  padding: '10px 14px',
-  fontWeight: '900',
-  cursor: 'pointer'
-},
+  filterBox: {
+    display: 'flex',
+    gap: '10px',
+    flexWrap: 'wrap',
+    marginBottom: '24px'
+  },
 
-archiveButton: {
-  background: '#64748b',
-  color: '#fff',
-  border: 'none',
-  borderRadius: '10px',
-  padding: '10px 14px',
-  fontWeight: '900',
-  cursor: 'pointer'
-},
+  filterButton: {
+    background: '#e2e8f0',
+    color: '#0f172a',
+    border: 'none',
+    borderRadius: '999px',
+    padding: '10px 16px',
+    fontWeight: '900',
+    cursor: 'pointer'
+  },
+
+  filterButtonActive: {
+    background: '#0B3D91',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '999px',
+    padding: '10px 16px',
+    fontWeight: '900',
+    cursor: 'pointer'
+  }
 }
 
 export default NoticiasAdmin
