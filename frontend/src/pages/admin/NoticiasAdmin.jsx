@@ -24,7 +24,7 @@ function NoticiasAdmin() {
     conteudo: '',
     midias: [],
     youtubeUrl: '',
-    status: 'Publicado'
+    status: 'Rascunho'
   }
 
   const [form, setForm] = useState(formInicial)
@@ -148,7 +148,7 @@ function NoticiasAdmin() {
       conteudo: item.conteudo || '',
       midias: item.midias || (item.midia ? [{ base64: item.midia, tipo: item.tipoMidia }] : []),
       youtubeUrl: item.youtubeUrl || '',
-      status: item.status || 'Publicado'
+      status: item.status || 'Rascunho'
     })
 
     setEditandoId(item._id || item.id)
@@ -233,7 +233,45 @@ function NoticiasAdmin() {
 
     return item.criadoEm || 'Publicação'
   }
+  async function alterarStatusPublicacao(item, novoStatus) {
+  try {
+    const id = item._id || item.id
 
+    await atualizarNoticia({
+      ...item,
+      _id: id,
+      status: novoStatus
+    })
+
+    registrarAuditoriaFrontend(
+      'ALTERACAO_STATUS_NOTICIA',
+      `${item.titulo} alterada para ${novoStatus}`
+    )
+
+    await carregarNoticias()
+  } catch (error) {
+    console.error('Erro ao alterar status:', error)
+    alert('Erro ao alterar status da publicação.')
+  }
+  function corStatus(status) {
+  switch(status) {
+    case 'Rascunho':
+      return '#64748b'
+
+    case 'Em Revisão':
+      return '#f59e0b'
+
+    case 'Publicado':
+      return '#16a34a'
+
+    case 'Arquivado':
+      return '#dc2626'
+
+    default:
+      return '#64748b'
+  }
+  }
+  }
   return (
     <main style={styles.page}>
       <div style={styles.container}>
@@ -404,11 +442,6 @@ function NoticiasAdmin() {
                         Tamanho: {midia.tamanhoMB} MB
                       </p>
                     )}
-                    {midia.tamanhoMB && (
-                      <p style={styles.mediaSize}>
-                        Tamanho: {midia.tamanhoMB} MB
-                      </p>
-                    )}
                   </div>
                 ))}
               </div>
@@ -420,8 +453,10 @@ function NoticiasAdmin() {
               value={form.status}
               onChange={(e) => alterarCampo('status', e.target.value)}
             >
-              <option>Publicado</option>
               <option>Rascunho</option>
+              <option>Em Revisão</option>
+              <option>Publicado</option>
+              <option>Arquivado</option>
             </select>
 
             <div style={styles.actions}>
@@ -462,7 +497,7 @@ function NoticiasAdmin() {
                     )
                   ) : null}
 
-                  <span style={styles.badge}>{item.status}</span>
+                  <span style={{ ...styles.badge, background: corStatus(item.status), color: '#fff'}} ></span>
 
                   <h3 style={styles.newsTitle}>{item.titulo}</h3>
 
@@ -473,6 +508,35 @@ function NoticiasAdmin() {
                   <p style={styles.newsText}>{item.resumo}</p>
 
                   <div style={styles.cardActions}>
+                    {item.status === 'Rascunho' && (
+                    <button
+                      type="button"
+                      style={styles.reviewButton}
+                      onClick={() => alterarStatusPublicacao(item, 'Em Revisão')}
+                    >
+                      Enviar para revisão
+                    </button>
+                  )}
+
+                  {item.status === 'Em Revisão' && (
+                    <button
+                      type="button"
+                      style={styles.approveButton}
+                      onClick={() => alterarStatusPublicacao(item, 'Publicado')}
+                    >
+                      Aprovar
+                    </button>
+                  )}
+
+                  {item.status === 'Publicado' && (
+                    <button
+                      type="button"
+                      style={styles.archiveButton}
+                      onClick={() => alterarStatusPublicacao(item, 'Arquivado')}
+                    >
+                      Arquivar
+                    </button>
+                  )}
                     <button type="button" style={styles.editButton} onClick={() => editar(item)}>
                       ✏️ Editar
                     </button>
@@ -540,6 +604,35 @@ const styles = {
   fontSize: '12px',
   marginTop: '6px',
   fontWeight: '700'
+},
+  reviewButton: {
+  background: '#f59e0b',
+  color: '#fff',
+  border: 'none',
+  borderRadius: '10px',
+  padding: '10px 14px',
+  fontWeight: '900',
+  cursor: 'pointer'
+},
+
+approveButton: {
+  background: '#16a34a',
+  color: '#fff',
+  border: 'none',
+  borderRadius: '10px',
+  padding: '10px 14px',
+  fontWeight: '900',
+  cursor: 'pointer'
+},
+
+archiveButton: {
+  background: '#64748b',
+  color: '#fff',
+  border: 'none',
+  borderRadius: '10px',
+  padding: '10px 14px',
+  fontWeight: '900',
+  cursor: 'pointer'
 },
 }
 
