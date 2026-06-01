@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom'
 import logoLar from '../../assets/logo-lar.jpg'
 
-
 function Footer() {
   return (
     <footer style={styles.footer}>
@@ -9,6 +8,7 @@ function Footer() {
         <div style={styles.logoBox}>
           <img src={logoLar} alt="Lar Batista" style={styles.logo} />
         </div>
+
         <p style={styles.text}>
           O Lar Batista Albertine Meador acolhe, cuida e transforma vidas com
           amor, fé e solidariedade.
@@ -38,43 +38,84 @@ function Footer() {
         <p style={styles.text}>Rua Santos Dumont, 120, Laranjeiras, Serra - ES</p>
         <p style={styles.text}>CEP: 29.165-048</p>
       </div>
+
+      <div>
+        <h4 style={styles.title}>Redes Sociais</h4>
+
+        <a
+          href="https://www.facebook.com/larbatistaam"
+          target="_blank"
+          rel="noreferrer"
+          style={styles.socialLink}
+        >
+          Facebook
+        </a>
+
+        <a
+          href="https://www.instagram.com/larbatistaalbertinemeador"
+          target="_blank"
+          rel="noreferrer"
+          style={styles.socialLink}
+        >
+          Instagram
+        </a>
+      </div>
     </footer>
   )
 }
 
 const styles = {
   footer: {
-    background: '#002855',
+    background: 'linear-gradient(180deg, #0B4FA3, #0A3D7A)',
     color: '#ffffff',
-    padding: '55px 8%',
+    padding: '45px 8%',
     display: 'grid',
-    gridTemplateColumns: '1.5fr 1fr 1fr 1.3fr',
-    gap: '42px'
+    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+    gap: '34px',
+    boxShadow: '0 -6px 18px rgba(11,79,163,0.18)'
   },
+
   logoBox: {
-    width: '145px',
+    width: '95px',
     background: '#ffffff',
-    borderRadius: '18px',
-    padding: '10px',
-    marginBottom: '15px'
+    borderRadius: '14px',
+    padding: '8px',
+    marginBottom: '14px',
+    boxShadow: '0 6px 16px rgba(0,0,0,0.18)'
   },
+
   logo: {
     width: '100%',
     display: 'block'
   },
+
   title: {
     textTransform: 'uppercase',
-    marginBottom: '14px'
+    marginBottom: '14px',
+    color: '#ffffff',
+    fontSize: '15px'
   },
+
   link: {
     display: 'block',
-    color: '#dbeafe',
+    color: '#eaf3ff',
     textDecoration: 'none',
-    marginBottom: '9px'
+    marginBottom: '9px',
+    fontWeight: '700'
   },
+
+  socialLink: {
+    display: 'block',
+    color: '#ffffff',
+    textDecoration: 'none',
+    marginBottom: '12px',
+    fontWeight: '900'
+  },
+
   text: {
-    color: '#dbeafe',
-    lineHeight: '1.6'
+    color: '#eaf3ff',
+    lineHeight: '1.6',
+    fontWeight: '600'
   }
 }
 

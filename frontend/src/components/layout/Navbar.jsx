@@ -7,17 +7,9 @@ import './navbar.css'
 function Navbar() {
   const [menuAberto, setMenuAberto] = useState(false)
 
-  function registrarClique() {
-    registrarInteracao()
-  }
-
-  function fecharMenu() {
-    setMenuAberto(false)
-  }
-
   function clicarMenu() {
-    registrarClique()
-    fecharMenu()
+    registrarInteracao()
+    setMenuAberto(false)
   }
 
   return (
@@ -66,20 +58,21 @@ function Navbar() {
 
 const styles = {
   header: {
-    background: 'linear-gradient(90deg, #002855, #0B3D91)',
-    minHeight: '110px',
-    padding: '18px 5%',
+    background: 'linear-gradient(90deg, #0B4FA3, #1A67C7)',
+    minHeight: '78px',
+    padding: '10px 5%',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: '24px',
+    gap: '18px',
     flexWrap: 'wrap',
-    position: 'relative'
+    position: 'relative',
+    boxShadow: '0 4px 14px rgba(11, 79, 163, 0.20)'
   },
 
   logoLink: {
-    width: '130px',
-    height: '90px',
+    width: '82px',
+    height: '60px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -92,12 +85,12 @@ const styles = {
     height: '100%',
     objectFit: 'contain',
     background: 'transparent',
-    filter: 'brightness(0.88) contrast(1.08) drop-shadow(0 8px 18px rgba(0,0,0,0.35))'
+    filter: 'drop-shadow(0 5px 12px rgba(0,0,0,0.20))'
   },
 
   nav: {
     display: 'flex',
-    gap: '22px',
+    gap: '18px',
     alignItems: 'center',
     justifyContent: 'center',
     flexWrap: 'wrap',
@@ -107,12 +100,12 @@ const styles = {
   navMobileOpen: {
     display: 'flex',
     position: 'absolute',
-    top: '110px',
+    top: '78px',
     left: 0,
     right: 0,
-    background: '#0B3D91',
+    background: 'linear-gradient(180deg, #0B4FA3, #0A3D7A)',
     flexDirection: 'column',
-    padding: '28px',
+    padding: '24px',
     zIndex: 999,
     boxShadow: '0 8px 24px rgba(0,0,0,0.25)'
   },
@@ -121,27 +114,28 @@ const styles = {
     color: '#ffffff',
     textDecoration: 'none',
     fontWeight: '900',
-    fontSize: '15px'
+    fontSize: '14px'
   },
 
   button: {
-    background: '#ffc928',
-    color: '#061f4a',
-    padding: '14px 30px',
+    background: '#FFD54A',
+    color: '#06295c',
+    padding: '12px 26px',
     borderRadius: '999px',
     textDecoration: 'none',
     fontWeight: '900',
-    fontSize: '16px'
+    fontSize: '15px',
+    boxShadow: '0 4px 12px rgba(255,213,74,0.35)'
   },
 
   menuButton: {
     display: 'none',
-    background: '#ffc928',
+    background: '#FFD54A',
     border: 'none',
-    color: '#002855',
-    fontSize: '28px',
+    color: '#06295c',
+    fontSize: '26px',
     borderRadius: '12px',
-    padding: '8px 14px',
+    padding: '7px 13px',
     cursor: 'pointer',
     fontWeight: '900',
     zIndex: 1000
