@@ -388,6 +388,12 @@ function DashboardAdmin() {
             title="Auditoria"
             descricao="Logs de login, segurança e ações administrativas."
           />
+          <CardLink
+            to="/admin/configuracoes"
+            icon="⚙️"
+            title="Configurações"
+            descricao="Configurações gerais da plataforma."
+          />
         </section>
 
         {/* NECESSIDADES */}

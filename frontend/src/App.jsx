@@ -40,6 +40,7 @@ import GovernancaAdmin from './pages/admin/GovernancaAdmin'
 import ProtectedAdminRoute from './routes/ProtectedAdminRoute'
 import AlterarSenhaAdmin from './pages/admin/AlterarSenhaAdmin'
 import AuditoriaAdmin from './pages/admin/AuditoriaAdmin'
+import ConfiguracoesAdmin from './pages/admin/ConfiguracoesAdmin'
 
 function Layout() {
   const location = useLocation()
@@ -273,6 +274,14 @@ function Layout() {
             element={
               <ProtectedAdminRoute>
                 <AuditoriaAdmin />
+              </ProtectedAdminRoute>
+            }
+          />
+          <Route
+            path="/admin/configuracoes"
+            element={
+              <ProtectedAdminRoute>
+                <ConfiguracoesAdmin />
               </ProtectedAdminRoute>
             }
           />
