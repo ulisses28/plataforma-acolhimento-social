@@ -10,6 +10,7 @@ import { exportarBackupSistema } from '../../services/backupService'
 import { limparSessaoAdmin } from '../../utils/sessaoAdmin'
 import { registrarAuditoriaFrontend } from '../../services/auditoriaFrontendService'
 import { listarNoticias } from '../../services/noticiasService'
+import NotificacoesBell from '../../components/admin/NotificacoesBell'
 
 
 import {
@@ -174,6 +175,28 @@ function DashboardAdmin() {
     noticias.filter(
       (n) => n.status === 'Arquivado'
     )
+  const necessidadesAlta =
+  necessidades.filter(
+    (item) => item.prioridade === 'ALTA'
+  )
+
+  const totalNecessidadesAtivas =
+    necessidades.length
+
+  const totalNecessidadesPorCategoria =
+    Object.values(graficoNecessidades).reduce(
+      (total, valor) => total + Number(valor || 0),
+      0
+    )
+
+  const taxaAtendimento =
+    totalNecessidadesPorCategoria > 0
+      ? Math.round(
+          ((totalNecessidadesPorCategoria - totalNecessidadesAtivas) /
+            totalNecessidadesPorCategoria) *
+            100
+        )
+      : 0
 
   const ultimasDoacoes = [...doacoes]
       .slice(-5)
@@ -195,20 +218,44 @@ function DashboardAdmin() {
 
   return (
     <main style={styles.page}>
-      <div style={styles.container}>
+      <div
+          style={{
+            ...styles.container,
+            ...styles.mobileResponsive
+          }}
+        >
         <BackButton />
 
         <header style={styles.header}>
-        <h1 style={styles.title}>
-          Dashboard Administrativo
-        </h1>
 
-        <p style={styles.subtitle}>
-          Gerencie a operação da instituição
-          e acompanhe indicadores em tempo real.
-        </p>
+  <div
+    style={{
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      flexWrap: 'wrap',
+      gap: '20px'
+    }}
+  >
+    <div>
+      <h1 style={styles.title}>
+        Dashboard Administrativo
+      </h1>
 
-        <div style={styles.headerActions}>
+      <p style={styles.subtitle}>
+        Gerencie a operação da instituição
+        e acompanhe indicadores em tempo real.
+      </p>
+    </div>
+
+    <NotificacoesBell
+      noticias={noticias}
+      necessidades={necessidades}
+      doacoes={doacoes}
+    />
+  </div>
+
+  <div style={styles.headerActions}>
         <button
           type="button"
           onClick={exportarBackupComAuditoria}
@@ -292,8 +339,70 @@ function DashboardAdmin() {
             label="Total confirmado"
             value={valorTotalFormatado}
           />
+          <SummaryCard
+            icon="📌"
+            label="Necessidades ativas"
+            value={totalNecessidadesAtivas}
+          />
+
+          <SummaryCard
+            icon="🔴"
+            label="Alta prioridade"
+            value={necessidadesAlta.length}
+          />
+
+          <SummaryCard
+            icon="📈"
+            label="Taxa atendimento"
+            value={`${taxaAtendimento}%`}
+          />
         </section>
 
+        <section style={styles.chartCard}>
+          <h2 style={styles.tableTitle}>
+            Status das Publicações
+          </h2>
+          <div style={styles.healthContainer}>
+          <div style={styles.healthCardGreen}>
+            <h3>Sistema</h3>
+            <p>Operacional</p>
+          </div>
+
+          <div style={styles.healthCardBlue}>
+            <h3>{topDoadores.length}</h3>
+            <p>Top Doadores</p>
+          </div>
+
+          <div style={styles.healthCardOrange}>
+            <h3>{necessidadesAlta.length}</h3>
+            <p>Necessidades Críticas</p>
+          </div>
+          </div>
+
+          <div style={styles.statusGrid}>
+            <div style={styles.statusItem}>
+              <strong>Rascunho</strong>
+              <span>{noticiasRascunho.length}</span>
+            </div>
+
+            <div style={styles.statusItem}>
+              <strong>Em Revisão</strong>
+              <span>{noticiasRevisao.length}</span>
+            </div>
+
+            <div style={styles.statusItem}>
+              <strong>Publicado</strong>
+              <span>{noticiasPublicadas.length}</span>
+            </div>
+
+            <div style={styles.statusItem}>
+              <strong>Arquivado</strong>
+              <span>{noticiasArquivadas.length}</span>
+            </div>
+          </div>
+        </section>
+
+        
         {/* PAINEL ADMIN */}
 
         <section style={styles.sectionHeaderBlue}>
@@ -672,6 +781,9 @@ function DashboardAdmin() {
                 </div>
 
                 <h3 style={styles.rankingName}>
+                  <p style={styles.rankingPercent}>
+                    Participação no ranking
+                  </p>
                   {d.nome}
                 </h3>
 
@@ -797,9 +909,9 @@ const styles = {
   },
 
   title: {
-    fontSize: '2.5rem',
-    color: '#0B3D91',
-    marginBottom: '10px'
+  fontSize: 'clamp(2rem, 4vw, 2.5rem)',
+  color: '#0B3D91',
+  marginBottom: '10px'
   },
 
   subtitle: {
@@ -826,18 +938,18 @@ const styles = {
 
   summaryGrid: {
   display: 'grid',
-  gridTemplateColumns:
-    'repeat(auto-fit, minmax(180px, 1fr))',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
   gap: '16px'
   },
 
   summaryCard: {
-    background: '#fff',
-    padding: '24px',
-    borderRadius: '20px',
-    borderTop: '6px solid #ffc928',
-    boxShadow:
-      '0 8px 24px rgba(0,0,0,0.07)'
+  background: '#fff',
+  padding: '22px',
+  borderRadius: '20px',
+  borderTop: '6px solid #ffc928',
+  boxShadow: '0 8px 24px rgba(0,0,0,0.07)',
+  minHeight: '130px',
+  wordBreak: 'break-word'
   },
 
   summaryIcon: {
@@ -1181,6 +1293,64 @@ pendingItem: {
   padding: '16px',
   marginTop: '12px'
 }, 
+chartCard: {
+  marginTop: '35px',
+  background: '#fff',
+  borderRadius: '24px',
+  padding: '28px',
+  boxShadow: '0 8px 24px rgba(0,0,0,0.08)'
+},
+
+statusGrid: {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+  gap: '16px'
+},
+
+statusItem: {
+  background: '#f8fbff',
+  borderLeft: '6px solid #0B4FA3',
+  borderRadius: '14px',
+  padding: '18px',
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  color: '#0B3D91',
+  fontWeight: '900'
+},
+healthContainer: {
+  display: 'grid',
+  gridTemplateColumns:
+    'repeat(auto-fit, minmax(220px, 1fr))',
+  gap: '18px',
+  marginTop: '24px'
+},
+
+healthCardGreen: {
+  background: '#dcfce7',
+  padding: '24px',
+  borderRadius: '18px'
+},
+
+healthCardBlue: {
+  background: '#dbeafe',
+  padding: '24px',
+  borderRadius: '18px'
+},
+
+healthCardOrange: {
+  background: '#ffedd5',
+  padding: '24px',
+  borderRadius: '18px'
+},
+rankingPercent: {
+  color: '#64748b',
+  fontSize: '13px'
+},
+mobileResponsive: {
+  width: '100%',
+  overflowX: 'auto'
+},
 }
 
 

@@ -25,7 +25,8 @@ const doadorSchema = new mongoose.Schema(
 
     documento: {
       type: String,
-      default: ''
+      required: true,
+      unique: true
     },
 
     tipoPessoa: {

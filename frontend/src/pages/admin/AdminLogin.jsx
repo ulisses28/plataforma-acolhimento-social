@@ -50,8 +50,17 @@ function AdminLogin() {
 
       localStorage.removeItem('admin-trocar-senha')
       navigate('/admin/dashboard')
-    } catch (error) {
-      setMensagem('E-mail ou senha inválidos.')
+    }catch (error) {
+  console.log(error)
+
+  if (error.response) {
+    console.log(error.response)
+  }
+
+  setMensagem(
+    error.message || 'Erro ao fazer login'
+  )
+
     } finally {
       setCarregando(false)
     }

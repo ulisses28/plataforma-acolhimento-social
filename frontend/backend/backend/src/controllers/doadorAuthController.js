@@ -41,6 +41,7 @@ export async function registrarDoador(req, res) {
     }
 
     const emailNormalizado = email.trim().toLowerCase()
+    const documentoLimpo = documento.replace(/\D/g, '')
 
     const existe = await Doador.findOne({
       email: emailNormalizado
@@ -51,7 +52,16 @@ export async function registrarDoador(req, res) {
         mensagem: 'Este e-mail já está cadastrado.'
       })
     }
+    const documentoExiste = await Doador.findOne({
+      documento: documentoLimpo
+    })
 
+    if (documentoExiste) {
+      return res.status(400).json({
+        mensagem:
+          'Já existe um cadastro vinculado a este CPF/CNPJ. Utilize a opção "Esqueci minha senha" para recuperar o acesso.'
+      })
+    }
     const senhaHash = await bcrypt.hash(senha, 10)
 
     const doador = await Doador.create({
@@ -59,7 +69,7 @@ export async function registrarDoador(req, res) {
       email: emailNormalizado,
       senha: senhaHash,
       telefone,
-      documento,
+      documento: documentoLimpo,
       tipoPessoa,
       pais,
       estado,

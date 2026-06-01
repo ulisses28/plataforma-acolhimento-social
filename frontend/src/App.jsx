@@ -42,6 +42,7 @@ import AlterarSenhaAdmin from './pages/admin/AlterarSenhaAdmin'
 import AuditoriaAdmin from './pages/admin/AuditoriaAdmin'
 import ConfiguracoesAdmin from './pages/admin/ConfiguracoesAdmin'
 
+
 function Layout() {
   const location = useLocation()
 

@@ -279,10 +279,21 @@ function DoadorLogin() {
       setTimeout(() => {
         navigate('/doador/painel')
       }, 1800)
-    } catch (error) {
+    }catch (error) {
+
+      console.log('ERRO COMPLETO:', error)
+
+      if (error.data) {
+        console.log('DATA:', error.data)
+      }
+
       mostrarErro(
-        'Erro ao cadastrar doador. Verifique se o e-mail já existe ou se o backend está funcionando.'
+        error?.data?.mensagem ||
+        error?.mensagem ||
+        error?.message ||
+        'Erro ao cadastrar doador.'
       )
+
     } finally {
       setCarregando(false)
     }
