@@ -1,63 +1,70 @@
-const STORAGE_KEY = 'necessidades_lar_batista'
+import {
+  apiGet,
+  apiPost,
+  apiPut,
+  apiDelete
+} from './api'
 
-export function listarNecessidades() {
-  const dados = localStorage.getItem(STORAGE_KEY)
-  return dados ? JSON.parse(dados) : []
+export async function listarNecessidades() {
+  return apiGet('/necessidades')
 }
 
-export function listarNecessidadesAtivas() {
-  return listarNecessidades().filter(
-    (item) => item.status !== 'Concluída'
+export async function listarNecessidadesAtivas() {
+  const lista = await listarNecessidades()
+
+  return lista.filter(
+    (item) =>
+      item.status !== 'Concluída' &&
+      item.status !== 'Concluida' &&
+      item.status !== 'Concluída' &&
+      item.status !== 'Concluida' &&
+      item.status !== 'Encerrada'
   )
 }
 
-export function listarNecessidadesConcluidas() {
-  return listarNecessidades().filter(
-    (item) => item.status === 'Concluída'
+export async function listarNecessidadesConcluidas() {
+  const lista = await listarNecessidades()
+
+  return lista.filter(
+    (item) =>
+      item.status === 'Concluída' ||
+      item.status === 'Concluida' ||
+      item.status === 'Encerrada'
   )
 }
 
-export function salvarNecessidade(novaNecessidade) {
-  const lista = listarNecessidades()
+export async function salvarNecessidade(novaNecessidade) {
+  return apiPost('/necessidades', {
+    titulo:
+      novaNecessidade.titulo ||
+      novaNecessidade.descricao ||
+      'Necessidade cadastrada',
 
-  const necessidade = {
-    id: Date.now(),
     categoria: novaNecessidade.categoria,
     descricao: novaNecessidade.descricao,
     prioridade: novaNecessidade.prioridade || 'MEDIA',
     quantidade: Number(novaNecessidade.quantidade || 0),
     unidade: novaNecessidade.unidade || 'unidade',
-    status: 'Em aberto',
-    criadoEm: new Date().toLocaleDateString('pt-BR'),
-    concluidoEm: ''
-  }
-
-  localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify([necessidade, ...lista])
-  )
-
-  return necessidade
+    status: 'Ativa'
+  })
 }
 
-export function concluirNecessidade(id) {
-  const lista = listarNecessidades()
-
-  const atualizada = lista.map((item) =>
-    item.id === id
-      ? {
-          ...item,
-          status: 'Concluída',
-          concluidoEm: new Date().toLocaleDateString('pt-BR')
-        }
-      : item
-  )
-
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(atualizada))
+export async function atualizarNecessidade(id, dados) {
+  return apiPut(`/necessidades/${id}`, dados)
 }
 
-export function contarNecessidadesPorCategoria() {
-  const lista = listarNecessidadesAtivas()
+export async function concluirNecessidade(id) {
+  return apiPut(`/necessidades/${id}`, {
+    status: 'Concluída'
+  })
+}
+
+export async function excluirNecessidade(id) {
+  return apiDelete(`/necessidades/${id}`)
+}
+
+export async function contarNecessidadesPorCategoria() {
+  const lista = await listarNecessidadesAtivas()
 
   return lista.reduce((acc, item) => {
     acc[item.categoria] = (acc[item.categoria] || 0) + 1

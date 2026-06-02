@@ -57,16 +57,17 @@ function DashboardAdmin() {
   navigate('/admin/login')
   }
 
-  function carregarDashboard() {
+  async function carregarDashboard() {
     setDoacoes([...listarDoacoes()])
 
     setTopDoadores(obterTopDoadores(3))
 
-    setNecessidades(listarNecessidadesAtivas())
+    const necessidadesAtivas = await listarNecessidadesAtivas()
+    const graficoCategorias = await contarNecessidadesPorCategoria()
 
-    setGraficoNecessidades(
-      contarNecessidadesPorCategoria()
-    )
+    setNecessidades(necessidadesAtivas)
+    setGraficoNecessidades(graficoCategorias)
+    
     listarNoticias()
       .then((dados) => {
         setNoticias(Array.isArray(dados) ? dados : [])
@@ -88,7 +89,7 @@ function DashboardAdmin() {
     setQuantidade('')
   }
 
-  function salvarNovaNecessidade() {
+  async function salvarNovaNecessidade() {
     if (!categoriaSelecionada) {
       alert('Selecione uma categoria.')
       return
@@ -99,7 +100,7 @@ function DashboardAdmin() {
       return
     }
 
-    salvarNecessidade({
+    await salvarNecessidade({
       categoria: categoriaSelecionada,
       descricao: descricaoNecessidade.trim(),
       prioridade,
@@ -666,7 +667,7 @@ function DashboardAdmin() {
                 {necessidadesDaCategoria.map(
                   (item) => (
                     <div
-                      key={item.id}
+                      key={item._id || item.id}
                       style={styles.needItem}
                     >
                       <div>
@@ -691,7 +692,7 @@ function DashboardAdmin() {
                         <button
                         type="button"
                         style={styles.completeButton}
-                        onClick={() => {
+                        onClick={async () => {
                           const ok = confirm(
                             'Deseja concluir esta necessidade? Ela sairá da campanha ativa e irá para o histórico.'
                           )
@@ -701,8 +702,8 @@ function DashboardAdmin() {
                             'CONCLUSAO_NECESSIDADE',
                             item.descricao
                           )
-                          concluirNecessidade(item.id)
-                          carregarDashboard()
+                          await concluirNecessidade(item._id || item.id)
+                          await carregarDashboard()
                         }}
                       >
                         Concluir necessidade
