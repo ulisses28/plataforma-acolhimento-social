@@ -54,12 +54,23 @@ function GraficosAdmin() {
     return () => clearInterval(intervalo)
   }, [mesSelecionado, anoSelecionado])
 
-  function carregarDados() {
+  async function carregarDados() {
+  try {
+    const dadosNecessidades = await listarNecessidades()
+
     setDoacoes(listarDoacoes())
     setDoadores(listarDoadores())
-    setNecessidades(listarNecessidades())
+    setNecessidades(Array.isArray(dadosNecessidades) ? dadosNecessidades : [])
+    setAnalytics(obterAnalyticsMes(mesSelecionado, anoSelecionado))
+  } catch (error) {
+    console.error('Erro ao carregar gráficos:', error)
+
+    setDoacoes(listarDoacoes())
+    setDoadores(listarDoadores())
+    setNecessidades([])
     setAnalytics(obterAnalyticsMes(mesSelecionado, anoSelecionado))
   }
+}
 
   const doacoesComLocalizacao = useMemo(() => {
     return doacoes.map((doacao) => {
@@ -95,10 +106,13 @@ function GraficosAdmin() {
       0
     )
 
-    const totalMateriaisNecessidades = necessidades.reduce(
-      (acc, item) => acc + Number(item.valorEstimado || item.valorEstimadoMaterial || 0),
+    const totalMateriaisNecessidades = Array.isArray(necessidades)
+  ? necessidades.reduce(
+      (acc, item) =>
+        acc + Number(item.valorEstimado || item.valorEstimadoMaterial || 0),
       0
     )
+  : 0
 
     return {
       quantidadeFinanceiras: financeiras.length,
@@ -831,12 +845,16 @@ const styles = {
     marginTop: '8px'
   },
   chartArea: {
-    height: '260px',
-    marginTop: '12px'
+  width: '100%',
+  minWidth: 0,
+  height: '260px',
+  marginTop: '12px'
   },
-  chartAreaLarge: {
-    height: '330px',
-    marginTop: '12px'
+chartAreaLarge: {
+  width: '100%',
+  minWidth: 0,
+  height: '330px',
+  marginTop: '12px'
   },
   chartExplanation: {
     color: '#94a3b8',
