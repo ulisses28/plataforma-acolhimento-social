@@ -9,7 +9,8 @@ export function criarDoacao(dados) {
     id: Date.now(),
     data: new Date().toLocaleDateString('pt-BR'),
     dataCompleta: new Date().toISOString(),
-
+    
+    doadorId: doador.id || doador._id || '',
     doador: doador.nome || 'Anônimo',
     documento: doador.documento || '',
     email: doador.email || '',

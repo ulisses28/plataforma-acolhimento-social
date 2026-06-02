@@ -300,7 +300,10 @@ function PainelDoadorPublico() {
   if (!doador) return null
 
   const minhasDoacoes = listarDoacoes().filter(
-    (doacao) => doacao.doador === doador.nome
+  (doacao) =>
+    doacao.doadorId === doador.id ||
+    doacao.email === doador.email ||
+    doacao.documento === doador.documento
   )
 
   return (
