@@ -3,7 +3,8 @@ import jwt from 'jsonwebtoken'
 
 import Doador from '../models/Doador.js'
 import PasswordResetToken from '../models/PasswordResetToken.js'
-import { enviarEmailRecuperacao } from '../services/emailService.js'
+import { enviarEmailLinkRecuperacao } from '../services/emailService.js'
+import crypto from 'crypto'
 
 function senhaForte(senha) {
   return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.#_-]).{8,}$/.test(senha)
@@ -84,9 +85,12 @@ export async function registrarDoador(req, res) {
         email: doador.email
       }
     })
-  } catch (error) {
+    } catch (error) {
+    console.error('Erro recuperação doador:', error)
+
     return res.status(500).json({
-      mensagem: 'Erro ao cadastrar doador.',
+      mensagem:
+        'Não foi possível enviar o código de recuperação. Verifique a configuração de e-mail do sistema.',
       erro: error.message
     })
   }
@@ -176,24 +180,32 @@ export async function solicitarRecuperacaoSenha(req, res) {
       })
     }
 
-    const codigo = gerarCodigo()
+    const token = crypto.randomBytes(32).toString('hex')
 
     await PasswordResetToken.create({
       email: emailNormalizado,
-      codigo,
+      token,
       tipoUsuario: 'doador',
       usado: false,
       expiraEm: new Date(Date.now() + 15 * 60 * 1000)
     })
 
-    await enviarEmailRecuperacao(emailNormalizado, codigo)
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173'
+
+    const link = `${frontendUrl}/redefinir-senha?token=${token}`
+
+    await enviarEmailLinkRecuperacao(emailNormalizado, link)
 
     return res.json({
-      mensagem: 'Código enviado para o e-mail cadastrado.'
+      mensagem:
+        'Enviamos um link de redefinição para o e-mail cadastrado.'
     })
   } catch (error) {
+    console.error('Erro recuperação doador:', error)
+
     return res.status(500).json({
-      mensagem: 'Erro ao solicitar recuperação de senha.',
+      mensagem:
+        'Não foi possível enviar o link de recuperação. Verifique a configuração de e-mail do sistema.',
       erro: error.message
     })
   }
@@ -201,11 +213,11 @@ export async function solicitarRecuperacaoSenha(req, res) {
 
 export async function redefinirSenhaDoador(req, res) {
   try {
-    const { email, codigo, novaSenha } = req.body
+    const { token, novaSenha } = req.body
 
-    if (!email || !codigo || !novaSenha) {
+    if (!token || !novaSenha) {
       return res.status(400).json({
-        mensagem: 'Informe e-mail, código e nova senha.'
+        mensagem: 'Informe o token e a nova senha.'
       })
     }
 
@@ -216,24 +228,21 @@ export async function redefinirSenhaDoador(req, res) {
       })
     }
 
-    const emailNormalizado = email.trim().toLowerCase()
-
-    const token = await PasswordResetToken.findOne({
-      email: emailNormalizado,
-      codigo,
+    const registroToken = await PasswordResetToken.findOne({
+      token,
       tipoUsuario: 'doador',
       usado: false,
       expiraEm: { $gt: new Date() }
     }).sort({ createdAt: -1 })
 
-    if (!token) {
+    if (!registroToken) {
       return res.status(400).json({
-        mensagem: 'Código inválido ou expirado.'
+        mensagem: 'Link inválido ou expirado.'
       })
     }
 
     const doador = await Doador.findOne({
-      email: emailNormalizado
+      email: registroToken.email
     })
 
     if (!doador) {
@@ -245,8 +254,8 @@ export async function redefinirSenhaDoador(req, res) {
     doador.senha = await bcrypt.hash(novaSenha, 10)
     await doador.save()
 
-    token.usado = true
-    await token.save()
+    registroToken.usado = true
+    await registroToken.save()
 
     return res.json({
       mensagem: 'Senha redefinida com sucesso.'

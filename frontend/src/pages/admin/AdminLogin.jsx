@@ -4,7 +4,6 @@ import { useNavigate } from 'react-router-dom'
 import BackButton from '../../components/ui/BackButton'
 import { apiPost } from '../../services/api'
 import { iniciarSessaoAdmin } from '../../utils/sessaoAdmin'
-import { registrarSolicitacaoRecuperacao } from '../../services/recuperacaoSenhaService'
 
 function AdminLogin() {
   const navigate = useNavigate()
@@ -39,7 +38,7 @@ function AdminLogin() {
       localStorage.setItem('admin-auth', 'true')
       localStorage.setItem('admin-token', resposta.token)
       localStorage.setItem('admin-data', JSON.stringify(resposta.admin))
-      
+
       iniciarSessaoAdmin()
 
       if (resposta.precisaTrocarSenha) {
@@ -50,35 +49,38 @@ function AdminLogin() {
 
       localStorage.removeItem('admin-trocar-senha')
       navigate('/admin/dashboard')
-    }catch (error) {
-  console.log(error)
-
-  if (error.response) {
-    console.log(error.response)
-  }
-
-  setMensagem(
-    error.message || 'Erro ao fazer login'
-  )
-
+    } catch (error) {
+      setMensagem(error.message || 'Erro ao fazer login')
     } finally {
       setCarregando(false)
     }
   }
-  function solicitarRecuperacaoSenhaAdmin() {
-  if (!email.trim()) {
-    setMensagem('Digite o e-mail administrativo antes de solicitar recuperação.')
-    return
+
+  async function solicitarRecuperacaoSenhaAdmin() {
+    setMensagem('')
+
+    if (!email.trim()) {
+      setMensagem('Digite o e-mail administrativo antes de solicitar recuperação.')
+      return
+    }
+
+    try {
+      setCarregando(true)
+
+      const resposta = await apiPost('/auth/solicitar-reset', {
+        email: email.trim().toLowerCase()
+      })
+
+      setMensagem(resposta.mensagem)
+    } catch (error) {
+      setMensagem(
+        error.message || 'Erro ao solicitar recuperação administrativa.'
+      )
+    } finally {
+      setCarregando(false)
+    }
   }
 
-  registrarSolicitacaoRecuperacao({
-    email: email.trim().toLowerCase(),
-    perfil: 'Administrador',
-    mensagem: 'Administrador solicitou recuperação de senha pela tela de login.'
-  })
-
-  setMensagem('Solicitação registrada. O responsável técnico deverá validar a recuperação.')
-  }
   return (
     <main style={styles.page}>
       <div style={styles.wrapper}>
@@ -109,16 +111,18 @@ function AdminLogin() {
             />
 
             <button type="submit" style={styles.button} disabled={carregando}>
-              {carregando ? 'Entrando...' : 'Entrar no painel'}
+              {carregando ? 'Processando...' : 'Entrar no painel'}
             </button>
           </form>
-            <button
-              type="button"
-              style={styles.linkButton}
-              onClick={solicitarRecuperacaoSenhaAdmin}
-            >
-              Esqueci minha senha
-            </button>
+
+          <button
+            type="button"
+            style={styles.linkButton}
+            onClick={solicitarRecuperacaoSenhaAdmin}
+            disabled={carregando}
+          >
+            Esqueci minha senha
+          </button>
 
           {mensagem && <p style={styles.error}>{mensagem}</p>}
         </div>
@@ -192,14 +196,16 @@ const styles = {
     color: '#991b1b',
     fontWeight: '700'
   },
+
   linkButton: {
-  background: 'transparent',
-  border: 'none',
-  color: '#0B3D91',
-  fontWeight: '800',
-  cursor: 'pointer',
-  textDecoration: 'underline'
-  },
+    background: 'transparent',
+    border: 'none',
+    color: '#0B3D91',
+    fontWeight: '800',
+    cursor: 'pointer',
+    textDecoration: 'underline',
+    marginTop: '10px'
+  }
 }
 
 export default AdminLogin

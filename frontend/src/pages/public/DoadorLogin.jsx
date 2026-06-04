@@ -13,7 +13,7 @@ import { criarDoacao } from '../../services/doacoesService'
 import {
   registrarDoadorBackend,
   loginDoadorBackend,
-  solicitarCodigoRecuperacao,
+  solicitarLinkRecuperacao,
   redefinirSenhaDoador
 } from '../../services/doadorAuthService'
 
@@ -322,56 +322,6 @@ function DoadorLogin() {
       mostrarErro(
         'Não foi possível enviar o código. Verifique o e-mail informado.'
       )
-    } finally {
-      setCarregando(false)
-    }
-  }
-
-  /*
-    SEGUNDA ETAPA DA RECUPERAÇÃO:
-    usuário informa código recebido + nova senha.
-  */
-  async function confirmarRedefinicaoSenha(e) {
-    e.preventDefault()
-    setMensagem('')
-
-    if (!emailLogin.trim()) return mostrarErro('Informe o e-mail.')
-    if (!codigoRecuperacao.trim()) {
-      return mostrarErro('Informe o código recebido por e-mail.')
-    }
-
-    if (!novaSenhaRecuperacao.trim() || !confirmarNovaSenhaRecuperacao.trim()) {
-      return mostrarErro('Informe e confirme a nova senha.')
-    }
-
-    if (!senhaForte(novaSenhaRecuperacao.trim())) {
-      return mostrarErro(
-        'A nova senha deve conter no mínimo 8 caracteres, letra maiúscula, minúscula, número e caractere especial.'
-      )
-    }
-
-    if (novaSenhaRecuperacao.trim() !== confirmarNovaSenhaRecuperacao.trim()) {
-      return mostrarErro('As senhas não conferem.')
-    }
-
-    try {
-      setCarregando(true)
-
-      await redefinirSenhaDoador({
-        email: emailLogin.trim().toLowerCase(),
-        codigo: codigoRecuperacao.trim(),
-        novaSenha: novaSenhaRecuperacao.trim()
-      })
-
-      mostrarSucesso('Senha redefinida com sucesso. Faça login com a nova senha.')
-
-      setSenhaLogin('')
-      setCodigoRecuperacao('')
-      setNovaSenhaRecuperacao('')
-      setConfirmarNovaSenhaRecuperacao('')
-      setModo('login')
-    } catch (error) {
-      mostrarErro('Código inválido, expirado ou senha fora do padrão.')
     } finally {
       setCarregando(false)
     }

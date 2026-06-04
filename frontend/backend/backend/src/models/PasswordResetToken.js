@@ -7,7 +7,7 @@ const passwordResetTokenSchema = new mongoose.Schema(
       required: true
     },
 
-    codigo: {
+    token: {
       type: String,
       required: true
     },

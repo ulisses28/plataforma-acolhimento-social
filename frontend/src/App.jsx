@@ -20,6 +20,9 @@ import Tutorial from './pages/public/Tutorial'
 import NossasNecessidades from './pages/public/NossasNecessidades'
 import DoadorDoar from './pages/public/DoadorDoar'
 import GovernancaInstitucional from './pages/public/GovernancaInstitucional'
+import RedefinirSenha from './pages/public/RedefinirSenha'
+
+
 
 import AssistenteVirtual from './components/ui/AssistenteVirtual'
 
@@ -41,7 +44,6 @@ import ProtectedAdminRoute from './routes/ProtectedAdminRoute'
 import AlterarSenhaAdmin from './pages/admin/AlterarSenhaAdmin'
 import AuditoriaAdmin from './pages/admin/AuditoriaAdmin'
 import ConfiguracoesAdmin from './pages/admin/ConfiguracoesAdmin'
-
 
 function Layout() {
   const location = useLocation()
@@ -137,6 +139,10 @@ function Layout() {
         <Route
           path="/governanca-institucional"
           element={<GovernancaInstitucional />}
+        />
+        <Route
+          path="/redefinir-senha"
+          element={<RedefinirSenha />}
         />
         {/* LOGIN ADMIN */}
 

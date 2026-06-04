@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken'
 
 import Admin from '../models/Admin.js'
 import { registrarAuditoria } from '../services/auditoriaService.js'
+import { enviarEmailSolicitacaoResetAdmin } from '../services/emailService.js'
 
 /*
   Controller de autenticação administrativa
@@ -196,7 +197,55 @@ export async function login(req, res) {
     })
   }
 }
+export async function solicitarResetAdmin(req, res) {
+  try {
+    const { email } = req.body
 
+    if (!email) {
+      return res.status(400).json({
+        mensagem: 'Informe o e-mail administrativo.'
+      })
+    }
+
+    const emailNormalizado = email.trim().toLowerCase()
+
+    const admin = await Admin.findOne({
+      email: emailNormalizado
+    })
+
+    if (!admin) {
+      return res.status(404).json({
+        mensagem: 'Administrador não encontrado.'
+      })
+    }
+
+    await enviarEmailSolicitacaoResetAdmin({
+      emailAdmin: emailNormalizado,
+      ip: req.ip,
+      dataHora: new Date().toLocaleString('pt-BR')
+    })
+
+    await registrarAuditoria(
+      emailNormalizado,
+      'SOLICITACAO_RESET_ADMIN',
+      'Administrador solicitou recuperação de senha.',
+      req.ip
+    )
+
+    return res.json({
+      mensagem:
+        'Solicitação enviada ao responsável técnico. Aguarde a validação para redefinição segura.'
+    })
+  } catch (error) {
+    console.error('Erro reset admin:', error)
+
+    return res.status(500).json({
+      mensagem:
+        'Não foi possível enviar a solicitação ao responsável técnico.',
+      erro: error.message
+    })
+  }
+}
 export async function alterarSenha(req, res) {
   try {
     const { email, senhaAtual, novaSenha } = req.body
