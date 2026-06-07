@@ -1,7 +1,11 @@
 const KEY = 'analytics_visitas'
 
 function getData() {
-  return JSON.parse(localStorage.getItem(KEY)) || {}
+  try {
+    return JSON.parse(localStorage.getItem(KEY)) || {}
+  } catch {
+    return {}
+  }
 }
 
 function salvar(data) {
@@ -24,6 +28,10 @@ function criarDiaSeNaoExistir(data, key) {
       interacoes: 0
     }
   }
+
+  data[key].visitas = Math.round(Number(data[key].visitas || 0))
+  data[key].tempoTotal = Math.round(Number(data[key].tempoTotal || 0))
+  data[key].interacoes = Math.round(Number(data[key].interacoes || 0))
 }
 
 export function registrarVisita() {
@@ -32,7 +40,7 @@ export function registrarVisita() {
 
   criarDiaSeNaoExistir(data, key)
 
-  data[key].visitas += 1
+  data[key].visitas = Math.round(data[key].visitas + 1)
 
   salvar(data)
 }
@@ -43,7 +51,9 @@ export function registrarTempo(segundos) {
 
   criarDiaSeNaoExistir(data, key)
 
-  data[key].tempoTotal += Number(segundos || 0)
+  data[key].tempoTotal = Math.round(
+    data[key].tempoTotal + Number(segundos || 0)
+  )
 
   salvar(data)
 }
@@ -54,7 +64,7 @@ export function registrarInteracao() {
 
   criarDiaSeNaoExistir(data, key)
 
-  data[key].interacoes += 1
+  data[key].interacoes = Math.round(data[key].interacoes + 1)
 
   salvar(data)
 }
@@ -69,13 +79,13 @@ export function registrarInteracaoComVisita() {
     data[key].visitas = 1
   }
 
-  data[key].interacoes += 1
+  data[key].interacoes = Math.round(data[key].interacoes + 1)
 
   salvar(data)
 }
 
 export function formatarTempo(segundos) {
-  const total = Number(segundos || 0)
+  const total = Math.round(Number(segundos || 0))
 
   const horas = Math.floor(total / 3600)
   const minutos = Math.floor((total % 3600) / 60)
@@ -103,32 +113,36 @@ export function obterAnalyticsMes(mes, ano) {
     const [y, m] = dataKey.split('-')
 
     if (String(y) === String(ano) && String(m) === String(mes)) {
-      totalVisitas += Number(data[dataKey].visitas || 0)
-      tempoTotal += Number(data[dataKey].tempoTotal || 0)
-      totalInteracoes += Number(data[dataKey].interacoes || 0)
+      totalVisitas += Math.round(Number(data[dataKey].visitas || 0))
+      tempoTotal += Math.round(Number(data[dataKey].tempoTotal || 0))
+      totalInteracoes += Math.round(Number(data[dataKey].interacoes || 0))
     }
   })
 
   const tempoMedio =
-    totalVisitas > 0 ? tempoTotal / totalVisitas : 0
+    totalVisitas > 0 ? Math.round(tempoTotal / totalVisitas) : 0
 
   const interacoesPorUsuario =
-    totalVisitas > 0 ? totalInteracoes / totalVisitas : 0
+  totalVisitas > 0
+    ? Number((totalInteracoes / totalVisitas).toFixed(2))
+    : 0
 
   const taxaInteracao =
-    totalVisitas > 0 ? (totalInteracoes / totalVisitas) * 100 : 0
+    totalVisitas > 0
+      ? Math.round((totalInteracoes / totalVisitas) * 100)
+      : 0
 
   return {
-    totalVisitas,
-    tempoTotal,
+    totalVisitas: Math.round(totalVisitas),
+    tempoTotal: Math.round(tempoTotal),
     tempoMedio,
-    totalInteracoes,
+    totalInteracoes: Math.round(totalInteracoes),
 
     interacoesPorUsuario,
     interacoesPorUsuarioFormatado: interacoesPorUsuario.toFixed(2),
 
     taxaInteracao,
-    taxaInteracaoFormatada: `${taxaInteracao.toFixed(2)}%`,
+    taxaInteracaoFormatada: `${taxaInteracao}%`,
 
     tempoTotalFormatado: formatarTempo(tempoTotal),
     tempoMedioFormatado: formatarTempo(tempoMedio)
