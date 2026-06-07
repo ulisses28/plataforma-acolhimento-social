@@ -15,6 +15,7 @@ import { listarNoticias } from '../../services/noticiasService'
 function Home() {
   const [noticias, setNoticias] = useState([])
   const [mensagemAberta, setMensagemAberta] = useState(false)
+  const [menuAberto, setMenuAberto] = useState(false)
 
   useEffect(() => {
     async function carregarNoticias() {
@@ -76,16 +77,24 @@ function Home() {
               />
             </Link>
 
-            <nav>
-              <Link to="/">Home</Link>
-              <Link to="/quem-somos">Quem Somos</Link>
-              <Link to="/projetos">Projetos</Link>
-              <Link to="/transparencia">Transparência</Link>
-              <Link to="/voluntario">Seja um Voluntário</Link>
-              <Link to="/parceiros">Parceiros</Link>
-              <Link to="/governanca-institucional">Governança</Link>
-              <Link to="/tutorial">Tutorial</Link>
+            <button
+              type="button"
+              className="home-menu-button"
+              onClick={() => setMenuAberto(!menuAberto)}
+            >
+              ☰
+            </button>
 
+            <nav className={`home-menu ${menuAberto ? 'home-menu-open' : ''}`}>
+              <Link to="/" onClick={() => setMenuAberto(false)}>Home</Link>
+              <Link to="/quem-somos" onClick={() => setMenuAberto(false)}>Quem Somos</Link>
+              <Link to="/projetos" onClick={() => setMenuAberto(false)}>Projetos</Link>
+              <Link to="/transparencia" onClick={() => setMenuAberto(false)}>Transparência</Link>
+              <Link to="/voluntario" onClick={() => setMenuAberto(false)}>Seja um Voluntário</Link>
+              <Link to="/parceiros" onClick={() => setMenuAberto(false)}>Parceiros</Link>
+              <Link to="/governanca-institucional" onClick={() => setMenuAberto(false)}>Governança</Link>
+              <Link to="/tutorial" onClick={() => setMenuAberto(false)}>Tutorial</Link>
+              <Link to="/login" className="login-top-mobile" onClick={() => setMenuAberto(false)}>Entrar</Link>
             </nav>
 
             <Link to="/login" className="login-top">Entrar</Link>
@@ -533,6 +542,7 @@ const styles = {
     objectFit: 'cover',
     borderRadius: '16px'
   }
+
 }
 
 export default Home
