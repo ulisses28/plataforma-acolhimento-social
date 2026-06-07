@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 
 import {
   listarVagasAtivas
@@ -56,9 +57,12 @@ function Vagas() {
                   {vaga.resumo}
                 </p>
 
-                <button style={styles.button}>
+                <Link
+                  to={`/enviar-curriculo?vaga=${vaga.id || vaga._id}`}
+                  style={styles.buttonLink}
+                >
                   Enviar currículo
-                </button>
+                </Link>
               </div>
             </article>
           ))}
@@ -150,7 +154,21 @@ const styles = {
     borderRadius: '12px',
     padding: '14px',
     fontWeight: '900'
-  }
+  },
+  buttonLink: {
+  display: 'block',
+  marginTop: '18px',
+  width: '100%',
+  background: '#16a34a',
+  color: '#fff',
+  border: 'none',
+  borderRadius: '12px',
+  padding: '14px',
+  fontWeight: '900',
+  textAlign: 'center',
+  textDecoration: 'none',
+  boxSizing: 'border-box'
+}
 }
 
 export default Vagas
