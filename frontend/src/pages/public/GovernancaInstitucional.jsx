@@ -1,5 +1,9 @@
 import { useEffect, useState } from 'react'
-import { listarDocumentosGovernanca } from '../../services/governancaService'
+import {
+  listarDocumentosGovernanca,
+  abrirArquivoBase64,
+  baixarArquivoBase64
+} from '../../services/governancaService'
 
 function GovernancaInstitucional() {
   const [documentos, setDocumentos] = useState([])
@@ -74,10 +78,26 @@ function GovernancaInstitucional() {
                   Publicado em {item.dataPublicacao}
                 </p>
 
-                {item.arquivo && (
-                  <button style={styles.downloadButton}>
-                    Visualizar documento
-                  </button>
+                {item.arquivoBase64 && (
+                  <div style={styles.actions}>
+                    <button
+                      type="button"
+                      style={styles.viewButton}
+                      onClick={() => abrirArquivoBase64(item.arquivoBase64)}
+                    >
+                      Visualizar documento
+                    </button>
+
+                    <button
+                      type="button"
+                      style={styles.downloadButton}
+                      onClick={() =>
+                        baixarArquivoBase64(item.arquivoBase64, item.arquivoNome)
+                      }
+                    >
+                      Baixar PDF
+                    </button>
+                  </div>
                 )}
               </article>
             ))}
@@ -209,7 +229,23 @@ const styles = {
   },
   empty: {
     color: '#64748b'
-  }
+  }, 
+  actions: {
+  display: 'flex',
+  gap: '10px',
+  flexWrap: 'wrap',
+  marginTop: '12px'
+},
+
+viewButton: {
+  background: '#16a34a',
+  color: '#fff',
+  border: 'none',
+  borderRadius: '12px',
+  padding: '12px 16px',
+  fontWeight: '900',
+  cursor: 'pointer'
+}
 }
 
 export default GovernancaInstitucional

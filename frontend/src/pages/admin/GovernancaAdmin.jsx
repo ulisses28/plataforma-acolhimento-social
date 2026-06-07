@@ -4,7 +4,10 @@ import BackButton from '../../components/ui/BackButton'
 import {
   listarDocumentosGovernanca,
   salvarDocumentoGovernanca,
-  excluirDocumentoGovernanca
+  excluirDocumentoGovernanca,
+  lerArquivoComoBase64,
+  abrirArquivoBase64,
+  baixarArquivoBase64
 } from '../../services/governancaService'
 
 function GovernancaAdmin() {
@@ -12,7 +15,8 @@ function GovernancaAdmin() {
   const [titulo, setTitulo] = useState('')
   const [categoria, setCategoria] = useState('Transparência')
   const [descricao, setDescricao] = useState('')
-  const [arquivo, setArquivo] = useState('')
+  const [arquivoNome, setArquivoNome] = useState('')
+  const [arquivoBase64, setArquivoBase64] = useState('')
 
   useEffect(() => {
     carregar()
@@ -21,7 +25,21 @@ function GovernancaAdmin() {
   function carregar() {
     setDocumentos(listarDocumentosGovernanca())
   }
+  async function selecionarArquivo(e) {
+  const arquivo = e.target.files?.[0]
 
+  if (!arquivo) return
+
+  if (arquivo.type !== 'application/pdf') {
+    alert('Envie apenas arquivos PDF.')
+    return
+  }
+
+  const base64 = await lerArquivoComoBase64(arquivo)
+
+  setArquivoNome(arquivo.name)
+  setArquivoBase64(base64)
+ }
   function salvar(e) {
     e.preventDefault()
 
@@ -32,13 +50,15 @@ function GovernancaAdmin() {
       titulo,
       categoria,
       descricao,
-      arquivo
+      arquivoNome,
+      arquivoBase64
     })
 
     setTitulo('')
     setCategoria('Transparência')
     setDescricao('')
-    setArquivo('')
+    setArquivoNome('')
+    setArquivoBase64('')
 
     carregar()
   }
@@ -101,10 +121,15 @@ function GovernancaAdmin() {
             <label style={styles.label}>Arquivo/documento</label>
             <input
               type="file"
+              accept=".pdf"
               style={styles.input}
-              onChange={(e) => setArquivo(e.target.files?.[0]?.name || '')}
+              onChange={selecionarArquivo}
             />
-
+            {arquivoNome && (
+              <p style={styles.meta}>
+                PDF selecionado: {arquivoNome}
+              </p>
+            )}
             <button style={styles.button}>Publicar documento</button>
           </form>
 
@@ -126,10 +151,30 @@ function GovernancaAdmin() {
                     Publicado em {item.dataPublicacao}
                   </p>
 
-                  {item.arquivo && (
-                    <p style={styles.meta}>
-                      Arquivo: {item.arquivo}
-                    </p>
+                  {item.arquivoNome && (
+                    <>
+                      <p style={styles.meta}>Arquivo: {item.arquivoNome}</p>
+
+                      <div style={styles.actions}>
+                        <button
+                          type="button"
+                          style={styles.viewButton}
+                          onClick={() => abrirArquivoBase64(item.arquivoBase64)}
+                        >
+                          Visualizar
+                        </button>
+
+                        <button
+                          type="button"
+                          style={styles.downloadButton}
+                          onClick={() =>
+                            baixarArquivoBase64(item.arquivoBase64, item.arquivoNome)
+                          }
+                        >
+                          Baixar PDF
+                        </button>
+                      </div>
+                    </>
                   )}
 
                   <button
@@ -261,6 +306,32 @@ const styles = {
   },
   empty: {
     color: '#64748b'
+  },
+  actions: {
+  display: 'flex',
+  gap: '10px',
+  flexWrap: 'wrap',
+  marginTop: '12px'
+  },
+
+  viewButton: {
+    background: '#16a34a',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '10px',
+    padding: '10px 14px',
+    fontWeight: '900',
+    cursor: 'pointer'
+  },
+
+  downloadButton: {
+    background: '#0B3D91',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '10px',
+    padding: '10px 14px',
+    fontWeight: '900',
+    cursor: 'pointer'
   }
 }
 

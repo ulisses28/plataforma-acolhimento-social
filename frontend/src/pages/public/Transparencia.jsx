@@ -54,7 +54,21 @@ function Transparencia() {
     return
   }
 
-  window.open(item.arquivoBase64, '_blank')
+  function abrirPdf(item) {
+  if (!item.arquivoBase64) {
+    alert('PDF não encontrado.')
+    return
+  }
+
+  const novaJanela = window.open()
+
+  novaJanela.document.write(`
+    <iframe
+      src="${item.arquivoBase64}"
+      style="width:100%;height:100vh;border:none;"
+    ></iframe>
+  `)
+  } 
   }
 
   function baixarPdf(item) {
@@ -66,7 +80,9 @@ function Transparencia() {
   const link = document.createElement('a')
   link.href = item.arquivoBase64
   link.download = item.arquivoNome || `${item.titulo || 'documento'}.pdf`
+  document.body.appendChild(link)
   link.click()
+  document.body.removeChild(link)
   }
   
   const totalArrecadado = publicacoesDoAno.reduce(

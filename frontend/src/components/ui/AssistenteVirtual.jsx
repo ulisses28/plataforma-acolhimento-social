@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import chullyImg from '../../assets/chully_robo.png'
 import { registrarInteracao } from '../../services/analyticsService'
@@ -8,6 +8,20 @@ function AssistenteVirtual() {
   const [pergunta, setPergunta] = useState('')
   const [iniciou, setIniciou] = useState(false)
   const [mensagens, setMensagens] = useState([])
+
+  const [mobile, setMobile] = useState(window.innerWidth <= 768)
+
+  useEffect(() => {
+    function verificarTela() {
+      setMobile(window.innerWidth <= 768)
+    }
+
+    window.addEventListener('resize', verificarTela)
+
+    return () => {
+      window.removeEventListener('resize', verificarTela)
+    }
+  }, [])
 
   function saudacao() {
     const hora = new Date().getHours()
@@ -90,14 +104,16 @@ function AssistenteVirtual() {
   return (
     <>
       {aberto && (
-        <section style={styles.chatBox}>
+        <section style={{ ...styles.chatBox, ...(mobile ? styles.chatBoxMobile : {}) }} >
           <header style={styles.header}>
             <img src={chullyImg} alt="Chully" style={styles.avatar} />
 
-            <div>
-              <strong>Chully</strong>
-              <p>Sua assistente virtual</p>
-            </div>
+            {!mobile && (
+              <div>
+                <strong>Chully</strong>
+                <small>Assistente virtual</small>
+              </div>
+            )}
 
             <button style={styles.close} onClick={() => setAberto(false)}>
               ×
@@ -148,7 +164,13 @@ function AssistenteVirtual() {
         </section>
       )}
 
-      <button style={styles.floatButton} onClick={() => setAberto(!aberto)}>
+      <button
+          style={{
+            ...styles.floatButton,
+            ...(mobile ? styles.floatButtonMobile : {})
+          }}
+          onClick={() => setAberto(!aberto)}
+        >
         <img src={chullyImg} alt="Chully" style={styles.floatAvatar} />
 
         <div>
@@ -180,7 +202,17 @@ const styles = {
     padding: '10px 16px',
     textAlign: 'left'
   },
-
+  floatButtonMobile: {
+  right: '14px',
+  bottom: '86px',
+  minWidth: '54px',
+  width: '54px',
+  height: '54px',
+  borderRadius: '50%',
+  padding: '6px',
+  justifyContent: 'center',
+  gap: 0
+  },
   floatAvatar: {
     width: '48px',
     height: '48px',
@@ -201,7 +233,12 @@ const styles = {
     overflow: 'hidden',
     zIndex: 9999
   },
-
+  chatBoxMobile: {
+  right: '10px',
+  bottom: '150px',
+  width: 'calc(100vw - 20px)',
+  maxHeight: '70vh'
+  },
   header: {
     background: 'linear-gradient(135deg, #002855, #0B3D91)',
     color: '#fff',
@@ -301,6 +338,8 @@ const styles = {
   textAlign: 'center',
   fontWeight: '500'
   },
+
+  
 }
 
 export default AssistenteVirtual

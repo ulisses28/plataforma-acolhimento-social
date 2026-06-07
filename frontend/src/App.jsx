@@ -21,6 +21,7 @@ import NossasNecessidades from './pages/public/NossasNecessidades'
 import DoadorDoar from './pages/public/DoadorDoar'
 import GovernancaInstitucional from './pages/public/GovernancaInstitucional'
 import RedefinirSenha from './pages/public/RedefinirSenha'
+import EnviarCurriculo from './pages/public/EnviarCurriculo'
 
 
 
@@ -120,6 +121,10 @@ function Layout() {
         <Route
           path="/vagas"
           element={<Vagas />}
+        />
+        <Route
+          path="/enviar-curriculo"
+          element={<EnviarCurriculo />}
         />
 
         <Route

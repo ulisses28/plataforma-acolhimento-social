@@ -17,3 +17,13 @@
     box-sizing: border-box;
   }
 }
+
+@media (max-width: 480px) {
+  .navbar-menu {
+    gap: 14px !important;
+  }
+
+  .navbar-menu a {
+    font-size: 14px !important;
+  }
+}

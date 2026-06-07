@@ -94,8 +94,11 @@ function NoticiaDetalhe() {
               banco de talentos da instituição.
             </p>
 
-            <Link to="/vagas" style={styles.button}>
-              Envie-nos seu currículo aqui →
+            <Link
+              to={`/enviar-curriculo?vaga=${noticia._id || noticia.id}`}
+              style={styles.button}
+            >
+              Envie seu currículo para esta vaga →
             </Link>
           </section>
         )}

@@ -1407,3 +1407,81 @@ iframe {
 }
 }
 }
+/* ================================
+   CORREÇÃO FINAL MENU HOME
+================================ */
+
+.home-menu-button {
+  display: none !important;
+}
+
+.home-menu .login-top-mobile {
+  display: none !important;
+}
+
+@media (min-width: 769px) {
+  .home-navbar nav.home-menu {
+    display: flex !important;
+  }
+
+  .home-menu-button {
+    display: none !important;
+  }
+
+  .home-menu .login-top-mobile {
+    display: none !important;
+  }
+
+  .login-top {
+    display: inline-block !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .home-menu-button {
+    display: block !important;
+  }
+
+  .home-navbar nav.home-menu {
+    display: none !important;
+  }
+
+  .home-navbar nav.home-menu.home-menu-open {
+    display: flex !important;
+  }
+
+  .login-top {
+    display: none !important;
+  }
+
+  .home-menu .login-top-mobile {
+    display: block !important;
+  }
+}
+@media (max-width: 768px) {
+  .news-grid {
+    display: flex !important;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    gap: 18px;
+    padding-bottom: 18px;
+  }
+
+  .news-card {
+    min-width: 86%;
+    scroll-snap-align: start;
+  }
+
+  .news-grid::-webkit-scrollbar {
+    height: 8px;
+  }
+
+  .news-grid::-webkit-scrollbar-thumb {
+    background: #0B3D91;
+    border-radius: 999px;
+  }
+
+  .news-grid::-webkit-scrollbar-track {
+    background: #dbeafe;
+  }
+}

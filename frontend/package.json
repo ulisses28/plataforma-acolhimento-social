@@ -12,6 +12,7 @@
     "axios": "^1.16.1",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
+    "multer": "^2.1.1",
     "pix-payload": "^1.0.4",
     "qrcode": "^1.5.4",
     "react": "^18.3.1",
