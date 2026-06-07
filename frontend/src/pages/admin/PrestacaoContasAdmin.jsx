@@ -6,7 +6,9 @@ import {
   salvarPublicacaoTransparencia,
   atualizarPublicacaoTransparencia,
   excluirPublicacaoTransparencia,
-  lerArquivoComoBase64
+  lerArquivoComoBase64,
+  abrirArquivoBase64,
+  baixarArquivoBase64
 } from '../../services/transparenciaService'
 
 import {
@@ -761,14 +763,18 @@ function PrestacaoContasAdmin() {
                     >
                       ✏️ Editar
                     </button>
-
                     <button
+                      style={styles.editButton}
+                      onClick={() => abrirArquivoBase64(item.arquivoBase64)}
+                    >
+                      👁 Visualizar
+                    </button>
+                    <button
+                    
                       style={
                         styles.downloadButton
                       }
-                      onClick={() =>
-                        baixarDocumento(item)
-                      }
+                      onClick={() => baixarArquivoBase64(item.arquivoBase64, item.arquivoNome)}
                     >
                       ⬇ Baixar PDF
                     </button>

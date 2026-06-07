@@ -20,27 +20,37 @@ export function salvarDocumentoGovernanca(documento) {
   }
 
   localStorage.setItem(STORAGE_KEY, JSON.stringify([novo, ...lista]))
-
   return novo
 }
 
 export function excluirDocumentoGovernanca(id) {
   const lista = listarDocumentosGovernanca()
-
   const atualizada = lista.filter((item) => item.id !== id)
-
   localStorage.setItem(STORAGE_KEY, JSON.stringify(atualizada))
 }
 
 export function lerArquivoComoBase64(arquivo) {
   return new Promise((resolve, reject) => {
     const leitor = new FileReader()
-
     leitor.onload = () => resolve(leitor.result)
     leitor.onerror = () => reject(new Error('Erro ao ler arquivo.'))
-
     leitor.readAsDataURL(arquivo)
   })
+}
+
+function base64ParaBlobUrl(base64) {
+  const partes = base64.split(',')
+  const mime = partes[0].match(/:(.*?);/)?.[1] || 'application/pdf'
+  const binario = atob(partes[1])
+  const tamanho = binario.length
+  const bytes = new Uint8Array(tamanho)
+
+  for (let i = 0; i < tamanho; i++) {
+    bytes[i] = binario.charCodeAt(i)
+  }
+
+  const blob = new Blob([bytes], { type: mime })
+  return URL.createObjectURL(blob)
 }
 
 export function abrirArquivoBase64(arquivoBase64) {
@@ -49,19 +59,8 @@ export function abrirArquivoBase64(arquivoBase64) {
     return
   }
 
-  const novaJanela = window.open()
-
-  if (!novaJanela) {
-    alert('O navegador bloqueou a abertura do arquivo.')
-    return
-  }
-
-  novaJanela.document.write(`
-    <iframe 
-      src="${arquivoBase64}" 
-      style="width:100%;height:100vh;border:none;"
-    ></iframe>
-  `)
+  const url = base64ParaBlobUrl(arquivoBase64)
+  window.open(url, '_blank')
 }
 
 export function baixarArquivoBase64(arquivoBase64, nomeArquivo = 'documento.pdf') {
@@ -70,10 +69,14 @@ export function baixarArquivoBase64(arquivoBase64, nomeArquivo = 'documento.pdf'
     return
   }
 
+  const url = base64ParaBlobUrl(arquivoBase64)
+
   const link = document.createElement('a')
-  link.href = arquivoBase64
+  link.href = url
   link.download = nomeArquivo
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)
+
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
