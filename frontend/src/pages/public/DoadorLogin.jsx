@@ -13,7 +13,7 @@ import { criarDoacao } from '../../services/doacoesService'
 import {
   registrarDoadorBackend,
   loginDoadorBackend,
-  solicitarLinkRecuperacao,
+  solicitarCodigoRecuperacao,
   redefinirSenhaDoador
 } from '../../services/doadorAuthService'
 
@@ -86,9 +86,17 @@ function DoadorLogin() {
       setMunicipio('')
     }
 
-    carregarMunicipios()
-  }, [estadoId])
+      carregarMunicipios()
+        }, [estadoId])
+  useEffect(() => {
+  const emailRecuperacao = localStorage.getItem('email_recuperacao_doador')
 
+  if (emailRecuperacao) {
+    setEmailLogin(emailRecuperacao)
+    setModo('recuperar')
+    localStorage.removeItem('email_recuperacao_doador')
+  }
+  }, [])
   function listarDoadoresLocais() {
     const dados = localStorage.getItem(DOADORES_KEY)
     return dados ? JSON.parse(dados) : []
@@ -304,29 +312,79 @@ function DoadorLogin() {
     envia um código de 6 dígitos para o e-mail cadastrado.
   */
   async function solicitarRecuperacaoSenhaDoador() {
-    if (!emailLogin.trim()) {
-      mostrarErro(
-        'Digite seu e-mail cadastrado antes de solicitar recuperação de senha.'
-      )
-      return
-    }
-
-    try {
-      setCarregando(true)
-
-      await solicitarCodigoRecuperacao(emailLogin.trim().toLowerCase())
-
-      mostrarSucesso('Código enviado para o e-mail cadastrado.')
-      setModo('recuperar')
-    } catch (error) {
-      mostrarErro(
-        'Não foi possível enviar o código. Verifique o e-mail informado.'
-      )
-    } finally {
-      setCarregando(false)
-    }
+  if (!emailLogin.trim()) {
+    mostrarErro(
+      'Digite seu e-mail cadastrado antes de solicitar recuperação de senha.'
+    )
+    return
   }
 
+  try {
+    setCarregando(true)
+
+    await solicitarCodigoRecuperacao(
+      emailLogin.trim().toLowerCase()
+    )
+
+    mostrarSucesso('Código de recuperação enviado para o e-mail cadastrado.')
+    setModo('recuperar')
+  } catch (error) {
+    mostrarErro(
+      error?.response?.data?.mensagem ||
+        error?.data?.mensagem ||
+        error?.mensagem ||
+        error?.message ||
+        'Não foi possível enviar o código de recuperação de senha.'
+    )
+  } finally {
+    setCarregando(false)
+  }
+}
+  async function confirmarRedefinicaoSenha(e) {
+  e.preventDefault()
+  setMensagem('')
+
+  if (!emailLogin.trim()) return mostrarErro('Informe o e-mail.')
+  if (!codigoRecuperacao.trim()) return mostrarErro('Informe o código recebido.')
+  if (!novaSenhaRecuperacao.trim()) return mostrarErro('Informe a nova senha.')
+
+  if (!senhaForte(novaSenhaRecuperacao.trim())) {
+    return mostrarErro(
+      'A senha deve conter no mínimo 8 caracteres, letra maiúscula, minúscula, número e caractere especial.'
+    )
+  }
+
+  if (novaSenhaRecuperacao !== confirmarNovaSenhaRecuperacao) {
+    return mostrarErro('As senhas não conferem.')
+  }
+
+  try {
+    setCarregando(true)
+
+    await redefinirSenhaDoador({
+      email: emailLogin.trim().toLowerCase(),
+      codigo: codigoRecuperacao.trim(),
+      novaSenha: novaSenhaRecuperacao.trim()
+    })
+
+    mostrarSucesso('Senha redefinida com sucesso. Faça login novamente.')
+
+    setCodigoRecuperacao('')
+    setNovaSenhaRecuperacao('')
+    setConfirmarNovaSenhaRecuperacao('')
+    setModo('login')
+  } catch (error) {
+    mostrarErro(
+      error?.response?.data?.mensagem ||
+        error?.data?.mensagem ||
+        error?.mensagem ||
+        error?.message ||
+        'Não foi possível redefinir a senha. Verifique o código.'
+    )
+  } finally {
+    setCarregando(false)
+  }
+}
   return (
     <main style={styles.page}>
       <div style={styles.container}>
@@ -339,23 +397,25 @@ function DoadorLogin() {
             Acesse seu painel ou cadastre-se para acompanhar suas doações.
           </p>
 
-          <div style={styles.tabs}>
-            <button
-              type="button"
-              style={styles.tabButton}
-              onClick={() => setModo('login')}
-            >
-              Entrar como doador
-            </button>
+          {modo !== 'recuperar' && (
+            <div style={styles.tabs}>
+              <button
+                type="button"
+                style={styles.tabButton}
+                onClick={() => setModo('login')}
+              >
+                Entrar como doador
+              </button>
 
-            <button
-              type="button"
-              style={styles.tabButton}
-              onClick={() => setModo('cadastro')}
-            >
-              Cadastrar-se
-            </button>
-          </div>
+              <button
+                type="button"
+                style={styles.tabButton}
+                onClick={() => setModo('cadastro')}
+              >
+                Cadastrar-se
+              </button>
+            </div>
+          )}
 
           {modo === 'login' ? (
             <form onSubmit={entrarComoDoador} style={styles.form}>

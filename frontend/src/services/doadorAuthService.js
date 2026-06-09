@@ -8,6 +8,10 @@ export function loginDoadorBackend(dados) {
   return apiPost('/doador-auth/login', dados)
 }
 
+export function solicitarCodigoRecuperacao(email) {
+  return apiPost('/doador-auth/solicitar-recuperacao', { email })
+}
+
 export function solicitarLinkRecuperacao(email) {
   return apiPost('/doador-auth/solicitar-recuperacao', { email })
 }

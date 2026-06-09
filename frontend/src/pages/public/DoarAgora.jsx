@@ -8,6 +8,7 @@ import QRCode from 'qrcode'
 import { criarDoacao } from '../../services/doacoesService'
 import BackButton from '../../components/ui/BackButton'
 import { registrarInteracao } from '../../services/analyticsService'
+import { listarBancosBrasil } from '../../services/bancosService'
 
 import {
   listarPaises,
@@ -29,6 +30,9 @@ function DoarAgora() {
   const [estadoId, setEstadoId] = useState('')
   const [estadoNome, setEstadoNome] = useState('')
   const [municipio, setMunicipio] = useState('')
+  const [bancoOrigem, setBancoOrigem] = useState('')
+  
+  const bancos = listarBancosBrasil()
 
   const [valor, setValor] = useState('')
   const [forma, setForma] = useState('')
@@ -188,6 +192,7 @@ async function gerarPixReal() {
     if (!pais.trim()) return setMensagem('Selecione o país.')
     if (!estadoNome.trim()) return setMensagem('Selecione o estado.')
     if (!municipio.trim()) return setMensagem('Selecione o município.')
+    if (!bancoOrigem) return setMensagem('Selecione o banco utilizado para pagamento.')
     if (!forma) return setMensagem('Selecione Pix ou TED.')
     if (forma === 'TED' && !valor.trim()) return setMensagem('Informe o valor da TED.')
     if (!aceitouLGPD) return setMensagem('Você precisa aceitar os termos LGPD.')
@@ -205,6 +210,7 @@ async function gerarPixReal() {
       tipoDoacao: 'Financeira',
       valor: forma === 'Pix' ? '' : valor,
       forma,
+      bancoOrigem,
       comprovante,
       lgpdAceito: true,
       lgpdAceitoEm: new Date().toLocaleString('pt-BR')
@@ -226,6 +232,7 @@ async function gerarPixReal() {
     setMunicipios([])
     setValor('')
     setForma('')
+    setBancoOrigem('')
     setComprovante('')
     setAceitouLGPD(false)
   }
@@ -350,7 +357,20 @@ async function gerarPixReal() {
                 ))}
               </select>
             </section>
-
+            
+            <label style={styles.label}>Banco utilizado para pagamento</label>
+            <select
+              style={styles.input}
+              value={bancoOrigem}
+              onChange={(e) => setBancoOrigem(e.target.value)}
+            >
+              <option value="">Selecione o banco</option>
+              {bancos.map((banco) => (
+                <option key={banco} value={banco}>
+                  {banco}
+                </option>
+              ))}
+            </select>
             <label style={styles.label}>Forma de pagamento</label>
             <div style={styles.radioGroup}>
               <label>
@@ -392,7 +412,18 @@ async function gerarPixReal() {
                 <input
                   type="file"
                   style={styles.input}
-                  onChange={(e) => setComprovante(e.target.files?.[0]?.name || '')}
+                  onChange={(e) => {
+                    const arquivo = e.target.files?.[0]
+                    if (!arquivo) return
+
+                    const leitor = new FileReader()
+
+                    leitor.onload = () => {
+                      setComprovante(leitor.result)
+                    }
+
+                    leitor.readAsDataURL(arquivo)
+                  }}
                 />
               </>
             )}

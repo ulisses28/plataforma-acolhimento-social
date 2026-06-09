@@ -2,14 +2,13 @@ const STORAGE_KEY = 'doacoes_lar_batista'
 
 export function criarDoacao(dados) {
   const doacoes = listarDoacoes()
-
   const doador = dados.doador || {}
 
   const nova = {
     id: Date.now(),
     data: new Date().toLocaleDateString('pt-BR'),
     dataCompleta: new Date().toISOString(),
-    
+
     doadorId: doador.id || doador._id || '',
     doador: doador.nome || 'Anônimo',
     documento: doador.documento || '',
@@ -26,17 +25,19 @@ export function criarDoacao(dados) {
         ? 'Valor informado no banco'
         : formatarValor(dados.valor),
 
-    banco: dados.forma === 'TED' ? 'Banestes' : 'PIX',
+    bancoOrigem: dados.bancoOrigem || '',
+    bancoDestino: dados.forma === 'TED' ? 'Banestes' : 'PIX/CNPJ',
     agencia: dados.forma === 'TED' ? '059' : '',
     conta: dados.forma === 'TED' ? '6.948.103' : '',
     chavePix: dados.forma === 'Pix' ? '27363944000180' : '',
 
     comprovante: dados.comprovante || '',
-    status: dados.forma === 'TED' ? 'Pendente' : 'Confirmado'
+    comprovanteNome: dados.comprovanteNome || '',
+
+    status: 'Pendente'
   }
 
-  doacoes.push(nova)
-  salvarDoacoes(doacoes)
+  localStorage.setItem(STORAGE_KEY, JSON.stringify([nova, ...doacoes]))
 
   return nova
 }
@@ -53,12 +54,8 @@ export function atualizarStatusDoacao(id, novoStatus) {
     item.id === id ? { ...item, status: novoStatus } : item
   )
 
-  salvarDoacoes(atualizadas)
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(atualizadas))
   return atualizadas
-}
-
-function salvarDoacoes(doacoes) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(doacoes))
 }
 
 function formatarValor(valor) {

@@ -30,13 +30,22 @@ export async function enviarEmailRecuperacao(destinatario, codigo) {
   await transporter.sendMail({
     from: process.env.EMAIL_FROM,
     to: destinatario,
+    replyTo: process.env.EMAIL_REPLY_TO || process.env.EMAIL_FROM,
     subject: 'Código de recuperação de senha',
     html: `
       <div style="font-family: Arial, sans-serif;">
         <h2>Recuperação de senha</h2>
+
+        <p>Recebemos uma solicitação para redefinir sua senha.</p>
+
         <p>Seu código de recuperação é:</p>
-        <h1>${codigo}</h1>
+
+        <h1 style="letter-spacing: 4px; color: #0B3D91;">
+          ${codigo}
+        </h1>
+
         <p>Este código expira em 15 minutos.</p>
+
         <p>Se você não solicitou essa recuperação, ignore este e-mail.</p>
       </div>
     `
@@ -56,6 +65,7 @@ export async function enviarEmailSolicitacaoResetAdmin({
   await transporter.sendMail({
     from: process.env.EMAIL_FROM,
     to: destinatarioTecnico,
+    replyTo: process.env.EMAIL_REPLY_TO || process.env.EMAIL_FROM,
     subject: 'Solicitação de recuperação de senha administrativa',
     html: `
       <div style="font-family: Arial, sans-serif;">
@@ -75,12 +85,14 @@ export async function enviarEmailSolicitacaoResetAdmin({
     `
   })
 }
+
 export async function enviarEmailLinkRecuperacao(destinatario, link) {
   const transporter = criarTransporter()
 
   await transporter.sendMail({
     from: process.env.EMAIL_FROM,
     to: destinatario,
+    replyTo: process.env.EMAIL_REPLY_TO || process.env.EMAIL_FROM,
     subject: 'Redefinição de senha',
     html: `
       <div style="font-family: Arial, sans-serif;">

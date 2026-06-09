@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import QRCode from 'qrcode'
 import BackButton from '../../components/ui/BackButton'
 import { criarDoacao } from '../../services/doacoesService'
+import { listarBancosBrasil } from '../../services/bancosService'
 
 const DOADOR_LOGADO_KEY = 'doador_logado_lar_batista'
 const PIX_CHAVE = '27363944000180'
@@ -63,6 +64,17 @@ function gerarPayloadPix() {
   return payloadSemCRC + crc
 }
 
+function converterArquivoParaBase64(arquivo) {
+  return new Promise((resolve, reject) => {
+    const leitor = new FileReader()
+
+    leitor.onload = () => resolve(leitor.result)
+    leitor.onerror = () => reject(new Error('Erro ao ler comprovante.'))
+
+    leitor.readAsDataURL(arquivo)
+  })
+}
+
 function DoadorDoar() {
   const navigate = useNavigate()
 
@@ -70,6 +82,9 @@ function DoadorDoar() {
   const [forma, setForma] = useState('Pix')
   const [valor, setValor] = useState('')
   const [comprovante, setComprovante] = useState('')
+  const [comprovanteNome, setComprovanteNome] = useState('')
+  const [bancoOrigem, setBancoOrigem] = useState('')
+  const bancos = listarBancosBrasil()
   const [tempo, setTempo] = useState(540)
   const [mensagem, setMensagem] = useState('')
   const [pixPayload, setPixPayload] = useState('')
@@ -128,13 +143,17 @@ function DoadorDoar() {
       setMensagem('Informe o valor da TED.')
       return
     }
-
+    if (!bancoOrigem) {
+      setMensagem('Selecione o banco utilizado para pagamento.')
+      return
+    }
     criarDoacao({
       doador,
       tipoDoacao: 'Financeira',
-      forma,
-      valor,
-      comprovante
+      forma: 'Pix',
+      valor: '',
+      comprovante: '',
+      bancoOrigem
     })
 
     setMensagem(
@@ -145,6 +164,8 @@ function DoadorDoar() {
 
     setValor('')
     setComprovante('')
+    setComprovanteNome('')
+    setBancoOrigem('')
   }
 
   if (!doador) return null
@@ -168,6 +189,26 @@ function DoadorDoar() {
             <p><strong>E-mail:</strong> {doador.email || '-'}</p>
             <p><strong>Cidade:</strong> {doador.cidade || doador.municipio || '-'}</p>
             <p><strong>Estado:</strong> {doador.estado || '-'}</p>
+          </section>
+
+          <section style={styles.infoBox}>
+            <h2 style={styles.sectionTitle}>Dados do pagamento</h2>
+
+            <label style={styles.label}>Banco utilizado para pagamento</label>
+
+            <select
+              style={styles.input}
+              value={bancoOrigem}
+              onChange={(e) => setBancoOrigem(e.target.value)}
+            >
+              <option value="">Selecione o banco</option>
+
+              {bancos.map((banco) => (
+                <option key={banco} value={banco}>
+                  {banco}
+                </option>
+              ))}
+            </select>
           </section>
 
           <section style={styles.paymentGrid}>
@@ -286,9 +327,18 @@ function DoadorDoar() {
               <input
                 type="file"
                 style={styles.input}
-                onChange={(e) =>
-                  setComprovante(e.target.files?.[0]?.name || '')
-                }
+                onChange={async (e) => {
+                  const arquivo = e.target.files?.[0]
+
+                  if (!arquivo) return
+
+                  const base64 = await converterArquivoParaBase64(
+                    arquivo
+                  )
+
+                  setComprovante(base64)
+                  setComprovanteNome(arquivo.name)
+                }}
               />
             </section>
           )}

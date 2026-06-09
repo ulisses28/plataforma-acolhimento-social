@@ -272,7 +272,7 @@ function PainelDoadorPublico() {
               <h3>Dados da Doação</h3>
               <p><span class="label">Valor:</span> ${doacao.valor || 'Valor informado no banco'}</p>
               <p><span class="label">Forma:</span> ${doacao.forma || '-'}</p>
-              <p><span class="label">Banco:</span> ${doacao.banco || 'Não informado'}</p>
+              <p><span class="label">Banco de origem:</span> ${doacao.bancoOrigem || doacao.banco || 'Não informado'}</p>
               <p><span class="label">Status:</span> ${doacao.status || '-'}</p>
               <p><span class="label">Código:</span> ${doacao.id || '-'}</p>
             </div>
@@ -355,8 +355,9 @@ function PainelDoadorPublico() {
               style={styles.botao}
               onClick={() => {
                 registrarInteracao()
-                setAba('senha')
-                setMensagem('')
+                localStorage.setItem('email_recuperacao_doador', doador.email || '')
+                localStorage.removeItem(DOADOR_LOGADO_KEY)
+                navigate('/doador/login')
               }}
             >
               Alterar senha
@@ -451,6 +452,7 @@ function PainelDoadorPublico() {
                         <th style={styles.th}>Data</th>
                         <th style={styles.th}>Valor</th>
                         <th style={styles.th}>Forma</th>
+                        <th style={styles.th}>Banco</th>
                         <th style={styles.th}>Status</th>
                         <th style={styles.th}>Comprovante</th>
                       </tr>
@@ -462,6 +464,7 @@ function PainelDoadorPublico() {
                           <td style={styles.td}>{d.data}</td>
                           <td style={styles.td}>{d.valor}</td>
                           <td style={styles.td}>{d.forma}</td>
+                          <td style={styles.td}>{d.bancoOrigem || d.banco || 'Não informado'}</td>
                           <td style={styles.td}>{d.status}</td>
                           <td style={styles.td}>
                             <button
