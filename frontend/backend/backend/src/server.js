@@ -18,14 +18,55 @@ dotenv.config()
 
 const app = express()
 
-app.use(cors())
+/*
+  CONFIGURAÇÃO DE CORS
+
+  Isso libera o backend para receber requisições:
+  - do frontend local, durante desenvolvimento
+  - do frontend hospedado na Vercel
+  - da URL configurada no Render pela variável FRONTEND_URL
+*/
+
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://plataforma-acolhimento-social.vercel.app',
+  process.env.FRONTEND_URL
+]
+  .filter(Boolean)
+  .map((origin) => origin.replace(/\/$/, ''))
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      /*
+        Permite requisições sem origin, como testes diretos,
+        Postman, navegador acessando a API diretamente etc.
+      */
+      if (!origin) {
+        return callback(null, true)
+      }
+
+      const origemNormalizada = origin.replace(/\/$/, '')
+
+      if (allowedOrigins.includes(origemNormalizada)) {
+        return callback(null, true)
+      }
+
+      return callback(
+        new Error(`Origem não permitida pelo CORS: ${origin}`)
+      )
+    },
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
+  })
+)
 
 app.use(
   express.json({
     limit: '50mb'
   })
 )
-
 
 mongoose
   .connect(process.env.MONGO_URI)
@@ -38,7 +79,11 @@ mongoose
 
 app.get('/', (req, res) => {
   res.json({
-    status: 'Backend funcionando'
+    status: 'Backend funcionando',
+    ambiente: process.env.NODE_ENV || 'development',
+    frontendPermitido:
+      process.env.FRONTEND_URL ||
+      'https://plataforma-acolhimento-social.vercel.app'
   })
 })
 
@@ -57,4 +102,5 @@ const PORT = process.env.PORT || 3333
 
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`)
+  console.log('Origens permitidas pelo CORS:', allowedOrigins)
 })
