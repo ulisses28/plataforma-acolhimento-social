@@ -1,77 +1,77 @@
-import nodemailer from 'nodemailer'
-import dns from 'dns'
+function getEmailFromName() {
+  return process.env.EMAIL_FROM_NAME || 'Lar Batista Albertine Meador'
+}
 
-function criarTransporter() {
-  const {
-    EMAIL_HOST,
-    EMAIL_PORT,
-    EMAIL_USER,
-    EMAIL_PASS,
-    EMAIL_FROM
-  } = process.env
+function getEmailFromAddress() {
+  const emailFromAddress = process.env.EMAIL_FROM_ADDRESS
 
-  if (!EMAIL_HOST || !EMAIL_PORT || !EMAIL_USER || !EMAIL_PASS || !EMAIL_FROM) {
+  if (!emailFromAddress) {
     throw new Error(
-      'Configuração de e-mail incompleta. Verifique EMAIL_HOST, EMAIL_PORT, EMAIL_USER, EMAIL_PASS e EMAIL_FROM no .env.'
+      'EMAIL_FROM_ADDRESS não configurado no ambiente do servidor.'
     )
   }
 
-  const porta = Number(EMAIL_PORT)
-
-  return nodemailer.createTransport({
-    host: EMAIL_HOST,
-    port: porta,
-    secure: porta === 465,
-
-    /*
-      Força IPv4 no Render.
-      O erro ENETUNREACH estava tentando sair pelo IPv6:
-      2607:f8b0:400e:c09::6
-    */
-    family: 4,
-
-    lookup: (hostname, options, callback) => {
-      return dns.lookup(
-        hostname,
-        {
-          family: 4,
-          all: false
-        },
-        callback
-      )
-    },
-
-    auth: {
-      user: EMAIL_USER,
-      pass: EMAIL_PASS
-    },
-
-    connectionTimeout: 30000,
-    greetingTimeout: 30000,
-    socketTimeout: 30000,
-
-    tls: {
-      servername: EMAIL_HOST,
-      rejectUnauthorized: true
-    }
-  })
-}
-
-function getEmailFrom() {
-  return process.env.EMAIL_FROM
+  return emailFromAddress
 }
 
 function getReplyTo() {
-  return process.env.EMAIL_REPLY_TO || process.env.EMAIL_USER
+  return process.env.EMAIL_REPLY_TO || process.env.EMAIL_FROM_ADDRESS
+}
+
+async function enviarEmailBrevo({ destinatario, subject, html }) {
+  const apiKey = process.env.BREVO_API_KEY
+
+  if (!apiKey) {
+    throw new Error('BREVO_API_KEY não configurada no ambiente do servidor.')
+  }
+
+  const senderEmail = getEmailFromAddress()
+  const senderName = getEmailFromName()
+  const replyTo = getReplyTo()
+
+  const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/json',
+      'api-key': apiKey
+    },
+    body: JSON.stringify({
+      sender: {
+        name: senderName,
+        email: senderEmail
+      },
+      to: [
+        {
+          email: destinatario
+        }
+      ],
+      replyTo: {
+        email: replyTo
+      },
+      subject,
+      htmlContent: html
+    })
+  })
+
+  const data = await response.json().catch(() => ({}))
+
+  if (!response.ok) {
+    console.error('Erro Brevo:', data)
+
+    throw new Error(
+      data?.message ||
+        data?.error ||
+        'Erro ao enviar e-mail pela Brevo.'
+    )
+  }
+
+  return data
 }
 
 export async function enviarEmailRecuperacao(destinatario, codigo) {
-  const transporter = criarTransporter()
-
-  await transporter.sendMail({
-    from: getEmailFrom(),
-    replyTo: getReplyTo(),
-    to: destinatario,
+  return enviarEmailBrevo({
+    destinatario,
     subject: 'Código de recuperação de senha',
     html: `
       <div style="font-family: Arial, sans-serif; color: #1f2937;">
@@ -100,12 +100,8 @@ export async function enviarEmailRecuperacao(destinatario, codigo) {
 }
 
 export async function enviarEmailLinkRecuperacao(destinatario, link) {
-  const transporter = criarTransporter()
-
-  await transporter.sendMail({
-    from: getEmailFrom(),
-    replyTo: getReplyTo(),
-    to: destinatario,
+  return enviarEmailBrevo({
+    destinatario,
     subject: 'Redefinição de senha',
     html: `
       <div style="font-family: Arial, sans-serif; color: #1f2937;">
@@ -145,15 +141,13 @@ export async function enviarEmailSolicitacaoResetAdmin({
   ip,
   dataHora
 }) {
-  const transporter = criarTransporter()
-
   const destinatarioTecnico =
-    process.env.EMAIL_ADMIN_RECUPERACAO || process.env.EMAIL_USER
+    process.env.EMAIL_ADMIN_RECUPERACAO ||
+    process.env.EMAIL_REPLY_TO ||
+    process.env.EMAIL_FROM_ADDRESS
 
-  await transporter.sendMail({
-    from: getEmailFrom(),
-    replyTo: getReplyTo(),
-    to: destinatarioTecnico,
+  return enviarEmailBrevo({
+    destinatario: destinatarioTecnico,
     subject: 'Solicitação de recuperação de senha administrativa',
     html: `
       <div style="font-family: Arial, sans-serif; color: #1f2937;">
