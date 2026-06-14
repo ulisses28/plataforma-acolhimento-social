@@ -10,21 +10,144 @@ function Transparencia() {
   const [publicacoes, setPublicacoes] = useState([])
   const [mes, setMes] = useState(String(hoje.getMonth() + 1).padStart(2, '0'))
   const [ano, setAno] = useState('2025')
-  
 
   useEffect(() => {
     setTopDoadores(obterTopDoadores(3, mes, ano))
 
+    /*
+      Lista apenas publicações marcadas como "Publicado".
+
+      Mantemos String().trim().toLowerCase() para evitar erro caso algum item
+      venha sem status ou com diferença entre maiúsculas e minúsculas.
+    */
     const lista = listarPublicacoesTransparencia().filter(
-      (item) => String(item.status).trim().toLowerCase() === 'publicado'
+      (item) => String(item.status || '').trim().toLowerCase() === 'publicado'
     )
 
-    setPublicacoes(lista)
+    setPublicacoes(Array.isArray(lista) ? lista : [])
   }, [mes, ano])
 
   const publicacoesDoAno = publicacoes.filter(
     (item) => String(item.ano || '') === String(ano)
   )
+
+  /*
+    Compatibilidade com arquivos antigos e futuros.
+
+    Modelo antigo:
+    - arquivoBase64
+
+    Modelo futuro com Cloudinary ou outro armazenamento externo:
+    - arquivoUrl
+    - pdfUrl
+    - documentoUrl
+
+    Assim a página pública já fica pronta para exibir PDFs vindos da Cloudinary
+    sem quebrar documentos antigos salvos em base64/localStorage.
+  */
+  function obterUrlDocumento(item) {
+    return item.arquivoUrl || item.pdfUrl || item.documentoUrl || ''
+  }
+
+  function obterNomeArquivo(item) {
+    return item.arquivoNome || item.documentoNome || `${item.titulo || 'documento'}.pdf`
+  }
+
+  function temDocumento(item) {
+    return Boolean(item.arquivoBase64 || obterUrlDocumento(item))
+  }
+
+  /*
+    Visualiza o PDF.
+
+    Se tiver URL externa, abre em nova aba.
+    Se tiver base64, monta uma nova aba com iframe.
+  */
+  function abrirPdf(item) {
+    const urlDocumento = obterUrlDocumento(item)
+
+    if (urlDocumento) {
+      window.open(urlDocumento, '_blank', 'noopener,noreferrer')
+      return
+    }
+
+    if (!item.arquivoBase64) {
+      alert('PDF não encontrado. Edite esta publicação no admin e anexe o PDF novamente.')
+      return
+    }
+
+    const novaJanela = window.open('', '_blank')
+
+    if (!novaJanela) {
+      alert('O navegador bloqueou a abertura do documento. Permita pop-ups para visualizar o PDF.')
+      return
+    }
+
+    novaJanela.document.write(`
+      <!DOCTYPE html>
+      <html lang="pt-BR">
+        <head>
+          <meta charset="UTF-8" />
+          <title>${item.titulo || 'Documento'}</title>
+          <style>
+            body {
+              margin: 0;
+              background: #f1f5f9;
+            }
+
+            iframe {
+              width: 100%;
+              height: 100vh;
+              border: none;
+            }
+          </style>
+        </head>
+        <body>
+          <iframe src="${item.arquivoBase64}"></iframe>
+        </body>
+      </html>
+    `)
+
+    novaJanela.document.close()
+  }
+
+  /*
+    Baixa o PDF.
+
+    Para URL externa, cria um link temporário.
+    Para base64, usa o próprio base64 como href.
+  */
+  function baixarPdf(item) {
+    const urlDocumento = obterUrlDocumento(item)
+    const nomeArquivo = obterNomeArquivo(item)
+
+    if (urlDocumento) {
+      const link = document.createElement('a')
+      link.href = urlDocumento
+      link.download = nomeArquivo
+      link.target = '_blank'
+      link.rel = 'noopener noreferrer'
+
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+
+      return
+    }
+
+    if (!item.arquivoBase64) {
+      alert('PDF não encontrado. Edite esta publicação no admin e anexe o PDF novamente.')
+      return
+    }
+
+    const link = document.createElement('a')
+    link.href = item.arquivoBase64
+    link.download = nomeArquivo
+
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
 
   function converterValor(valor) {
     if (!valor) return 0
@@ -47,44 +170,6 @@ function Transparencia() {
     })
   }
 
-
-  function abrirPdf(item) {
-  if (!item.arquivoBase64) {
-    alert('PDF não encontrado. Edite esta publicação no admin e anexe o PDF novamente.')
-    return
-  }
-
-  function abrirPdf(item) {
-  if (!item.arquivoBase64) {
-    alert('PDF não encontrado.')
-    return
-  }
-
-  const novaJanela = window.open()
-
-  novaJanela.document.write(`
-    <iframe
-      src="${item.arquivoBase64}"
-      style="width:100%;height:100vh;border:none;"
-    ></iframe>
-  `)
-  } 
-  }
-
-  function baixarPdf(item) {
-  if (!item.arquivoBase64) {
-    alert('PDF não encontrado. Edite esta publicação no admin e anexe o PDF novamente.')
-    return
-  }
-
-  const link = document.createElement('a')
-  link.href = item.arquivoBase64
-  link.download = item.arquivoNome || `${item.titulo || 'documento'}.pdf`
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-  }
-  
   const totalArrecadado = publicacoesDoAno.reduce(
     (acc, item) => acc + converterValor(item.valorArrecadado),
     0
@@ -143,14 +228,25 @@ function Transparencia() {
         <section style={styles.graphSection}>
           <div>
             <h2 style={styles.rankingTitle}>Gráfico financeiro da transparência</h2>
+
             <p style={styles.rankingSubtitle}>
               Comparativo automático baseado nos valores cadastrados nas publicações.
             </p>
           </div>
 
           <div style={styles.graphSummary}>
-            <ResumoMini titulo="Total arrecadado" valor={formatarMoeda(totalArrecadado)} cor="#16a34a" />
-            <ResumoMini titulo="Total aplicado" valor={formatarMoeda(totalAplicado)} cor="#dc2626" />
+            <ResumoMini
+              titulo="Total arrecadado"
+              valor={formatarMoeda(totalArrecadado)}
+              cor="#16a34a"
+            />
+
+            <ResumoMini
+              titulo="Total aplicado"
+              valor={formatarMoeda(totalAplicado)}
+              cor="#dc2626"
+            />
+
             <ResumoMini
               titulo={saldo >= 0 ? 'Superávit geral' : 'Déficit geral'}
               valor={formatarMoeda(saldo)}
@@ -183,6 +279,7 @@ function Transparencia() {
           <div style={styles.rankingHeader}>
             <div>
               <h2 style={styles.rankingTitle}>Documentos e publicações</h2>
+
               <p style={styles.rankingSubtitle}>
                 Relatórios, notícias institucionais e documentos de prestação de contas.
               </p>
@@ -214,14 +311,14 @@ function Transparencia() {
 
                   <div style={styles.valuesGrid}>
                     {item.valorArrecadado && (
-                      <div>
+                      <div style={styles.valueItem}>
                         <strong>Arrecadado</strong>
                         <span>{item.valorArrecadado}</span>
                       </div>
                     )}
 
                     {item.valorAplicado && (
-                      <div>
+                      <div style={styles.valueItem}>
                         <strong>Aplicado</strong>
                         <span>{item.valorAplicado}</span>
                       </div>
@@ -235,13 +332,21 @@ function Transparencia() {
                     </div>
                   )}
 
-                  {item.arquivoBase64 ? (
+                  {temDocumento(item) ? (
                     <div style={styles.pdfActions}>
-                      <button type="button" style={styles.viewButton} onClick={() => abrirPdf(item)}>
+                      <button
+                        type="button"
+                        style={styles.viewButton}
+                        onClick={() => abrirPdf(item)}
+                      >
                         Visualizar documento
                       </button>
 
-                      <button type="button" style={styles.downloadButton} onClick={() => baixarPdf(item)}>
+                      <button
+                        type="button"
+                        style={styles.downloadButton}
+                        onClick={() => baixarPdf(item)}
+                      >
                         Baixar PDF
                       </button>
                     </div>
@@ -260,13 +365,18 @@ function Transparencia() {
           <div style={styles.rankingHeader}>
             <div>
               <h2 style={styles.rankingTitle}>Destaques de Solidariedade</h2>
+
               <p style={styles.rankingSubtitle}>
                 Top 3 doadores com base nas doações confirmadas.
               </p>
             </div>
 
             <div style={styles.filters}>
-              <select value={mes} onChange={(e) => setMes(e.target.value)} style={styles.input}>
+              <select
+                value={mes}
+                onChange={(e) => setMes(e.target.value)}
+                style={styles.input}
+              >
                 <option value="01">Janeiro</option>
                 <option value="02">Fevereiro</option>
                 <option value="03">Março</option>
@@ -281,7 +391,12 @@ function Transparencia() {
                 <option value="12">Dezembro</option>
               </select>
 
-              <input value={ano} onChange={(e) => setAno(e.target.value)} style={styles.input} placeholder="Ano" />
+              <input
+                value={ano}
+                onChange={(e) => setAno(e.target.value)}
+                style={styles.input}
+                placeholder="Ano"
+              />
             </div>
           </div>
 
@@ -381,8 +496,8 @@ function LinhaGrafico({ titulo, subtitulo, dados, linhas }) {
 
         <div style={styles.chartLegend}>
           {linhas.map((linha) => (
-            <span key={linha.chave}>
-              <i style={{ background: linha.cor }} />
+            <span key={linha.chave} style={styles.legendItem}>
+              <i style={{ ...styles.legendColor, background: linha.cor }} />
               {linha.nome}
             </span>
           ))}
@@ -439,7 +554,14 @@ function LinhaGrafico({ titulo, subtitulo, dados, linhas }) {
           )}
 
           {dados.map((item, index) => (
-            <text key={index} x={getX(index)} y={altura - 8} textAnchor="middle" fontSize="11" fill="#475569">
+            <text
+              key={index}
+              x={getX(index)}
+              y={altura - 8}
+              textAnchor="middle"
+              fontSize="11"
+              fill="#475569"
+            >
               {index + 1}
             </text>
           ))}
@@ -462,10 +584,28 @@ const styles = {
     background: 'linear-gradient(180deg, #f0f6ff 0%, #f8fbff 100%)',
     padding: '40px 20px'
   },
-  container: { maxWidth: '1120px', margin: '0 auto' },
-  header: { marginBottom: '30px' },
-  title: { color: '#0B3D91', fontSize: '2.4rem', margin: 0 },
-  subtitle: { color: '#4b5563', marginTop: '10px', lineHeight: '1.6' },
+
+  container: {
+    maxWidth: '1120px',
+    margin: '0 auto'
+  },
+
+  header: {
+    marginBottom: '30px'
+  },
+
+  title: {
+    color: '#0B3D91',
+    fontSize: '2.4rem',
+    margin: 0
+  },
+
+  subtitle: {
+    color: '#4b5563',
+    marginTop: '10px',
+    lineHeight: '1.6'
+  },
+
   infoCard: {
     backgroundColor: '#ffffff',
     borderRadius: '20px',
@@ -473,20 +613,32 @@ const styles = {
     marginBottom: '24px',
     boxShadow: '0 4px 18px rgba(0,0,0,0.08)'
   },
-  sectionTitle: { margin: 0, color: '#0B3D91' },
-  text: { marginTop: '12px', color: '#374151', lineHeight: '1.7' },
+
+  sectionTitle: {
+    margin: 0,
+    color: '#0B3D91'
+  },
+
+  text: {
+    marginTop: '12px',
+    color: '#374151',
+    lineHeight: '1.7'
+  },
+
   warningText: {
     marginTop: '14px',
     color: '#dc2626',
     fontWeight: '800',
     fontSize: '14px'
   },
+
   cardsResumo: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
     gap: '18px',
     marginBottom: '24px'
   },
+
   resumoCard: {
     background: '#ffffff',
     borderRadius: '18px',
@@ -494,6 +646,7 @@ const styles = {
     borderLeft: '6px solid #ffc928',
     boxShadow: '0 4px 18px rgba(0,0,0,0.08)'
   },
+
   graphSection: {
     backgroundColor: '#ffffff',
     borderRadius: '20px',
@@ -501,6 +654,7 @@ const styles = {
     marginBottom: '24px',
     boxShadow: '0 4px 18px rgba(0,0,0,0.08)'
   },
+
   graphSummary: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
@@ -508,6 +662,7 @@ const styles = {
     marginTop: '20px',
     marginBottom: '20px'
   },
+
   resumoMini: {
     background: '#f8fbff',
     borderRadius: '14px',
@@ -517,6 +672,7 @@ const styles = {
     flexDirection: 'column',
     gap: '8px'
   },
+
   lineChartCard: {
     background: '#f8fbff',
     border: '1px solid #dbeafe',
@@ -524,6 +680,7 @@ const styles = {
     padding: '18px',
     marginTop: '18px'
   },
+
   chartHeader: {
     display: 'flex',
     justifyContent: 'space-between',
@@ -531,10 +688,46 @@ const styles = {
     flexWrap: 'wrap',
     marginBottom: '14px'
   },
-  chartTitle: { color: '#0B3D91', margin: 0 },
-  chartSubtitle: { color: '#64748b', margin: '6px 0 0' },
-  chartLegend: { display: 'flex', gap: '14px', alignItems: 'center', flexWrap: 'wrap' },
-  svgChart: { width: '100%', height: '260px', background: '#ffffff', borderRadius: '14px' },
+
+  chartTitle: {
+    color: '#0B3D91',
+    margin: 0
+  },
+
+  chartSubtitle: {
+    color: '#64748b',
+    margin: '6px 0 0'
+  },
+
+  chartLegend: {
+    display: 'flex',
+    gap: '14px',
+    alignItems: 'center',
+    flexWrap: 'wrap'
+  },
+
+  legendItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    color: '#475569',
+    fontWeight: '700'
+  },
+
+  legendColor: {
+    display: 'inline-block',
+    width: '12px',
+    height: '12px',
+    borderRadius: '999px'
+  },
+
+  svgChart: {
+    width: '100%',
+    height: '260px',
+    background: '#ffffff',
+    borderRadius: '14px'
+  },
+
   publicationsSection: {
     backgroundColor: '#ffffff',
     borderRadius: '20px',
@@ -542,18 +735,21 @@ const styles = {
     marginBottom: '24px',
     boxShadow: '0 4px 18px rgba(0,0,0,0.08)'
   },
+
   publicationGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
     gap: '18px',
     marginTop: '22px'
   },
+
   publicationCard: {
     background: '#f8fbff',
     border: '1px solid #dbeafe',
     borderRadius: '18px',
     padding: '20px'
   },
+
   badge: {
     background: '#ffc928',
     color: '#002855',
@@ -562,8 +758,29 @@ const styles = {
     fontWeight: '900',
     fontSize: '12px'
   },
-  publicationTitle: { color: '#0B3D91' },
-  valuesGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '12px' },
+
+  publicationTitle: {
+    color: '#0B3D91'
+  },
+
+  valuesGrid: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '10px',
+    marginTop: '12px'
+  },
+
+  valueItem: {
+    background: '#ffffff',
+    border: '1px solid #dbeafe',
+    borderRadius: '12px',
+    padding: '10px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+    color: '#475569'
+  },
+
   graphPreview: {
     background: '#ffffff',
     border: '1px solid #dbeafe',
@@ -572,7 +789,14 @@ const styles = {
     marginTop: '12px',
     color: '#475569'
   },
-  pdfActions: { display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '14px' },
+
+  pdfActions: {
+    display: 'flex',
+    gap: '10px',
+    flexWrap: 'wrap',
+    marginTop: '14px'
+  },
+
   viewButton: {
     background: '#16a34a',
     color: '#ffffff',
@@ -582,6 +806,7 @@ const styles = {
     fontWeight: '900',
     cursor: 'pointer'
   },
+
   downloadButton: {
     background: '#0B3D91',
     color: '#ffffff',
@@ -591,23 +816,82 @@ const styles = {
     fontWeight: '900',
     cursor: 'pointer'
   },
+
   rankingSection: {
     backgroundColor: '#ffffff',
     borderRadius: '20px',
     padding: '30px',
     boxShadow: '0 4px 18px rgba(0,0,0,0.08)'
   },
-  rankingHeader: { display: 'flex', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap', alignItems: 'flex-start' },
-  rankingTitle: { margin: 0, color: '#0B3D91' },
-  rankingSubtitle: { marginTop: '10px', color: '#6b7280' },
-  filters: { display: 'flex', gap: '10px', flexWrap: 'wrap' },
-  input: { padding: '10px', borderRadius: '10px', border: '1px solid #d1d5db', backgroundColor: '#ffffff' },
-  rankingGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', marginTop: '25px' },
-  rankingCard: { backgroundColor: '#f8fbff', borderRadius: '18px', padding: '24px', border: '1px solid #dbeafe', textAlign: 'center' },
-  medal: { fontSize: '2.4rem', marginBottom: '8px' },
-  rankingPosition: { color: '#0B3D91', margin: 0 },
-  rankingName: { fontWeight: '700', fontSize: '1.15rem', color: '#111827', marginTop: '8px' },
-  rankingText: { color: '#4b5563', marginTop: '6px' },
+
+  rankingHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    gap: '16px',
+    flexWrap: 'wrap',
+    alignItems: 'flex-start'
+  },
+
+  rankingTitle: {
+    margin: 0,
+    color: '#0B3D91'
+  },
+
+  rankingSubtitle: {
+    marginTop: '10px',
+    color: '#6b7280'
+  },
+
+  filters: {
+    display: 'flex',
+    gap: '10px',
+    flexWrap: 'wrap'
+  },
+
+  input: {
+    padding: '10px',
+    borderRadius: '10px',
+    border: '1px solid #d1d5db',
+    backgroundColor: '#ffffff'
+  },
+
+  rankingGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+    gap: '20px',
+    marginTop: '25px'
+  },
+
+  rankingCard: {
+    backgroundColor: '#f8fbff',
+    borderRadius: '18px',
+    padding: '24px',
+    border: '1px solid #dbeafe',
+    textAlign: 'center'
+  },
+
+  medal: {
+    fontSize: '2.4rem',
+    marginBottom: '8px'
+  },
+
+  rankingPosition: {
+    color: '#0B3D91',
+    margin: 0
+  },
+
+  rankingName: {
+    fontWeight: '700',
+    fontSize: '1.15rem',
+    color: '#111827',
+    marginTop: '8px'
+  },
+
+  rankingText: {
+    color: '#4b5563',
+    marginTop: '6px'
+  },
+
   ctaBox: {
     marginTop: '30px',
     background: 'linear-gradient(135deg, #0B3D91, #1d4ed8)',
@@ -616,8 +900,17 @@ const styles = {
     color: '#ffffff',
     textAlign: 'center'
   },
-  ctaTitle: { margin: 0, fontSize: '1.4rem' },
-  ctaText: { marginTop: '10px', lineHeight: '1.6' },
+
+  ctaTitle: {
+    margin: 0,
+    fontSize: '1.4rem'
+  },
+
+  ctaText: {
+    marginTop: '10px',
+    lineHeight: '1.6'
+  },
+
   ctaButton: {
     display: 'inline-block',
     marginTop: '16px',
@@ -627,51 +920,6 @@ const styles = {
     padding: '12px 18px',
     borderRadius: '999px',
     fontWeight: '700'
-  },
-  modalOverlay: {
-    position: 'fixed',
-    inset: 0,
-    background: 'rgba(15, 23, 42, 0.75)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 9999,
-    padding: '20px'
-  },
-  modal: {
-    background: '#ffffff',
-    width: 'min(1000px, 96vw)',
-    height: '90vh',
-    borderRadius: '20px',
-    padding: '20px',
-    display: 'flex',
-    flexDirection: 'column',
-    boxShadow: '0 20px 60px rgba(0,0,0,0.35)'
-  },
-  modalHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    gap: '16px',
-    alignItems: 'center',
-    marginBottom: '14px'
-  },
-  modalTitle: { color: '#0B3D91', margin: 0 },
-  modalSubtitle: { color: '#64748b', margin: '6px 0 0' },
-  closeButton: {
-    background: '#dc2626',
-    color: '#ffffff',
-    border: 'none',
-    borderRadius: '10px',
-    padding: '10px 14px',
-    cursor: 'pointer',
-    fontWeight: '900'
-  },
-  pdfFrame: {
-    flex: 1,
-    width: '100%',
-    border: '1px solid #dbeafe',
-    borderRadius: '14px',
-    marginBottom: '14px'
   }
 }
 

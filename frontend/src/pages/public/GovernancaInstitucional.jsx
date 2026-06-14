@@ -16,6 +16,81 @@ function GovernancaInstitucional() {
     setDocumentos(publicados)
   }, [])
 
+  /*
+    Retorna a URL do documento, quando no futuro o arquivo for salvo
+    na Cloudinary ou em outro serviço externo.
+
+    Mantemos compatibilidade com nomes possíveis:
+    - arquivoUrl
+    - pdfUrl
+    - documentoUrl
+  */
+  function obterUrlDocumento(item) {
+    return item.arquivoUrl || item.pdfUrl || item.documentoUrl || ''
+  }
+
+  /*
+    Verifica se o documento tem arquivo disponível.
+
+    Pode ser:
+    - arquivoBase64: modelo antigo
+    - arquivoUrl/pdfUrl/documentoUrl: modelo novo, Cloudinary
+  */
+  function temDocumento(item) {
+    return Boolean(item.arquivoBase64 || obterUrlDocumento(item))
+  }
+
+  /*
+    Abre o documento.
+
+    Se for URL externa, abre direto em nova aba.
+    Se for base64, usa a função antiga do governancaService.
+  */
+  function visualizarDocumento(item) {
+    const urlDocumento = obterUrlDocumento(item)
+
+    if (urlDocumento) {
+      window.open(urlDocumento, '_blank', 'noopener,noreferrer')
+      return
+    }
+
+    if (item.arquivoBase64) {
+      abrirArquivoBase64(item.arquivoBase64)
+      return
+    }
+
+    alert('Documento não encontrado.')
+  }
+
+  /*
+    Faz download do documento.
+
+    Para URL externa, criamos um link temporário.
+    Para base64, mantemos a função antiga.
+  */
+  function baixarDocumento(item) {
+    const urlDocumento = obterUrlDocumento(item)
+    const nomeArquivo = item.arquivoNome || `${item.titulo || 'documento'}.pdf`
+
+    if (urlDocumento) {
+      const link = document.createElement('a')
+      link.href = urlDocumento
+      link.download = nomeArquivo
+      link.target = '_blank'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      return
+    }
+
+    if (item.arquivoBase64) {
+      baixarArquivoBase64(item.arquivoBase64, nomeArquivo)
+      return
+    }
+
+    alert('Documento não encontrado.')
+  }
+
   return (
     <main style={styles.page}>
       <section style={styles.hero}>
@@ -78,12 +153,12 @@ function GovernancaInstitucional() {
                   Publicado em {item.dataPublicacao}
                 </p>
 
-                {item.arquivoBase64 && (
+                {temDocumento(item) ? (
                   <div style={styles.actions}>
                     <button
                       type="button"
                       style={styles.viewButton}
-                      onClick={() => abrirArquivoBase64(item.arquivoBase64)}
+                      onClick={() => visualizarDocumento(item)}
                     >
                       Visualizar documento
                     </button>
@@ -91,13 +166,15 @@ function GovernancaInstitucional() {
                     <button
                       type="button"
                       style={styles.downloadButton}
-                      onClick={() =>
-                        baixarArquivoBase64(item.arquivoBase64, item.arquivoNome)
-                      }
+                      onClick={() => baixarDocumento(item)}
                     >
                       Baixar PDF
                     </button>
                   </div>
+                ) : (
+                  <p style={styles.empty}>
+                    Documento sem arquivo anexado.
+                  </p>
                 )}
               </article>
             ))}
@@ -124,6 +201,7 @@ const styles = {
     background: '#f1f7ff',
     padding: '50px 20px'
   },
+
   hero: {
     maxWidth: '1180px',
     margin: '0 auto 34px',
@@ -132,6 +210,7 @@ const styles = {
     padding: '44px',
     boxShadow: '0 12px 32px rgba(0,0,0,0.08)'
   },
+
   badge: {
     display: 'inline-block',
     background: '#ffc928',
@@ -140,18 +219,21 @@ const styles = {
     borderRadius: '999px',
     fontWeight: '900'
   },
+
   title: {
     color: '#0B3D91',
     fontSize: '2.8rem',
     maxWidth: '850px',
     lineHeight: '1.15'
   },
+
   subtitle: {
     color: '#475569',
     fontSize: '1.1rem',
     lineHeight: '1.7',
     maxWidth: '850px'
   },
+
   principles: {
     maxWidth: '1180px',
     margin: '0 auto',
@@ -159,6 +241,7 @@ const styles = {
     gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))',
     gap: '20px'
   },
+
   principleCard: {
     background: '#fff',
     borderRadius: '22px',
@@ -166,16 +249,20 @@ const styles = {
     boxShadow: '0 10px 28px rgba(0,0,0,0.07)',
     borderTop: '5px solid #0B3D91'
   },
+
   icon: {
     fontSize: '34px'
   },
+
   cardTitle: {
     color: '#0B3D91'
   },
+
   cardText: {
     color: '#475569',
     lineHeight: '1.6'
   },
+
   documents: {
     maxWidth: '1180px',
     margin: '34px auto 0',
@@ -184,21 +271,25 @@ const styles = {
     padding: '34px',
     boxShadow: '0 12px 32px rgba(0,0,0,0.08)'
   },
+
   sectionTitle: {
     color: '#0B3D91',
     marginTop: 0
   },
+
   docGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
     gap: '20px'
   },
+
   documentCard: {
     background: '#f8fbff',
     border: '1px solid #dbeafe',
     borderRadius: '18px',
     padding: '20px'
   },
+
   docBadge: {
     background: '#dbeafe',
     color: '#0B3D91',
@@ -206,19 +297,22 @@ const styles = {
     borderRadius: '999px',
     fontWeight: '900'
   },
+
   docTitle: {
     color: '#0B3D91'
   },
+
   docText: {
     color: '#334155',
     lineHeight: '1.6'
   },
+
   meta: {
     color: '#64748b',
     fontSize: '0.9rem'
   },
+
   downloadButton: {
-    marginTop: '12px',
     background: '#0B3D91',
     color: '#fff',
     border: 'none',
@@ -227,25 +321,27 @@ const styles = {
     fontWeight: '900',
     cursor: 'pointer'
   },
+
   empty: {
     color: '#64748b'
-  }, 
-  actions: {
-  display: 'flex',
-  gap: '10px',
-  flexWrap: 'wrap',
-  marginTop: '12px'
-},
+  },
 
-viewButton: {
-  background: '#16a34a',
-  color: '#fff',
-  border: 'none',
-  borderRadius: '12px',
-  padding: '12px 16px',
-  fontWeight: '900',
-  cursor: 'pointer'
-}
+  actions: {
+    display: 'flex',
+    gap: '10px',
+    flexWrap: 'wrap',
+    marginTop: '12px'
+  },
+
+  viewButton: {
+    background: '#16a34a',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '12px',
+    padding: '12px 16px',
+    fontWeight: '900',
+    cursor: 'pointer'
+  }
 }
 
 export default GovernancaInstitucional

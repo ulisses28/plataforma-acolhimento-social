@@ -5,18 +5,41 @@ import {
   listarDocumentosGovernanca,
   salvarDocumentoGovernanca,
   excluirDocumentoGovernanca,
-  lerArquivoComoBase64,
+  enviarDocumentoGovernanca,
   abrirArquivoBase64,
   baixarArquivoBase64
 } from '../../services/governancaService'
 
 function GovernancaAdmin() {
   const [documentos, setDocumentos] = useState([])
+
   const [titulo, setTitulo] = useState('')
   const [categoria, setCategoria] = useState('Transparência')
   const [descricao, setDescricao] = useState('')
+
+  /*
+    Estados do arquivo.
+
+    arquivoSelecionado:
+    - Guarda o PDF escolhido pelo usuário antes de salvar.
+    - Não deve ir para o localStorage.
+
+    arquivoNome:
+    - Nome visível do PDF.
+
+    arquivoUrl / arquivoPublicId:
+    - Campos novos vindos da Cloudinary.
+
+    arquivoBase64:
+    - Mantido apenas para compatibilidade com documentos antigos.
+  */
+  const [arquivoSelecionado, setArquivoSelecionado] = useState(null)
   const [arquivoNome, setArquivoNome] = useState('')
   const [arquivoBase64, setArquivoBase64] = useState('')
+  const [arquivoUrl, setArquivoUrl] = useState('')
+  const [arquivoPublicId, setArquivoPublicId] = useState('')
+
+  const [salvando, setSalvando] = useState(false)
 
   useEffect(() => {
     carregar()
@@ -25,42 +48,160 @@ function GovernancaAdmin() {
   function carregar() {
     setDocumentos(listarDocumentosGovernanca())
   }
-  async function selecionarArquivo(e) {
-  const arquivo = e.target.files?.[0]
 
-  if (!arquivo) return
-
-  if (arquivo.type !== 'application/pdf') {
-    alert('Envie apenas arquivos PDF.')
-    return
+  function limparFormulario() {
+    setTitulo('')
+    setCategoria('Transparência')
+    setDescricao('')
+    setArquivoSelecionado(null)
+    setArquivoNome('')
+    setArquivoBase64('')
+    setArquivoUrl('')
+    setArquivoPublicId('')
   }
 
-  const base64 = await lerArquivoComoBase64(arquivo)
+  /*
+    Seleciona PDF.
 
-  setArquivoNome(arquivo.name)
-  setArquivoBase64(base64)
- }
-  function salvar(e) {
+    Agora não convertemos mais para base64.
+    Apenas guardamos o arquivo temporariamente no estado.
+    O upload para Cloudinary acontece no botão "Publicar documento".
+  */
+  function selecionarArquivo(e) {
+    const arquivo = e.target.files?.[0]
+
+    if (!arquivo) return
+
+    if (arquivo.type !== 'application/pdf') {
+      alert('Envie apenas arquivos PDF.')
+      e.target.value = ''
+      return
+    }
+
+    const limiteMB = 20
+    const tamanhoMB = arquivo.size / (1024 * 1024)
+
+    if (tamanhoMB > limiteMB) {
+      alert(`O PDF possui ${tamanhoMB.toFixed(2)} MB. O limite é ${limiteMB} MB.`)
+      e.target.value = ''
+      return
+    }
+
+    setArquivoSelecionado(arquivo)
+    setArquivoNome(arquivo.name)
+
+    /*
+      Limpamos os campos antigos/anteriores para evitar salvar arquivo errado.
+    */
+    setArquivoBase64('')
+    setArquivoUrl('')
+    setArquivoPublicId('')
+  }
+
+  /*
+    Retorna a URL de documento quando ele foi enviado para Cloudinary.
+  */
+  function obterUrlDocumento(item) {
+    return item.arquivoUrl || item.pdfUrl || item.documentoUrl || ''
+  }
+
+  function visualizarDocumento(item) {
+    const urlDocumento = obterUrlDocumento(item)
+
+    if (urlDocumento) {
+      window.open(urlDocumento, '_blank', 'noopener,noreferrer')
+      return
+    }
+
+    if (item.arquivoBase64) {
+      abrirArquivoBase64(item.arquivoBase64)
+      return
+    }
+
+    alert('Documento não encontrado.')
+  }
+
+  function baixarDocumento(item) {
+    const urlDocumento = obterUrlDocumento(item)
+    const nomeArquivo = item.arquivoNome || item.documentoNome || `${item.titulo || 'documento'}.pdf`
+
+    if (urlDocumento) {
+      const link = document.createElement('a')
+      link.href = urlDocumento
+      link.download = nomeArquivo
+      link.target = '_blank'
+      link.rel = 'noopener noreferrer'
+
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+
+      return
+    }
+
+    if (item.arquivoBase64) {
+      baixarArquivoBase64(item.arquivoBase64, nomeArquivo)
+      return
+    }
+
+    alert('Documento não encontrado.')
+  }
+
+  async function salvar(e) {
     e.preventDefault()
 
     if (!titulo.trim()) return alert('Informe o título.')
     if (!descricao.trim()) return alert('Informe a descrição.')
 
-    salvarDocumentoGovernanca({
-      titulo,
-      categoria,
-      descricao,
-      arquivoNome,
-      arquivoBase64
-    })
+    try {
+      setSalvando(true)
 
-    setTitulo('')
-    setCategoria('Transparência')
-    setDescricao('')
-    setArquivoNome('')
-    setArquivoBase64('')
+      let dadosArquivo = {
+        arquivoNome,
+        arquivoBase64,
+        arquivoUrl,
+        arquivoPublicId,
+        pdfUrl: arquivoUrl,
+        documentoUrl: arquivoUrl,
+        documentoPublicId: arquivoPublicId,
+        documentoNome: arquivoNome
+      }
 
-    carregar()
+      /*
+        Se o usuário selecionou um PDF novo, enviamos para Cloudinary.
+      */
+      if (arquivoSelecionado) {
+        const upload = await enviarDocumentoGovernanca(arquivoSelecionado)
+
+        dadosArquivo = {
+          arquivoNome: upload.arquivoNome || arquivoSelecionado.name,
+          arquivoBase64: '',
+          arquivoUrl: upload.arquivoUrl,
+          arquivoPublicId: upload.arquivoPublicId,
+          pdfUrl: upload.pdfUrl || upload.arquivoUrl,
+          documentoUrl: upload.documentoUrl || upload.arquivoUrl,
+          documentoPublicId: upload.documentoPublicId || upload.arquivoPublicId,
+          documentoNome: upload.documentoNome || upload.arquivoNome || arquivoSelecionado.name
+        }
+      }
+
+      salvarDocumentoGovernanca({
+        titulo,
+        categoria,
+        descricao,
+        ...dadosArquivo
+      })
+
+      limparFormulario()
+      carregar()
+
+      alert('Documento publicado com sucesso!')
+    } catch (error) {
+      console.error('Erro ao salvar documento:', error)
+      alert(error.message || 'Erro ao salvar documento.')
+    } finally {
+      setSalvando(false)
+    }
   }
 
   function remover(id) {
@@ -118,19 +259,27 @@ function GovernancaAdmin() {
               placeholder="Descreva a finalidade do documento..."
             />
 
-            <label style={styles.label}>Arquivo/documento</label>
+            <label style={styles.label}>Arquivo/documento em PDF</label>
             <input
               type="file"
-              accept=".pdf"
+              accept=".pdf,application/pdf"
               style={styles.input}
               onChange={selecionarArquivo}
             />
+
             {arquivoNome && (
               <p style={styles.meta}>
                 PDF selecionado: {arquivoNome}
               </p>
             )}
-            <button style={styles.button}>Publicar documento</button>
+
+            <button
+              type="submit"
+              style={styles.button}
+              disabled={salvando}
+            >
+              {salvando ? 'Enviando...' : 'Publicar documento'}
+            </button>
           </form>
 
           <section style={styles.card}>
@@ -151,15 +300,17 @@ function GovernancaAdmin() {
                     Publicado em {item.dataPublicacao}
                   </p>
 
-                  {item.arquivoNome && (
+                  {(item.arquivoNome || item.arquivoUrl || item.pdfUrl || item.documentoUrl || item.arquivoBase64) && (
                     <>
-                      <p style={styles.meta}>Arquivo: {item.arquivoNome}</p>
+                      <p style={styles.meta}>
+                        Arquivo: {item.arquivoNome || item.documentoNome || 'documento.pdf'}
+                      </p>
 
                       <div style={styles.actions}>
                         <button
                           type="button"
                           style={styles.viewButton}
-                          onClick={() => abrirArquivoBase64(item.arquivoBase64)}
+                          onClick={() => visualizarDocumento(item)}
                         >
                           Visualizar
                         </button>
@@ -167,9 +318,7 @@ function GovernancaAdmin() {
                         <button
                           type="button"
                           style={styles.downloadButton}
-                          onClick={() =>
-                            baixarArquivoBase64(item.arquivoBase64, item.arquivoNome)
-                          }
+                          onClick={() => baixarDocumento(item)}
                         >
                           Baixar PDF
                         </button>
@@ -296,6 +445,7 @@ const styles = {
     fontSize: '0.9rem'
   },
   removeButton: {
+    marginTop: '12px',
     background: '#dc2626',
     color: '#fff',
     border: 'none',
@@ -308,12 +458,11 @@ const styles = {
     color: '#64748b'
   },
   actions: {
-  display: 'flex',
-  gap: '10px',
-  flexWrap: 'wrap',
-  marginTop: '12px'
+    display: 'flex',
+    gap: '10px',
+    flexWrap: 'wrap',
+    marginTop: '12px'
   },
-
   viewButton: {
     background: '#16a34a',
     color: '#fff',
@@ -323,7 +472,6 @@ const styles = {
     fontWeight: '900',
     cursor: 'pointer'
   },
-
   downloadButton: {
     background: '#0B3D91',
     color: '#fff',

@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { buscarNoticiaPorId } from '../../services/noticiasService'
-import { registrarInteracao } from '../../services/analyticsService'
 
 function NoticiaDetalhe() {
   const { id } = useParams()
@@ -24,6 +23,66 @@ function NoticiaDetalhe() {
 
     carregarNoticia()
   }, [id])
+
+  /*
+    Converte links comuns do YouTube para formato embed.
+
+    Isso permite exibir vídeos dentro da página de detalhe.
+  */
+  function converterYoutubeEmbed(url) {
+    if (!url) return ''
+
+    if (url.includes('watch?v=')) {
+      return url.replace('watch?v=', 'embed/')
+    }
+
+    if (url.includes('youtu.be/')) {
+      const id = url.split('youtu.be/')[1].split('?')[0]
+      return `https://www.youtube.com/embed/${id}`
+    }
+
+    if (url.includes('/shorts/')) {
+      const id = url.split('/shorts/')[1].split('?')[0]
+      return `https://www.youtube.com/embed/${id}`
+    }
+
+    return url
+  }
+
+  /*
+    Obtém a mídia principal da notícia.
+
+    Compatível com:
+    - imagemUrl: novo campo da Cloudinary
+    - midia: campo antigo
+    - midias[0].imagemUrl: array de mídias novo
+    - midias[0].base64: compatibilidade antiga
+  */
+  function obterMidiaPrincipal(item) {
+    return (
+      item.imagemUrl ||
+      item.midia ||
+      item.midias?.[0]?.imagemUrl ||
+      item.midias?.[0]?.base64 ||
+      ''
+    )
+  }
+
+  function obterTipoMidia(item) {
+    return (
+      item.tipoMidia ||
+      item.midias?.[0]?.tipo ||
+      ''
+    )
+  }
+
+  function formatarData(item) {
+    if (item.createdAt) {
+      return new Date(item.createdAt).toLocaleDateString('pt-BR')
+    }
+
+    return item.criadoEm || 'Publicação'
+  }
 
   if (carregando) {
     return (
@@ -49,6 +108,9 @@ function NoticiaDetalhe() {
     )
   }
 
+  const midiaPrincipal = obterMidiaPrincipal(noticia)
+  const tipoMidia = obterTipoMidia(noticia)
+
   return (
     <main style={styles.page}>
       <article style={styles.container}>
@@ -56,23 +118,38 @@ function NoticiaDetalhe() {
           ← Voltar para notícias
         </Link>
 
-        <span style={styles.badge}>{noticia.categoria}</span>
+        <span style={styles.badge}>
+          {noticia.categoria || 'Notícia institucional'}
+        </span>
 
         <h1 style={styles.title}>{noticia.titulo}</h1>
 
         <p style={styles.date}>
-          {noticia.createdAt
-            ? new Date(noticia.createdAt).toLocaleDateString('pt-BR')
-            : noticia.criadoEm || 'Publicação'}
+          {formatarData(noticia)}
         </p>
 
-        {noticia.midia && (
-          noticia.tipoMidia?.startsWith('video') ? (
-            <video src={noticia.midia} controls style={styles.media} />
+        {noticia.youtubeUrl ? (
+          <iframe
+            src={converterYoutubeEmbed(noticia.youtubeUrl)}
+            title={noticia.titulo}
+            style={styles.media}
+            allowFullScreen
+          />
+        ) : midiaPrincipal ? (
+          tipoMidia?.startsWith('video') ? (
+            <video
+              src={midiaPrincipal}
+              controls
+              style={styles.media}
+            />
           ) : (
-            <img src={noticia.midia} alt={noticia.titulo} style={styles.media} />
+            <img
+              src={midiaPrincipal}
+              alt={noticia.titulo}
+              style={styles.media}
+            />
           )
-        )}
+        ) : null}
 
         <p style={styles.resumo}>
           {noticia.resumo || noticia.descricao}
@@ -155,13 +232,14 @@ const styles = {
 
   media: {
     width: '100%',
-    maxHeight: '520px',
+    height: '520px',
     objectFit: 'contain',
     background: '#f8fbff',
     border: '1px solid #dbeafe',
     borderRadius: '18px',
     margin: '18px 0',
-    padding: '10px'
+    padding: '10px',
+    boxSizing: 'border-box'
   },
 
   resumo: {

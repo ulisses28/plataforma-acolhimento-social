@@ -6,7 +6,7 @@ import {
   salvarPublicacaoTransparencia,
   atualizarPublicacaoTransparencia,
   excluirPublicacaoTransparencia,
-  lerArquivoComoBase64,
+  enviarDocumentoTransparencia,
   abrirArquivoBase64,
   baixarArquivoBase64
 } from '../../services/transparenciaService'
@@ -18,6 +18,22 @@ import {
 } from '../../services/indicadoresFinanceirosService'
 
 function PrestacaoContasAdmin() {
+  /*
+    Formulário base da publicação.
+
+    Campos antigos mantidos:
+    - arquivoBase64
+
+    Campos novos para Cloudinary:
+    - arquivoUrl
+    - arquivoPublicId
+    - pdfUrl
+    - documentoUrl
+    - documentoPublicId
+    - documentoNome
+
+    Assim, publicações antigas continuam funcionando e as novas passam a usar URL.
+  */
   const formLimpo = {
     titulo: '',
     tipo: 'Relatório Mensal',
@@ -27,6 +43,12 @@ function PrestacaoContasAdmin() {
     descricao: '',
     arquivoNome: '',
     arquivoBase64: '',
+    arquivoUrl: '',
+    arquivoPublicId: '',
+    pdfUrl: '',
+    documentoUrl: '',
+    documentoPublicId: '',
+    documentoNome: '',
     imagemCapa: '',
     status: 'Publicado'
   }
@@ -34,6 +56,16 @@ function PrestacaoContasAdmin() {
   const [publicacoes, setPublicacoes] = useState([])
   const [form, setForm] = useState(formLimpo)
   const [editandoId, setEditandoId] = useState(null)
+
+  /*
+    Guarda temporariamente o PDF escolhido pelo usuário.
+
+    Importante:
+    Esse arquivo NÃO vai para o localStorage.
+    Ele fica só em memória até o usuário clicar em Publicar/Atualizar.
+  */
+  const [arquivoSelecionado, setArquivoSelecionado] = useState(null)
+  const [salvando, setSalvando] = useState(false)
 
   const [indicadores, setIndicadores] = useState([])
 
@@ -65,31 +97,149 @@ function PrestacaoContasAdmin() {
     }))
   }
 
-  async function selecionarPdf(e) {
+  /*
+    Seleciona PDF.
+
+    Antes:
+    - convertia o arquivo para base64
+
+    Agora:
+    - valida o PDF
+    - guarda o arquivo no estado arquivoSelecionado
+    - o upload para Cloudinary será feito no momento de salvar
+  */
+  function selecionarPdf(e) {
     const arquivo = e.target.files?.[0]
 
     if (!arquivo) return
 
     if (arquivo.type !== 'application/pdf') {
       alert('Envie apenas arquivos PDF.')
+      e.target.value = ''
       return
     }
 
-    try {
-      const base64 = await lerArquivoComoBase64(arquivo)
+    const limiteMB = 20
+    const tamanhoMB = arquivo.size / (1024 * 1024)
 
-      setForm((atual) => ({
-        ...atual,
-        arquivoNome: arquivo.name,
-        arquivoBase64: base64
-      }))
-    } catch (erro) {
-      console.error(erro)
-      alert('Erro ao carregar PDF.')
+    if (tamanhoMB > limiteMB) {
+      alert(`O PDF possui ${tamanhoMB.toFixed(2)} MB. O limite é ${limiteMB} MB.`)
+      e.target.value = ''
+      return
     }
+
+    setArquivoSelecionado(arquivo)
+
+    setForm((atual) => ({
+      ...atual,
+      arquivoNome: arquivo.name,
+
+      /*
+        Limpamos os campos antigos/anteriores para evitar salvar PDF errado
+        quando o usuário escolher um novo arquivo.
+      */
+      arquivoBase64: '',
+      arquivoUrl: '',
+      arquivoPublicId: '',
+      pdfUrl: '',
+      documentoUrl: '',
+      documentoPublicId: '',
+      documentoNome: arquivo.name
+    }))
   }
 
-  function publicar(e) {
+  /*
+    Retorna a URL do documento, quando a publicação já usa Cloudinary.
+  */
+  function obterUrlDocumento(item) {
+    return item.arquivoUrl || item.pdfUrl || item.documentoUrl || ''
+  }
+
+  function obterNomeDocumento(item) {
+    return item.arquivoNome || item.documentoNome || `${item.titulo || 'documento'}.pdf`
+  }
+
+  function temDocumento(item) {
+    return Boolean(item.arquivoBase64 || obterUrlDocumento(item))
+  }
+
+  /*
+    Visualiza PDF.
+
+    Se for documento novo da Cloudinary:
+    - abre a URL externa
+
+    Se for documento antigo:
+    - usa abrirArquivoBase64
+  */
+  function visualizarDocumento(item) {
+    const urlDocumento = obterUrlDocumento(item)
+
+    if (urlDocumento) {
+      window.open(urlDocumento, '_blank', 'noopener,noreferrer')
+      return
+    }
+
+    if (item.arquivoBase64) {
+      abrirArquivoBase64(item.arquivoBase64)
+      return
+    }
+
+    alert('Este documento não possui PDF.')
+  }
+
+  /*
+    Baixa PDF.
+
+    Se for Cloudinary:
+    - cria link temporário para URL
+
+    Se for base64:
+    - usa função antiga baixarArquivoBase64
+  */
+  function baixarDocumento(item) {
+    const urlDocumento = obterUrlDocumento(item)
+    const nomeArquivo = obterNomeDocumento(item)
+
+    if (urlDocumento) {
+      const link = document.createElement('a')
+      link.href = urlDocumento
+      link.download = nomeArquivo
+      link.target = '_blank'
+      link.rel = 'noopener noreferrer'
+
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+
+      return
+    }
+
+    if (item.arquivoBase64) {
+      baixarArquivoBase64(item.arquivoBase64, nomeArquivo)
+      return
+    }
+
+    alert('Este documento não possui PDF.')
+  }
+
+  function limparPublicacao() {
+    setForm(formLimpo)
+    setEditandoId(null)
+    setArquivoSelecionado(null)
+  }
+
+  /*
+    Publica ou atualiza uma publicação.
+
+    Se houver um PDF novo selecionado:
+    - envia para Cloudinary
+    - salva no localStorage apenas a URL e os metadados
+
+    Se não houver PDF novo:
+    - mantém o que já existe na publicação editada
+  */
+  async function publicar(e) {
     e.preventDefault()
 
     if (!form.titulo.trim()) {
@@ -102,30 +252,82 @@ function PrestacaoContasAdmin() {
       return
     }
 
-    if (editandoId) {
-      atualizarPublicacaoTransparencia({
+    try {
+      setSalvando(true)
+
+      let dadosArquivo = {
+        arquivoNome: form.arquivoNome || '',
+        arquivoBase64: form.arquivoBase64 || '',
+        arquivoUrl: form.arquivoUrl || form.pdfUrl || form.documentoUrl || '',
+        arquivoPublicId: form.arquivoPublicId || form.documentoPublicId || '',
+        pdfUrl: form.pdfUrl || form.arquivoUrl || form.documentoUrl || '',
+        documentoUrl: form.documentoUrl || form.arquivoUrl || form.pdfUrl || '',
+        documentoPublicId: form.documentoPublicId || form.arquivoPublicId || '',
+        documentoNome: form.documentoNome || form.arquivoNome || ''
+      }
+
+      if (arquivoSelecionado) {
+        const upload = await enviarDocumentoTransparencia(arquivoSelecionado)
+
+        dadosArquivo = {
+          arquivoNome: upload.arquivoNome || arquivoSelecionado.name,
+          arquivoBase64: '',
+          arquivoUrl: upload.arquivoUrl,
+          arquivoPublicId: upload.arquivoPublicId,
+          pdfUrl: upload.pdfUrl || upload.arquivoUrl,
+          documentoUrl: upload.documentoUrl || upload.arquivoUrl,
+          documentoPublicId: upload.documentoPublicId || upload.arquivoPublicId,
+          documentoNome: upload.documentoNome || upload.arquivoNome || arquivoSelecionado.name
+        }
+      }
+
+      const dadosPublicacao = {
         ...form,
-        id: editandoId
-      })
+        ...dadosArquivo
+      }
 
-      setEditandoId(null)
-    } else {
-      salvarPublicacaoTransparencia(form)
+      if (editandoId) {
+        atualizarPublicacaoTransparencia({
+          ...dadosPublicacao,
+          id: editandoId
+        })
+
+        setEditandoId(null)
+      } else {
+        salvarPublicacaoTransparencia(dadosPublicacao)
+      }
+
+      limparPublicacao()
+      carregar()
+
+      alert('Publicação salva com sucesso.')
+    } catch (error) {
+      console.error('Erro ao salvar publicação:', error)
+      alert(error.message || 'Erro ao salvar publicação.')
+    } finally {
+      setSalvando(false)
     }
-
-    setForm(formLimpo)
-
-    carregar()
-
-    alert('Publicação salva com sucesso.')
   }
 
   function editar(item) {
     setForm({
       ...formLimpo,
-      ...item
+      ...item,
+
+      /*
+        Normaliza os campos de arquivo para aceitar publicações antigas e novas.
+      */
+      arquivoNome: item.arquivoNome || item.documentoNome || '',
+      arquivoBase64: item.arquivoBase64 || '',
+      arquivoUrl: item.arquivoUrl || item.pdfUrl || item.documentoUrl || '',
+      arquivoPublicId: item.arquivoPublicId || item.documentoPublicId || '',
+      pdfUrl: item.pdfUrl || item.arquivoUrl || item.documentoUrl || '',
+      documentoUrl: item.documentoUrl || item.arquivoUrl || item.pdfUrl || '',
+      documentoPublicId: item.documentoPublicId || item.arquivoPublicId || '',
+      documentoNome: item.documentoNome || item.arquivoNome || ''
     })
 
+    setArquivoSelecionado(null)
     setEditandoId(item.id)
 
     window.scrollTo({
@@ -144,25 +346,6 @@ function PrestacaoContasAdmin() {
     excluirPublicacaoTransparencia(id)
 
     carregar()
-  }
-
-  function baixarDocumento(item) {
-    if (!item.arquivoBase64) {
-      alert('Este documento não possui PDF.')
-      return
-    }
-
-    const link = document.createElement('a')
-
-    link.href = item.arquivoBase64
-    link.download =
-      item.arquivoNome || 'documento.pdf'
-
-    document.body.appendChild(link)
-
-    link.click()
-
-    document.body.removeChild(link)
   }
 
   function alterarIndicador(campo, valor) {
@@ -357,7 +540,7 @@ function PrestacaoContasAdmin() {
 
             <input
               type="file"
-              accept=".pdf"
+              accept=".pdf,application/pdf"
               style={styles.input}
               onChange={selecionarPdf}
             />
@@ -366,6 +549,12 @@ function PrestacaoContasAdmin() {
               <p style={styles.fileName}>
                 PDF selecionado:{' '}
                 {form.arquivoNome}
+              </p>
+            )}
+
+            {form.arquivoUrl && (
+              <p style={styles.helper}>
+                Documento salvo na Cloudinary.
               </p>
             )}
 
@@ -392,20 +581,21 @@ function PrestacaoContasAdmin() {
               <button
                 type="submit"
                 style={styles.button}
+                disabled={salvando}
               >
-                {editandoId
-                  ? 'Atualizar publicação'
-                  : 'Publicar'}
+                {salvando
+                  ? 'Salvando...'
+                  : editandoId
+                    ? 'Atualizar publicação'
+                    : 'Publicar'}
               </button>
 
               {editandoId && (
                 <button
                   type="button"
                   style={styles.cancelButton}
-                  onClick={() => {
-                    setForm(formLimpo)
-                    setEditandoId(null)
-                  }}
+                  onClick={limparPublicacao}
+                  disabled={salvando}
                 >
                   Cancelar
                 </button>
@@ -703,6 +893,7 @@ function PrestacaoContasAdmin() {
                     </p>
 
                     <button
+                      type="button"
                       style={styles.deleteButton}
                       onClick={() =>
                         removerIndicador(item.id)
@@ -747,15 +938,22 @@ function PrestacaoContasAdmin() {
                     {item.resumo}
                   </p>
 
-                  {item.arquivoNome && (
+                  {obterNomeDocumento(item) && (
                     <p style={styles.fileName}>
                       PDF:{' '}
-                      {item.arquivoNome}
+                      {obterNomeDocumento(item)}
+                    </p>
+                  )}
+
+                  {item.arquivoUrl && (
+                    <p style={styles.helper}>
+                      Documento salvo na Cloudinary.
                     </p>
                   )}
 
                   <div style={styles.actions}>
                     <button
+                      type="button"
                       style={styles.editButton}
                       onClick={() =>
                         editar(item)
@@ -763,23 +961,31 @@ function PrestacaoContasAdmin() {
                     >
                       ✏️ Editar
                     </button>
-                    <button
-                      style={styles.editButton}
-                      onClick={() => abrirArquivoBase64(item.arquivoBase64)}
-                    >
-                      👁 Visualizar
-                    </button>
-                    <button
-                    
-                      style={
-                        styles.downloadButton
-                      }
-                      onClick={() => baixarArquivoBase64(item.arquivoBase64, item.arquivoNome)}
-                    >
-                      ⬇ Baixar PDF
-                    </button>
+
+                    {temDocumento(item) && (
+                      <>
+                        <button
+                          type="button"
+                          style={styles.editButton}
+                          onClick={() => visualizarDocumento(item)}
+                        >
+                          👁 Visualizar
+                        </button>
+
+                        <button
+                          type="button"
+                          style={
+                            styles.downloadButton
+                          }
+                          onClick={() => baixarDocumento(item)}
+                        >
+                          ⬇ Baixar PDF
+                        </button>
+                      </>
+                    )}
 
                     <button
+                      type="button"
                       style={styles.deleteButton}
                       onClick={() =>
                         remover(item.id)
