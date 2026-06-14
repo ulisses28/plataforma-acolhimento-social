@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="https://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://plataforma-acolhimento-social.vercel.app/</loc>
+    <priority>1.0</priority>
+  </url>
+
+  <url>
+    <loc>https://plataforma-acolhimento-social.vercel.app/quem-somos</loc>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://plataforma-acolhimento-social.vercel.app/projetos</loc>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://plataforma-acolhimento-social.vercel.app/transparencia</loc>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://plataforma-acolhimento-social.vercel.app/governanca-institucional</loc>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://plataforma-acolhimento-social.vercel.app/parceiros</loc>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://plataforma-acolhimento-social.vercel.app/voluntario</loc>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://plataforma-acolhimento-social.vercel.app/doar-agora</loc>
+    <priority>0.9</priority>
+  </url>
+
+  <url>
+    <loc>https://plataforma-acolhimento-social.vercel.app/noticias</loc>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://plataforma-acolhimento-social.vercel.app/vagas</loc>
+    <priority>0.7</priority>
+  </url>
+</urlset>
