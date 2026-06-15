@@ -17,6 +17,8 @@ import Vagas from './pages/public/Vagas'
 import Noticias from './pages/public/Noticias'
 import NoticiaDetalhe from './pages/public/NoticiaDetalhe'
 import Tutorial from './pages/public/Tutorial'
+import JogoAventuraBlocos from './pages/public/JogoAventuraBlocos'
+import JogosDiversao from './pages/public/JogosDiversao'
 import NossasNecessidades from './pages/public/NossasNecessidades'
 import DoadorDoar from './pages/public/DoadorDoar'
 import GovernancaInstitucional from './pages/public/GovernancaInstitucional'
@@ -51,8 +53,9 @@ function Layout() {
 
   const isHome = location.pathname === '/'
   const isAdmin = location.pathname.startsWith('/admin')
+  const isGame = location.pathname.startsWith('/jogos/')
 
-  const mostrarLayoutPublico = !isHome && !isAdmin
+  const mostrarLayoutPublico = !isHome && !isAdmin && !isGame
 
   return (
     <>
@@ -140,6 +143,14 @@ function Layout() {
         <Route
           path="/tutorial"
           element={<Tutorial />}
+        />
+        <Route
+          path="/jogos/aventura-blocos"
+          element={<JogoAventuraBlocos />}
+        />
+        <Route
+          path="/jogos-diversao"
+          element={<JogosDiversao />}
         />
         <Route
           path="/governanca-institucional"
@@ -301,7 +312,7 @@ function Layout() {
 
       {mostrarLayoutPublico && <Footer />}
 
-      {!isAdmin && <AssistenteVirtual />}
+      {!isAdmin && !isGame && <AssistenteVirtual />}
     </>
   )
 }

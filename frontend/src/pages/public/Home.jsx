@@ -12,10 +12,17 @@ import HeroNewsCarousel from '../../components/news/HeroNewsCarousel'
 
 import { listarNoticias } from '../../services/noticiasService'
 
+const INSTAGRAM_URL =
+  'https://www.instagram.com/larbatistaalbertinemeador?igsh=aXludWIycTE0amlw'
+
+const FACEBOOK_URL =
+  'https://www.facebook.com/larbatistaam'
+
 function Home() {
   const [noticias, setNoticias] = useState([])
   const [mensagemAberta, setMensagemAberta] = useState(false)
   const [menuAberto, setMenuAberto] = useState(false)
+  const [perfilUsuario, setPerfilUsuario] = useState(null)
 
   useEffect(() => {
     async function carregarNoticias() {
@@ -29,15 +36,29 @@ function Home() {
     }
 
     carregarNoticias()
+    setPerfilUsuario(obterUsuarioLogado())
   }, [])
 
+  /*
+    Filtra apenas notícias publicadas.
+
+    Mantemos essa lógica para evitar exibir rascunhos ou notícias em revisão
+    na página inicial.
+  */
   const noticiasPublicadas = noticias.filter(
-  (item) =>
-    String(item.status || '')
-      .trim()
-      .toLowerCase() === 'publicado'
+    (item) =>
+      String(item.status || '')
+        .trim()
+        .toLowerCase() === 'publicado'
   )
 
+  /*
+    Notícia usada como mensagem do dia.
+
+    O admin pode escolher:
+    - Mensagem do Dia
+    - Ambos
+  */
   const noticiaDestaque =
     noticiasPublicadas.find(
       (item) =>
@@ -45,6 +66,13 @@ function Home() {
         item.areaPublicacao === 'Ambos'
     ) || null
 
+  /*
+    Notícias exibidas na Home.
+
+    O admin pode escolher:
+    - Últimas Notícias
+    - Ambos
+  */
   const noticiasHome = noticiasPublicadas.filter(
     (item) =>
       item.areaPublicacao === 'Últimas Notícias' ||
@@ -54,12 +82,129 @@ function Home() {
   const textoMensagem =
     noticiaDestaque?.conteudo?.replace(/<[^>]+>/g, '') ||
     noticiaDestaque?.resumo ||
-    'Pequenas atitudes podem transformar vidas. Cada gesto de cuidado, apoio e solidariedade ajuda a construir um futuro melhor.'
+    'E todos os teus filhos serão ensinados do Senhor; e a paz de teus filhos será em grande abundância.'
 
   const textoCurto =
-    textoMensagem.length > 360 && !mensagemAberta
-      ? `${textoMensagem.slice(0, 360)}...`
+    textoMensagem.length > 300 && !mensagemAberta
+      ? `${textoMensagem.slice(0, 300)}...`
       : textoMensagem
+
+  const quickLinks = [
+    {
+      icon: '👥',
+      title: 'Nossos Projetos',
+      to: '/projetos'
+    },
+    {
+      icon: '♡',
+      title: 'Como Ajudar',
+      to: '/voluntario'
+    },
+    {
+      icon: '📄',
+      title: 'Prestação de Contas',
+      to: '/transparencia'
+    },
+    {
+      icon: '📰',
+      title: 'Notícias',
+      to: '/noticias'
+    },
+    {
+      icon: '🖼️',
+      title: 'Galeria de Fotos',
+      to: '/projetos'
+    },
+    {
+      icon: '💬',
+      title: 'Fale Conosco',
+      href: 'mailto:visitas@larbatista.org.br'
+    },
+    {
+      icon: '🎮',
+      title: 'Jogue e Divirta-se',
+      to: '/jogos-diversao'
+    }
+  ]
+
+  const projetos = [
+    {
+      image: quemSomos,
+      title: 'Acolhimento Institucional',
+      text: 'Casa, cuidado e proteção para crianças e adolescentes em situação de vulnerabilidade.',
+      link: '/quem-somos'
+    },
+    {
+      image: nossosProjetosImg,
+      title: 'Educação e Apoio Escolar',
+      text: 'Reforço escolar, formação e incentivo para um futuro com mais oportunidades.',
+      link: '/projetos'
+    },
+    {
+      image: doeAgoraImg,
+      title: 'Assistência e Bem-estar',
+      text: 'Alimentação, saúde, cuidado diário e apoio integral ao desenvolvimento humano.',
+      link: '/doar-agora'
+    },
+    {
+      image: transparenciaImg,
+      title: 'Transparência e Governança',
+      text: 'Relatórios, prestação de contas e documentos públicos da instituição.',
+      link: '/transparencia'
+    }
+  ]
+
+  const noticiasFallback = [
+    {
+      id: 'fallback-1',
+      image: quemSomos,
+      date: '06 de junho de 2025',
+      title: 'Festa das Cores leva alegria e esperança às crianças',
+      text: 'Um dia especial repleto de brincadeiras, sorrisos e momentos inesquecíveis.',
+      link: '/noticias'
+    },
+    {
+      id: 'fallback-2',
+      image: doeAgoraImg,
+      date: '02 de junho de 2025',
+      title: 'Campanha do Agasalho 2025 já começou',
+      text: 'Doe amor, doe calor. Sua doação pode transformar o inverno de alguém.',
+      link: '/doar-agora'
+    },
+    {
+      id: 'fallback-3',
+      image: nossosProjetosImg,
+      date: '28 de maio de 2025',
+      title: 'Voluntariado que transforma: seja parte dessa missão',
+      text: 'Conheça as formas de participar e fazer a diferença na vida de quem acolhemos.',
+      link: '/voluntario'
+    },
+    {
+      id: 'fallback-4',
+      image: heroImg,
+      date: '20 de maio de 2025',
+      title: 'Novo espaço para mais acolhimento e cuidado',
+      text: 'Estamos ampliando nossa estrutura para acolher ainda mais vidas.',
+      link: '/quem-somos'
+    }
+  ]
+
+  const noticiasCards =
+    noticiasHome.length > 0
+      ? noticiasHome.slice(0, 4).map((item) => ({
+          id: item._id || item.id,
+          image: obterMidiaPrincipal(item) || quemSomos,
+          date: formatarDataNoticia(item),
+          title: item.titulo,
+          text:
+            item.resumo ||
+            item.descricao ||
+            item.conteudo?.replace(/<[^>]+>/g, '').slice(0, 140) ||
+            'Leia a publicação completa.',
+          categoria: item.categoria,
+          link: `/noticias/${item._id || item.id}`
+        }))
+      : noticiasFallback
 
   return (
     <main className="home-page" id="top">
@@ -81,247 +226,325 @@ function Home() {
               type="button"
               className="home-menu-button"
               onClick={() => setMenuAberto(!menuAberto)}
+              aria-label="Abrir menu"
             >
               ☰
             </button>
 
             <nav className={`home-menu ${menuAberto ? 'home-menu-open' : ''}`}>
-              <Link to="/" onClick={() => setMenuAberto(false)}>Home</Link>
-              <Link to="/quem-somos" onClick={() => setMenuAberto(false)}>Quem Somos</Link>
-              <Link to="/projetos" onClick={() => setMenuAberto(false)}>Projetos</Link>
-              <Link to="/transparencia" onClick={() => setMenuAberto(false)}>Transparência</Link>
-              <Link to="/voluntario" onClick={() => setMenuAberto(false)}>Seja um Voluntário</Link>
-              <Link to="/parceiros" onClick={() => setMenuAberto(false)}>Parceiros</Link>
-              <Link to="/governanca-institucional" onClick={() => setMenuAberto(false)}>Governança</Link>
-              <Link to="/tutorial" onClick={() => setMenuAberto(false)}>Tutorial</Link>
-              <Link to="/login" className="login-top-mobile" onClick={() => setMenuAberto(false)}>Entrar</Link>
+              <Link to="/" onClick={() => setMenuAberto(false)}>
+                Home
+              </Link>
+
+              <Link to="/quem-somos" onClick={() => setMenuAberto(false)}>
+                Quem Somos
+              </Link>
+
+              <Link to="/projetos" onClick={() => setMenuAberto(false)}>
+                Projetos
+              </Link>
+
+              <Link to="/transparencia" onClick={() => setMenuAberto(false)}>
+                Transparência
+              </Link>
+
+              <Link to="/voluntario" onClick={() => setMenuAberto(false)}>
+                Seja um Voluntário
+              </Link>
+
+              <Link to="/parceiros" onClick={() => setMenuAberto(false)}>
+                Parceiros
+              </Link>
+
+              <Link to="/governanca-institucional" onClick={() => setMenuAberto(false)}>
+                Governança
+              </Link>
+
+              <Link to="/tutorial" onClick={() => setMenuAberto(false)}>
+                Tutorial
+              </Link>
+
+              <Link
+                to={perfilUsuario ? '/doador/painel' : '/doador/login'}
+                className="login-top-mobile"
+                onClick={() => setMenuAberto(false)}
+              >
+                Painel do Doador
+              </Link>
             </nav>
 
-            <Link to="/login" className="login-top">Entrar</Link>
+            <Link
+              to={perfilUsuario ? '/doador/painel' : '/doador/login'}
+              className="login-top"
+            >
+              Painel do Doador
+            </Link>
           </header>
 
           <div className="hero-content">
             <h1>
               Transformando vidas,
-              <span> construindo um futuro melhor</span>
+              <span>construindo um futuro melhor</span>
             </h1>
 
             <p>
-              O Lar Batista Albertine Meador acolhe, cuida e transforma vidas
-              por meio do amor, da fé, da solidariedade e da participação da
-              sociedade.
+              O Lar Batista acolhe, transforma e devolve a esperança para
+              crianças e jovens em situação de vulnerabilidade social.
             </p>
 
             <div className="hero-buttons">
-              <Link to="/quem-somos" className="btn-yellow">
-                Conheça nossa história
+              <Link to="/projetos" className="btn-yellow">
+                Conheça nossos projetos
               </Link>
 
-              <Link to="/doar-agora" className="btn-outline">
-                Fazer doação
+              <Link to="/voluntario" className="btn-outline">
+                Como ajudar
               </Link>
             </div>
+          </div>
+
+          <div className="hero-dots" aria-hidden="true">
+            <span className="dot-blue" />
+            <span className="dot-green" />
+            <span className="dot-yellow" />
           </div>
         </div>
       </section>
 
-      <section style={styles.messageSection}>
-        <div
-          style={{
-            ...styles.messageCard,
-            gridTemplateColumns:
-              noticiaDestaque?.midia || noticiaDestaque?.youtubeUrl
-                ? '1fr 0.82fr'
-                : '1fr'
-          }}
-        >
-          <div style={styles.messageText}>
-            <div style={styles.messageTop}>
-              <span style={styles.messageTag}>Mensagem do Dia</span>
-              <span style={styles.messageIcon}>✨</span>
-            </div>
-
-            <h2 style={styles.messageTitle}>
-              {noticiaDestaque?.titulo || 'Amor, acolhimento e esperança'}
-            </h2>
-
-            <p style={styles.messageParagraph}>{textoCurto}</p>
-
-            {textoMensagem.length > 360 && (
-              <button
-                type="button"
-                style={styles.messageButton}
-                onClick={() => setMensagemAberta(!mensagemAberta)}
-              >
-                {mensagemAberta ? 'Mostrar menos ↑' : 'Ler mais →'}
-              </button>
-            )}
-          </div>
-
-          {(noticiaDestaque?.youtubeUrl || noticiaDestaque?.midia) && (
-            <div style={styles.messageMediaBox}>
-              {noticiaDestaque?.youtubeUrl ? (
-                <iframe
-                  width="100%"
-                  height="100%"
-                  src={converterYoutubeEmbed(noticiaDestaque.youtubeUrl)}
-                  title={noticiaDestaque.titulo}
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  style={styles.messageIframe}
-                />
-              ) : noticiaDestaque?.tipoMidia?.startsWith('video') ? (
-                <video
-                  src={noticiaDestaque.midia}
-                  controls
-                  style={styles.messageVideo}
-                />
-              ) : (
-                <img
-                  src={noticiaDestaque.midia}
-                  alt={noticiaDestaque.titulo}
-                  style={styles.messageImage}
-                />
-              )}
-            </div>
-          )}
+      <section className="quick-actions-section">
+        <div className="quick-actions-card">
+          {quickLinks.map((item) => (
+            <QuickAction
+              key={item.title}
+              icon={item.icon}
+              title={item.title}
+              to={item.to}
+              href={item.href}
+            />
+          ))}
         </div>
       </section>
 
-      <section className="impact-section">
-        <h2>Juntos, fazemos a diferença</h2>
+      <section className="news-feature-section">
+        <div className="section-header compact">
+          <h2>Notícias</h2>
 
-        <p>
-          Todo apoio recebido se transforma em cuidado, acolhimento,
-          alimentação, educação e oportunidades.
-        </p>
-
-        <div className="impact-cards">
-          <Link to="/necessidades" className="impact-card impact-card-link">
-            <div className="icon yellow">♡</div>
-            <div>
-              <h3>Necessidades Atuais</h3>
-              <p>
-                Veja alimentos, roupas, utensílios e itens prioritários que a
-                instituição precisa neste momento.
-              </p>
-            </div>
-          </Link>
-
-          <Link to="/voluntario" className="impact-card impact-card-link">
-            <div className="icon blue">👥</div>
-            <div>
-              <h3>Recebemos voluntários</h3>
-              <p>Pessoas que doam tempo, talento e amor para transformar vidas.</p>
-            </div>
-          </Link>
-
-          <Link to="/parceiros" className="impact-card impact-card-link">
-            <div className="icon green">🤝</div>
-            <div>
-              <h3>Apoio institucional</h3>
-              <p>Empresas e parceiros que fortalecem o impacto social.</p>
-            </div>
+          <Link to="/noticias">
+            Ver todas →
           </Link>
         </div>
-      </section>
 
-      <section className="navigation-section">
-        <HomeCard
-          image={nossosProjetosImg}
-          title="Nossos projetos"
-          text="Conheça as ações que transformam vidas todos os dias."
-          link="/projetos"
-          button="Saiba mais"
-        />
-
-        <HomeCard
-          image={transparenciaImg}
-          title="Transparência"
-          text="Acesse relatórios, prestação de contas e veja como as doações são utilizadas."
-          link="/transparencia"
-          button="Acessar"
-        />
-
-        <HomeCard
-          image={quemSomos}
-          title="Quem somos"
-          text="Conheça a história, missão, visão e valores da instituição."
-          link="/quem-somos"
-          button="Conhecer"
-        />
-
-        <HomeCard
-          image={doeAgoraImg}
-          title="Como ajudar"
-          text="Existem muitas formas de fazer parte dessa missão de amor."
-          link="/voluntario"
-          button="Fazer parte"
+        <HeroNewsCarousel
+          noticias={noticiasHome.slice(0, 5)}
+          fallbackImage={quemSomos}
         />
       </section>
 
-      <section className="numbers-section">
-        <div><strong>+70</strong><span>Vidas impactadas por ano</span></div>
-        <div><strong>+70</strong><span>Anos de história</span></div>
-        <div><strong>+50</strong><span>Parceiros</span></div>
-        <div><strong>+5</strong><span>Cidades atendidas</span></div>
-      </section>
-
-      <section className="news-section">
+      <section className="latest-news-section">
         <div className="section-header">
           <h2>Últimas notícias</h2>
-          <Link to="/noticias">Ver todas →</Link>
+
+          <Link to="/noticias">
+            Ver todas as notícias →
+          </Link>
         </div>
 
-      <HeroNewsCarousel noticias={noticiasHome.slice(0, 5)} />
-
         <div className="news-grid">
-          {noticiasHome.length > 0 ? (
-            noticiasHome.slice(0, 3).map((item) => (
-              <NewsCard
-                key={item._id || item.id}
-                id={item._id || item.id}
-                image={item.midia || quemSomos}
-                date={
-                  item.createdAt
-                    ? new Date(item.createdAt).toLocaleDateString('pt-BR')
-                    : item.criadoEm || 'Publicação'
-                }
-                title={item.titulo}
-                text={
-                  item.resumo ||
-                  item.descricao ||
-                  item.conteudo?.replace(/<[^>]+>/g, '').slice(0, 140) ||
-                  'Leia a publicação completa.'
-                }
-                categoria={item.categoria}
-              />
-            ))
-          ) : (
-            <>
-              <NewsCard
-                image={quemSomos}
-                date="12 Mai 2025"
-                title="Ações que acolhem"
-                text="Momentos de cuidado, escuta e apoio às pessoas acolhidas pela instituição."
-              />
+          {noticiasCards.map((item) => (
+            <NewsCard
+              key={item.id || item.title}
+              id={item.id}
+              image={item.image}
+              date={item.date}
+              title={item.title}
+              text={item.text}
+              categoria={item.categoria}
+              link={item.link}
+            />
+          ))}
+        </div>
+      </section>
 
-              <NewsCard
-                image={heroImg}
-                date="10 Mai 2025"
-                title="Doações que transformam"
-                text="Cada contribuição ajuda a manter o acolhimento e ampliar nosso impacto social."
-              />
+      <section className="message-day-section">
+        <div className="message-day-content">
+          <div className="message-day-title">
+            <h2>Mensagem do dia</h2>
+          </div>
 
-              <NewsCard
-                image={quemSomos}
-                date="05 Mai 2025"
-                title="Atividades educativas"
-                text="Ações que estimulam o aprendizado, a convivência e o desenvolvimento humano."
-              />
-            </>
-          )}
+          <div className="message-day-quote">
+            <span>“</span>
+
+            <div>
+              <p>
+                {textoCurto}
+              </p>
+
+              <small>
+                {noticiaDestaque?.titulo || 'Isaías 54:13'}
+              </small>
+
+              {textoMensagem.length > 300 && (
+                <button
+                  type="button"
+                  className="message-read-button"
+                  onClick={() => setMensagemAberta(!mensagemAberta)}
+                >
+                  {mensagemAberta ? 'Mostrar menos ↑' : 'Ler mais →'}
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="message-day-icon" aria-hidden="true">
+            📖
+          </div>
+        </div>
+      </section>
+
+      <section className="projects-showcase-section">
+        <div className="section-header">
+          <h2>Nossos projetos</h2>
+
+          <Link to="/projetos">
+            Conheça todos os projetos →
+          </Link>
+        </div>
+
+        <div className="projects-showcase-grid">
+          {projetos.map((item) => (
+            <ProjectCard
+              key={item.title}
+              image={item.image}
+              title={item.title}
+              text={item.text}
+              link={item.link}
+            />
+          ))}
+        </div>
+      </section>
+
+      <section className="help-banner-section">
+        <div className="help-banner-card">
+          <div className="help-banner-main">
+            <span>♡</span>
+
+            <div>
+              <h2>Como você pode ajudar</h2>
+
+              <p>
+                Sua doação, seu tempo ou sua parceria ajudam a construir um
+                futuro melhor para muitas crianças e adolescentes.
+              </p>
+            </div>
+          </div>
+
+          <div className="help-banner-actions">
+            <Link to="/doar-agora">
+              Faça uma doação
+            </Link>
+
+            <Link to="/voluntario">
+              Seja voluntário
+            </Link>
+
+            <Link to="/necessidades">
+              Doe roupas e alimentos
+            </Link>
+
+            <Link to="/parceiros">
+              Empresas parceiras
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="impact-wide-section">
+        <div className="impact-wide-image">
+          <img
+            src={quemSomos}
+            alt="Acolhimento e cuidado"
+          />
+        </div>
+
+        <div className="impact-wide-content">
+          <span className="section-kicker">
+            Impacto social
+          </span>
+
+          <h2>
+            Nosso impacto em números
+          </h2>
+
+          <p>
+            Cada número representa cuidado, presença, compromisso e esperança
+            renovada na vida de crianças, adolescentes, famílias e comunidades.
+          </p>
+
+          <div className="numbers-section">
+            <div>
+              <strong>350+</strong>
+              <span>Crianças e jovens acolhidos</span>
+            </div>
+
+            <div>
+              <strong>40+</strong>
+              <span>Profissionais dedicados</span>
+            </div>
+
+            <div>
+              <strong>20+</strong>
+              <span>Projetos em atividade</span>
+            </div>
+
+            <div>
+              <strong>15+</strong>
+              <span>Anos de história e transformação</span>
+            </div>
+          </div>
+        </div>
+
+        <aside className="volunteer-card">
+          <h3>Seja voluntário</h3>
+
+          <p>
+            Doe seu tempo, talentos e amor. Juntos, podemos transformar muitas vidas.
+          </p>
+
+          <Link to="/voluntario">
+            Quero ser voluntário →
+          </Link>
+        </aside>
+      </section>
+
+      <section className="social-section">
+        <div className="section-header">
+          <h2>Acompanhe nossas redes</h2>
+
+          <span>
+            Siga-nos nas redes sociais →
+          </span>
+        </div>
+
+        <div className="social-grid">
+          <SocialCard
+            type="Instagram"
+            handle="@larbatistaalbertinemeador"
+            href={INSTAGRAM_URL}
+            imageOne={quemSomos}
+            imageTwo={nossosProjetosImg}
+            imageThree={doeAgoraImg}
+            button="Ver no Instagram →"
+          />
+
+          <SocialCard
+            type="Facebook"
+            handle="/larbatistaam"
+            href={FACEBOOK_URL}
+            imageOne={heroImg}
+            imageTwo={transparenciaImg}
+            imageThree={quemSomos}
+            button="Ver no Facebook →"
+          />
         </div>
       </section>
 
@@ -332,63 +555,110 @@ function Home() {
           </div>
 
           <p>
-            O Lar Batista Albertine Meador é uma instituição cristã sem fins
-            lucrativos que acolhe, cuida e transforma vidas com amor, fé e
-            solidariedade.
+            O Lar Batista acolhe, transforma e devolve a esperança para crianças
+            e jovens em situação de vulnerabilidade social.
           </p>
         </div>
 
         <div>
-          <h4>Navegação</h4>
-          <Link to="/">Home</Link>
-          <Link to="/quem-somos">Quem Somos</Link>
+          <h4>Links rápidos</h4>
+          <Link to="/">Início</Link>
+          <Link to="/quem-somos">Sobre nós</Link>
           <Link to="/projetos">Projetos</Link>
           <Link to="/transparencia">Transparência</Link>
-          <Link to="/voluntario">Seja um Voluntário</Link>
-          <Link to="/parceiros">Parceiros</Link>
+          <Link to="/noticias">Notícias</Link>
         </div>
 
         <div>
-          <h4>Institucional</h4>
-          <Link to="/quem-somos">Missão, visão e valores</Link>
-          <Link to="/transparencia">Prestação de contas</Link>
-          <Link to="/doar-agora">Doe agora</Link>
+          <h4>Como ajudar</h4>
+          <Link to="/doar-agora">Doação</Link>
+          <Link to="/voluntario">Voluntariado</Link>
+          <Link to="/necessidades">Necessidades atuais</Link>
+          <Link to="/parceiros">Empresas parceiras</Link>
           <Link to="/admin/login">Área administrativa</Link>
         </div>
 
         <div>
-          <h4>Contato</h4>
+          <h4>Fale conosco</h4>
           <p>(27) 3328-5165</p>
           <p>visitas@larbatista.org.br</p>
           <p>Rua Santos Dumont, 120, Laranjeiras, Serra - ES</p>
           <p>CEP: 29.165-048</p>
         </div>
+
+        <div>
+          <h4>Siga-nos</h4>
+
+          <div className="footer-social-links">
+            <a href={INSTAGRAM_URL} target="_blank" rel="noreferrer">
+              Instagram
+            </a>
+
+            <a href={FACEBOOK_URL} target="_blank" rel="noreferrer">
+              Facebook
+            </a>
+          </div>
+        </div>
       </footer>
 
-      <Link to="/doar-agora" className="float-donate">❤</Link>
-      <a href="#top" className="float-top">↑</a>
+      <Link to="/doar-agora" className="float-donate">
+        ❤
+      </Link>
+
+      <a href="#top" className="float-top">
+        ↑
+      </a>
     </main>
   )
 }
 
-function HomeCard({ image, title, text, link, button }) {
+function QuickAction({ icon, title, to, href }) {
+  const content = (
+    <>
+      <span>{icon}</span>
+      <strong>{title}</strong>
+    </>
+  )
+
+  if (href) {
+    return (
+      <a href={href} className="quick-action-item">
+        {content}
+      </a>
+    )
+  }
+
   return (
-    <article className="home-card">
+    <Link to={to} className="quick-action-item">
+      {content}
+    </Link>
+  )
+}
+
+function ProjectCard({ image, title, text, link }) {
+  return (
+    <article className="project-card">
       <img src={image} alt={title} />
+
       <div>
         <h3>{title}</h3>
         <p>{text}</p>
-        <Link to={link}>{button} →</Link>
+
+        <Link to={link}>
+          Saiba mais →
+        </Link>
       </div>
     </article>
   )
 }
 
-function NewsCard({ image, date, title, text, categoria, id }) {
+function NewsCard({ image, date, title, text, categoria, id, link }) {
   const resumo =
-    text?.length > 115
-      ? `${text.slice(0, 115)}...`
+    text?.length > 120
+      ? `${text.slice(0, 120)}...`
       : text
+
+  const destino = link || (id ? `/noticias/${id}` : '/noticias')
 
   return (
     <article className="news-card">
@@ -404,8 +674,8 @@ function NewsCard({ image, date, title, text, categoria, id }) {
         </p>
 
         <div className="news-card-links">
-          <Link to={`/noticias/${id}`} className="news-read-link">
-            Ler mais →
+          <Link to={destino} className="news-read-link">
+            Leia mais →
           </Link>
 
           {(categoria === 'Vagas' || categoria === 'Oportunidade') && (
@@ -419,130 +689,110 @@ function NewsCard({ image, date, title, text, categoria, id }) {
   )
 }
 
-function converterYoutubeEmbed(url) {
-  if (!url) return ''
+function SocialCard({
+  type,
+  handle,
+  href,
+  imageOne,
+  imageTwo,
+  imageThree,
+  button
+}) {
+  return (
+    <article className="social-card">
+      <div className="social-card-header">
+        <strong>{type}</strong>
+        <span>{handle}</span>
+      </div>
 
-  if (url.includes('watch?v=')) {
-    return url.replace('watch?v=', 'embed/')
-  }
+      <div className="social-card-images">
+        <img src={imageOne} alt={`${type} 1`} />
+        <img src={imageTwo} alt={`${type} 2`} />
+        <img src={imageThree} alt={`${type} 3`} />
+      </div>
 
-  if (url.includes('youtu.be/')) {
-    const id = url.split('youtu.be/')[1].split('?')[0]
-    return `https://www.youtube.com/embed/${id}`
-  }
-
-  if (url.includes('/shorts/')) {
-    const id = url.split('/shorts/')[1].split('?')[0]
-    return `https://www.youtube.com/embed/${id}`
-  }
-
-  return url
+      <a
+        href={href}
+        target="_blank"
+        rel="noreferrer"
+        className="social-card-button"
+      >
+        {button}
+      </a>
+    </article>
+  )
 }
 
-const styles = {
-  messageSection: {
-    background: 'linear-gradient(180deg, #ffffff 0%, #eef6ff 100%)',
-    padding: '44px 20px'
-  },
+function obterMidiaPrincipal(item) {
+  return (
+    item.imagemUrl ||
+    item.midia ||
+    item.midias?.[0]?.imagemUrl ||
+    item.midias?.[0]?.base64 ||
+    ''
+  )
+}
 
-  messageCard: {
-    maxWidth: '1180px',
-    margin: '0 auto',
-    display: 'grid',
-    gap: '24px',
-    alignItems: 'center',
-    background:
-      'linear-gradient(135deg, #ffffff 0%, #f8fbff 55%, #eef6ff 100%)',
-    border: '1px solid #dbeafe',
-    borderRadius: '24px',
-    padding: '26px',
-    boxShadow:
-      '0 14px 34px rgba(11, 61, 145, 0.10)'
-  },
-
-  messageText: {
-    position: 'relative'
-  },
-
-  messageTop: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    marginBottom: '12px'
-  },
-
-  messageTag: {
-    display: 'inline-block',
-    background: '#ffc928',
-    color: '#002855',
-    padding: '8px 14px',
-    borderRadius: '999px',
-    fontWeight: '900',
-    textTransform: 'uppercase',
-    fontSize: '12px'
-  },
-
-  messageIcon: {
-    fontSize: '22px'
-  },
-
-  messageTitle: {
-    color: '#0B3D91',
-    fontSize: 'clamp(1.7rem, 3vw, 2.5rem)',
-    lineHeight: '1.12',
-    margin: '0 0 12px'
-  },
-
-  messageParagraph: {
-    color: '#475569',
-    fontSize: '1rem',
-    lineHeight: '1.8',
-    marginBottom: '16px',
-    maxWidth: '720px'
-  },
-
-  messageButton: {
-    background: '#0B3D91',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '10px',
-    padding: '10px 16px',
-    fontWeight: '900',
-    cursor: 'pointer'
-  },
-
-  messageMediaBox: {
-    background: '#0B3D91',
-    borderRadius: '22px',
-    padding: '10px',
-    minHeight: '270px',
-    boxShadow: '0 12px 26px rgba(0,0,0,0.14)'
-  },
-
-  messageIframe: {
-    width: '100%',
-    height: '100%',
-    minHeight: '270px',
-    border: 'none',
-    borderRadius: '16px'
-  },
-
-  messageVideo: {
-    width: '100%',
-    minHeight: '270px',
-    maxHeight: '340px',
-    objectFit: 'cover',
-    borderRadius: '16px'
-  },
-
-  messageImage: {
-    width: '100%',
-    minHeight: '270px',
-    maxHeight: '340px',
-    objectFit: 'cover',
-    borderRadius: '16px'
+function formatarDataNoticia(item) {
+  if (item.createdAt) {
+    return new Date(item.createdAt).toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric'
+    })
   }
 
+  return item.criadoEm || 'Publicação'
+}
+
+/*
+  Procura usuário logado sem quebrar caso as chaves mudem.
+
+  Isso permite exibir o botão como perfil quando houver algum dado salvo
+  no localStorage por login de doador, usuário ou admin.
+*/
+function obterUsuarioLogado() {
+  if (typeof window === 'undefined') return null
+
+  const chavesPossiveis = [
+    'doadorLogado',
+    'doador',
+    'usuarioLogado',
+    'usuario',
+    'adminLogado',
+    'usuarioAdmin'
+  ]
+
+  for (const chave of chavesPossiveis) {
+    const valor = localStorage.getItem(chave)
+
+    if (!valor) continue
+
+    try {
+      const dados = JSON.parse(valor)
+
+      const nome =
+        dados.nome ||
+        dados.nomeFantasia ||
+        dados.name ||
+        dados.email ||
+        'Minha conta'
+
+      const isAdmin =
+        chave.toLowerCase().includes('admin') ||
+        dados.tipo === 'admin' ||
+        dados.perfil === 'admin'
+
+      return {
+        nome,
+        link: isAdmin ? '/admin/dashboard' : '/doador/painel'
+      }
+    } catch {
+      return null
+    }
+  }
+
+  return null
 }
 
 export default Home

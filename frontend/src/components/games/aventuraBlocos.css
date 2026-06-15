@@ -1,0 +1,1399 @@
+/* =========================================================
+   AVENTURA DOS BLOCOS — TELA INTERNA DO JOGO
+   Visual estilo mundo de blocos / pixel adventure
+   Desktop + Mobile com controles flutuantes
+========================================================= */
+
+.ab-game {
+  min-height: 100svh;
+  position: relative;
+  overflow-x: hidden;
+  color: #ffffff;
+  background: #06172e;
+  padding: 22px;
+  isolation: isolate;
+}
+
+.ab-game * {
+  box-sizing: border-box;
+}
+
+.ab-game button {
+  font-family: inherit;
+}
+
+/* =========================================================
+   TEMAS DAS FASES
+========================================================= */
+
+.ab-game.sol {
+  background:
+    radial-gradient(circle at 78% 18%, rgba(255, 201, 40, 0.34), transparent 16%),
+    linear-gradient(180deg, #57b8f2 0%, #6cc5ff 38%, #71b84f 39%, #3f8d33 100%);
+}
+
+.ab-game.frio {
+  background:
+    radial-gradient(circle at 80% 18%, rgba(190, 230, 255, 0.3), transparent 18%),
+    linear-gradient(180deg, #2f8aca 0%, #9fd7ff 40%, #9ed0dd 41%, #3f8d68 100%);
+}
+
+.ab-game.neve {
+  background:
+    radial-gradient(circle at 80% 18%, rgba(255, 255, 255, 0.35), transparent 18%),
+    linear-gradient(180deg, #123d75 0%, #4f90c8 38%, #dcecff 39%, #b7d9f5 100%);
+}
+
+.ab-game.chuva {
+  background:
+    radial-gradient(circle at 78% 20%, rgba(67, 124, 178, 0.22), transparent 18%),
+    linear-gradient(180deg, #0b1f3a 0%, #173b65 40%, #2d5a4d 41%, #1d4a39 100%);
+}
+
+.ab-weather-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Neve */
+.ab-game.neve .ab-weather-layer {
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.9) 0 2px, transparent 3px),
+    radial-gradient(circle, rgba(255, 255, 255, 0.65) 0 1.5px, transparent 3px),
+    radial-gradient(circle, rgba(255, 255, 255, 0.7) 0 2px, transparent 4px);
+  background-size: 70px 70px, 110px 110px, 150px 150px;
+  animation: abSnow 8s linear infinite;
+}
+
+/* Chuva */
+.ab-game.chuva .ab-weather-layer {
+  background-image:
+    linear-gradient(110deg, rgba(180, 220, 255, 0.45) 0 2px, transparent 2px 100%);
+  background-size: 22px 52px;
+  animation: abRain 0.55s linear infinite;
+  opacity: 0.8;
+}
+
+/* Frio */
+.ab-game.frio .ab-weather-layer {
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.12), transparent 20%, rgba(255, 255, 255, 0.1), transparent 60%);
+  animation: abCold 3s ease-in-out infinite alternate;
+}
+
+/* Sol */
+.ab-game.sol .ab-weather-layer {
+  background:
+    radial-gradient(circle at 80% 15%, rgba(255, 246, 160, 0.3), transparent 18%);
+}
+
+@keyframes abSnow {
+  from {
+    background-position: 0 0, 0 0, 0 0;
+  }
+
+  to {
+    background-position: 0 260px, 0 340px, 0 420px;
+  }
+}
+
+@keyframes abRain {
+  from {
+    background-position: 0 0;
+  }
+
+  to {
+    background-position: -30px 60px;
+  }
+}
+
+@keyframes abCold {
+  from {
+    opacity: 0.35;
+  }
+
+  to {
+    opacity: 0.75;
+  }
+}
+
+/* =========================================================
+   HUD SUPERIOR
+========================================================= */
+
+.ab-hud {
+  position: relative;
+  z-index: 5;
+  max-width: 1400px;
+  margin: 0 auto 18px;
+  display: grid;
+  grid-template-columns: 64px 100px minmax(180px, 1fr) minmax(220px, 340px) 135px 135px;
+  gap: 14px;
+  align-items: center;
+}
+
+.ab-back {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  border: 4px solid #0d67ba;
+  background: linear-gradient(180deg, #1f7ddb, #073d83);
+  color: #ffffff;
+  font-size: 2rem;
+  font-weight: 950;
+  cursor: pointer;
+  box-shadow:
+    inset 0 -8px 0 rgba(0, 0, 0, 0.22),
+    0 7px 0 rgba(0, 0, 0, 0.26);
+}
+
+.ab-level-card,
+.ab-score-card,
+.ab-phase {
+  border: 4px solid rgba(79, 163, 255, 0.85);
+  background: rgba(3, 18, 38, 0.88);
+  border-radius: 18px;
+  box-shadow:
+    inset 0 -10px 0 rgba(0, 0, 0, 0.2),
+    0 8px 0 rgba(0, 0, 0, 0.24);
+}
+
+.ab-level-card {
+  min-height: 84px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+
+.ab-level-card span {
+  font-weight: 950;
+  text-transform: uppercase;
+  color: #dbeafe;
+  font-size: 0.82rem;
+}
+
+.ab-level-card strong {
+  color: #ffc928;
+  font-size: 3rem;
+  line-height: 1;
+  text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.28);
+}
+
+.ab-xp {
+  background: rgba(3, 18, 38, 0.78);
+  border: 4px solid rgba(79, 163, 255, 0.55);
+  border-radius: 18px;
+  padding: 12px;
+  box-shadow:
+    inset 0 -8px 0 rgba(0, 0, 0, 0.15),
+    0 7px 0 rgba(0, 0, 0, 0.2);
+}
+
+.ab-xp-label {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  color: #ffffff;
+  font-weight: 950;
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+}
+
+.ab-xp-bar {
+  height: 18px;
+  background: #031226;
+  border: 3px solid #0d67ba;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.ab-xp-bar span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #4fa3ff, #ffc928);
+  transition: width 0.3s ease;
+}
+
+.ab-phase {
+  min-height: 84px;
+  display: grid;
+  grid-template-columns: 60px 1fr;
+  gap: 10px;
+  align-items: center;
+  padding: 12px;
+}
+
+.ab-phase span {
+  width: 54px;
+  height: 54px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: #0b65bd;
+  border: 3px solid #4fa3ff;
+  font-size: 2rem;
+  box-shadow: inset 0 -7px 0 rgba(0, 0, 0, 0.22);
+}
+
+.ab-phase strong {
+  text-transform: uppercase;
+  font-size: 1.1rem;
+  line-height: 1.1;
+}
+
+.ab-score-card {
+  min-height: 84px;
+  padding: 12px;
+  text-align: center;
+  display: grid;
+  place-items: center;
+}
+
+.ab-score-card span {
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.ab-score-card strong {
+  color: #ffc928;
+  font-size: 1.9rem;
+  line-height: 1;
+  text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.28);
+}
+
+/* =========================================================
+   PAINEL DA PALAVRA
+========================================================= */
+
+.ab-board {
+  position: relative;
+  z-index: 5;
+  max-width: 980px;
+  margin: 0 auto 18px;
+}
+
+.ab-word-panel {
+  background: rgba(3, 18, 38, 0.82);
+  border: 4px solid rgba(79, 163, 255, 0.8);
+  border-radius: 22px;
+  padding: 22px;
+  text-align: center;
+  box-shadow:
+    inset 0 -10px 0 rgba(0, 0, 0, 0.18),
+    0 12px 0 rgba(0, 0, 0, 0.22);
+}
+
+.ab-word-panel h2 {
+  margin: 0 0 14px;
+  color: #ffffff;
+  text-transform: uppercase;
+  font-size: clamp(1.25rem, 3vw, 1.9rem);
+  letter-spacing: 0.5px;
+}
+
+.ab-slots {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.ab-slot {
+  width: 62px;
+  height: 62px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  color: #ffffff;
+  font-size: 1.65rem;
+  font-weight: 950;
+  background:
+    linear-gradient(180deg, #b87a34, #754719);
+  border: 4px solid #3b220d;
+  box-shadow:
+    inset 0 6px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -8px 0 rgba(0, 0, 0, 0.18),
+    0 6px 0 rgba(0, 0, 0, 0.24);
+}
+
+.ab-slot.filled {
+  background: linear-gradient(180deg, #22c55e, #15803d);
+  border-color: #064e3b;
+}
+
+.ab-word-panel p {
+  margin: 0 0 8px;
+  color: #ffffff;
+  font-size: 1.05rem;
+  line-height: 1.5;
+}
+
+.ab-word-panel p strong {
+  color: #ffc928;
+}
+
+.ab-word-panel small {
+  color: #bcdcff;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.ab-message {
+  margin: 12px auto 0;
+  min-height: 52px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  border-radius: 14px;
+  border: 4px solid #0d67ba;
+  font-weight: 950;
+  padding: 12px;
+  box-shadow:
+    inset 0 -7px 0 rgba(0, 0, 0, 0.16),
+    0 6px 0 rgba(0, 0, 0, 0.2);
+}
+
+.ab-message.neutro {
+  background: #0b3d7a;
+  color: #ffffff;
+}
+
+.ab-message.acerto {
+  background: #15803d;
+  color: #ffffff;
+  border-color: #4ade80;
+}
+
+.ab-message.erro {
+  background: #b91c1c;
+  color: #ffffff;
+  border-color: #f87171;
+  animation: abShake 0.3s ease;
+}
+
+.ab-message.vitoria {
+  background: #ffc928;
+  color: #3b220d;
+  border-color: #7b4f25;
+}
+
+@keyframes abShake {
+  0% {
+    transform: translateX(0);
+  }
+
+  30% {
+    transform: translateX(-5px);
+  }
+
+  60% {
+    transform: translateX(5px);
+  }
+
+  100% {
+    transform: translateX(0);
+  }
+}
+
+/* =========================================================
+   MUNDO DO JOGO
+========================================================= */
+
+.ab-world {
+  position: relative;
+  z-index: 4;
+  max-width: 1400px;
+  min-height: 590px;
+  margin: 0 auto;
+  border: 5px solid #031226;
+  border-radius: 28px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #72c6ff 0 52%, #58aa43 52% 100%);
+  box-shadow:
+    0 20px 0 rgba(0, 0, 0, 0.26),
+    0 26px 50px rgba(0, 0, 0, 0.36);
+}
+
+.ab-game.sol .ab-world {
+  background:
+    linear-gradient(180deg, #72c6ff 0 52%, #58aa43 52% 100%);
+}
+
+.ab-game.frio .ab-world {
+  background:
+    linear-gradient(180deg, #9ed8ff 0 52%, #7bb9b7 52% 100%);
+}
+
+.ab-game.neve .ab-world {
+  background:
+    linear-gradient(180deg, #2f6fae 0 52%, #e9f4ff 52% 100%);
+}
+
+.ab-game.chuva .ab-world {
+  background:
+    linear-gradient(180deg, #1f3d66 0 52%, #2d5a4d 52% 100%);
+}
+
+/* chão em blocos */
+.ab-world::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 155px;
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.16) 25%, transparent 25%) 0 0 / 46px 46px,
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent 45%),
+    #3f8d33;
+  z-index: 1;
+}
+
+.ab-game.neve .ab-world::after {
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.1) 25%, transparent 25%) 0 0 / 46px 46px,
+    linear-gradient(180deg, rgba(255, 255, 255, 0.25), transparent 45%),
+    #dcecff;
+}
+
+.ab-game.chuva .ab-world::after {
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.18) 25%, transparent 25%) 0 0 / 46px 46px,
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 45%),
+    #24543f;
+}
+
+/* céu */
+.ab-sky-elements {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.ab-sun {
+  position: absolute;
+  right: 58px;
+  top: 46px;
+  width: 70px;
+  height: 70px;
+  background: #ffc928;
+  border-radius: 50%;
+  box-shadow: 0 0 60px rgba(255, 201, 40, 0.7);
+}
+
+.ab-game.neve .ab-sun,
+.ab-game.chuva .ab-sun,
+.ab-game.frio .ab-sun {
+  opacity: 0.25;
+}
+
+.ab-cloud {
+  position: absolute;
+  width: 110px;
+  height: 35px;
+  background: rgba(255, 255, 255, 0.88);
+  border-radius: 999px;
+}
+
+.ab-cloud::before,
+.ab-cloud::after {
+  content: '';
+  position: absolute;
+  background: inherit;
+  border-radius: 50%;
+}
+
+.ab-cloud::before {
+  width: 42px;
+  height: 42px;
+  left: 16px;
+  top: -22px;
+}
+
+.ab-cloud::after {
+  width: 52px;
+  height: 52px;
+  left: 48px;
+  top: -30px;
+}
+
+.ab-cloud.one {
+  left: 90px;
+  top: 70px;
+}
+
+.ab-cloud.two {
+  left: 340px;
+  top: 145px;
+  transform: scale(0.75);
+}
+
+.ab-game.chuva .ab-cloud {
+  background: rgba(30, 45, 70, 0.85);
+}
+
+.ab-mountain {
+  position: absolute;
+  bottom: 145px;
+  width: 260px;
+  height: 170px;
+  background:
+    linear-gradient(135deg, transparent 50%, rgba(255, 255, 255, 0.38) 50% 65%, transparent 65%),
+    linear-gradient(135deg, #5d8eb7, #2d5f92);
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  opacity: 0.72;
+}
+
+.ab-mountain.one {
+  left: 140px;
+}
+
+.ab-mountain.two {
+  right: 170px;
+  transform: scale(1.15);
+}
+
+.ab-game.neve .ab-mountain {
+  background:
+    linear-gradient(135deg, transparent 48%, rgba(255, 255, 255, 0.85) 48% 72%, transparent 72%),
+    linear-gradient(135deg, #9cc7e8, #4a79a8);
+}
+
+/* personagem no mundo */
+.ab-player {
+  position: absolute;
+  left: 120px;
+  bottom: 165px;
+  z-index: 5;
+}
+
+.ab-object {
+  position: absolute;
+  right: 150px;
+  bottom: 232px;
+  z-index: 4;
+  width: 94px;
+  height: 94px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  background: rgba(3, 18, 38, 0.82);
+  border: 4px solid #0d67ba;
+  font-size: 3.4rem;
+  box-shadow:
+    inset 0 -8px 0 rgba(0, 0, 0, 0.18),
+    0 10px 0 rgba(0, 0, 0, 0.25);
+}
+
+/* linha dos blocos no chão */
+.ab-blocks-line {
+  position: absolute;
+  left: 310px;
+  right: 70px;
+  bottom: 86px;
+  z-index: 6;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: end;
+}
+
+.ab-block {
+  position: relative;
+  width: 74px;
+  height: 74px;
+  border-radius: 12px;
+  border: 5px solid #2b160a;
+  color: #ffffff;
+  font-size: 1.85rem;
+  font-weight: 950;
+  cursor: pointer;
+  text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.28);
+  box-shadow:
+    inset 0 7px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -11px 0 rgba(0, 0, 0, 0.22),
+    0 10px 0 rgba(0, 0, 0, 0.3);
+  transition: 0.16s ease;
+}
+
+.ab-block:hover {
+  transform: translateY(-5px);
+}
+
+.ab-block.selected {
+  outline: 5px solid #ffc928;
+  transform: translateY(-10px);
+}
+
+.ab-pointer {
+  position: absolute;
+  top: -34px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #ffc928;
+  font-size: 1.8rem;
+  text-shadow: 3px 3px 0 #000;
+}
+
+.ab-block.blue {
+  background: linear-gradient(180deg, #4fa3ff, #0b65bd);
+}
+
+.ab-block.green {
+  background: linear-gradient(180deg, #59c23a, #15803d);
+}
+
+.ab-block.yellow {
+  background: linear-gradient(180deg, #ffc928, #d97706);
+  color: #3b220d;
+}
+
+.ab-block.purple {
+  background: linear-gradient(180deg, #a78bfa, #6d28d9);
+}
+
+.ab-block.red {
+  background: linear-gradient(180deg, #ef4444, #b91c1c);
+}
+
+.ab-block.cyan {
+  background: linear-gradient(180deg, #22d3ee, #0891b2);
+}
+
+/* =========================================================
+   CONTROLES
+========================================================= */
+
+.ab-controls {
+  position: relative;
+  z-index: 10;
+  max-width: 980px;
+  margin: 20px auto 0;
+  display: grid;
+  grid-template-columns: 90px 1.3fr 90px 1fr 1fr 1fr;
+  gap: 12px;
+}
+
+.ab-controls button {
+  min-height: 64px;
+  border-radius: 16px;
+  border: 4px solid #031226;
+  background: linear-gradient(180deg, #1f7ddb, #073d83);
+  color: #ffffff;
+  font-weight: 950;
+  font-size: 1rem;
+  cursor: pointer;
+  box-shadow:
+    inset 0 -10px 0 rgba(0, 0, 0, 0.22),
+    0 8px 0 rgba(0, 0, 0, 0.28);
+}
+
+.ab-controls button.main {
+  background: linear-gradient(180deg, #59c23a, #15803d);
+}
+
+.ab-controls button:active {
+  transform: translateY(4px);
+  box-shadow:
+    inset 0 -6px 0 rgba(0, 0, 0, 0.22),
+    0 4px 0 rgba(0, 0, 0, 0.28);
+}
+
+/* =========================================================
+   CARDS DAS FASES
+========================================================= */
+
+.ab-phase-cards {
+  max-width: 1180px;
+  margin: 22px auto 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  position: relative;
+  z-index: 8;
+}
+
+.ab-phase-cards article {
+  min-height: 125px;
+  border-radius: 18px;
+  border: 4px solid #0d67ba;
+  background: rgba(3, 18, 38, 0.86);
+  padding: 14px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  box-shadow:
+    inset 0 -10px 0 rgba(0, 0, 0, 0.18),
+    0 8px 0 rgba(0, 0, 0, 0.24);
+}
+
+.ab-phase-cards article.active {
+  border-color: #ffc928;
+  box-shadow:
+    0 0 0 4px rgba(255, 201, 40, 0.18),
+    inset 0 -10px 0 rgba(0, 0, 0, 0.18),
+    0 8px 0 rgba(0, 0, 0, 0.24);
+}
+
+.ab-phase-cards span {
+  font-size: 2.2rem;
+}
+
+.ab-phase-cards strong {
+  color: #ffffff;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+}
+
+.ab-phase-cards small {
+  color: #ffc928;
+  font-weight: 950;
+}
+
+/* =========================================================
+   RANKING
+========================================================= */
+
+.ab-ranking {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  width: 250px;
+  z-index: 30;
+  background: rgba(3, 18, 38, 0.92);
+  border: 4px solid #0d67ba;
+  border-radius: 18px;
+  padding: 16px;
+  box-shadow:
+    inset 0 -10px 0 rgba(0, 0, 0, 0.18),
+    0 14px 30px rgba(0, 0, 0, 0.38);
+}
+
+.ab-ranking h3 {
+  margin: 0 0 10px;
+  color: #ffc928;
+  text-transform: uppercase;
+}
+
+.ab-ranking p {
+  margin: 0;
+  color: #dbeafe;
+  font-weight: 700;
+}
+
+.ab-ranking div {
+  border-top: 1px solid rgba(79, 163, 255, 0.35);
+  padding: 9px 0;
+}
+
+.ab-ranking div:first-of-type {
+  border-top: none;
+}
+
+.ab-ranking strong {
+  display: block;
+  color: #ffffff;
+  font-size: 0.9rem;
+}
+
+.ab-ranking span {
+  color: #bcdcff;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+/* =========================================================
+   PERSONAGEM
+========================================================= */
+
+.ab-character {
+  width: 110px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 5;
+}
+
+.ab-hair {
+  width: 88px;
+  height: 32px;
+  margin: 0 auto -13px;
+  background: #5b3418;
+  border: 6px solid #2b160a;
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  position: relative;
+  z-index: 4;
+}
+
+.ab-character.preto .ab-hair {
+  background: #151515;
+}
+
+.ab-character.loiro .ab-hair {
+  background: #d99a19;
+}
+
+.ab-character.ruivo .ab-hair {
+  background: #c2410c;
+}
+
+.ab-character.castanho-longo .ab-hair,
+.ab-character.castanho-roxo .ab-hair {
+  height: 44px;
+}
+
+.ab-head {
+  width: 82px;
+  height: 78px;
+  margin: 0 auto;
+  background: #f1b27a;
+  border: 6px solid #2b160a;
+  border-radius: 8px;
+  position: relative;
+  box-shadow: inset 0 -10px 0 rgba(0, 0, 0, 0.12);
+}
+
+.eye {
+  position: absolute;
+  top: 34px;
+  width: 10px;
+  height: 10px;
+  background: #111827;
+}
+
+.eye.left {
+  left: 23px;
+}
+
+.eye.right {
+  right: 23px;
+}
+
+.ab-character.azul .eye {
+  background: #38bdf8;
+}
+
+.ab-character.verde .eye {
+  background: #22c55e;
+}
+
+.mouth {
+  position: absolute;
+  left: 32px;
+  bottom: 18px;
+  width: 18px;
+  height: 6px;
+  background: #7f1d1d;
+  border-radius: 999px;
+}
+
+.ab-body {
+  width: 112px;
+  height: 104px;
+  margin: -2px auto 0;
+  display: grid;
+  grid-template-columns: 27px 1fr 27px;
+  gap: 5px;
+}
+
+.arm,
+.torso {
+  border: 6px solid #2b160a;
+  box-shadow: inset 0 -10px 0 rgba(0, 0, 0, 0.16);
+}
+
+.arm {
+  transform: translateY(12px);
+}
+
+.ab-legs {
+  width: 78px;
+  height: 70px;
+  margin: -3px auto 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+
+.ab-legs span {
+  background: #243b53;
+  border: 6px solid #2b160a;
+  border-radius: 5px;
+}
+
+/* roupa */
+.ab-character.azul .arm,
+.ab-character.azul .torso {
+  background: #2563eb;
+}
+
+.ab-character.verde .arm,
+.ab-character.verde .torso {
+  background: #16a34a;
+}
+
+.ab-character.vermelho .arm,
+.ab-character.vermelho .torso {
+  background: #dc2626;
+}
+
+.ab-character.rosa .arm,
+.ab-character.rosa .torso {
+  background: #ec4899;
+}
+
+.ab-character.roxo .arm,
+.ab-character.roxo .torso {
+  background: #7c3aed;
+}
+
+.ab-character.turquesa .arm,
+.ab-character.turquesa .torso {
+  background: #0891b2;
+}
+
+.ab-character.laranja .arm,
+.ab-character.laranja .torso {
+  background: #f97316;
+}
+
+.ab-character.preto .arm,
+.ab-character.preto .torso {
+  background: #1f2937;
+}
+
+/* sapatos */
+.ab-character.sapato.azul .ab-legs span {
+  box-shadow: inset 0 -16px 0 #2563eb;
+}
+
+.ab-character.sapato.vermelho .ab-legs span {
+  box-shadow: inset 0 -16px 0 #dc2626;
+}
+
+.ab-character.sapato.marrom .ab-legs span {
+  box-shadow: inset 0 -16px 0 #92400e;
+}
+
+.ab-character.sapato.rosa .ab-legs span {
+  box-shadow: inset 0 -16px 0 #ec4899;
+}
+
+.ab-character.sapato.dourado .ab-legs span {
+  box-shadow: inset 0 -16px 0 #fbbf24;
+}
+
+/* acessórios */
+.ab-character.oculos .ab-head::after {
+  content: '';
+  position: absolute;
+  left: 14px;
+  top: 29px;
+  width: 54px;
+  height: 18px;
+  border-top: 5px solid #0f172a;
+  border-left: 5px solid #0f172a;
+  border-right: 5px solid #0f172a;
+}
+
+.ab-character.coroa .ab-hair::before {
+  content: '♛';
+  position: absolute;
+  top: -34px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #ffc928;
+  font-size: 2rem;
+}
+
+/* =========================================================
+   RESPONSIVIDADE TABLET
+========================================================= */
+
+@media (max-width: 1180px) {
+  .ab-hud {
+    grid-template-columns: 64px 90px 1fr;
+  }
+
+  .ab-phase,
+  .ab-score-card {
+    grid-column: span 1;
+  }
+
+  .ab-world {
+    min-height: 610px;
+  }
+
+  .ab-blocks-line {
+    left: 230px;
+  }
+
+  .ab-ranking {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    width: auto;
+    max-width: 980px;
+    margin: 22px auto 0;
+  }
+}
+
+/* =========================================================
+   MOBILE — CONTROLES FLUTUANTES DE JOGO
+========================================================= */
+
+@media (max-width: 760px) {
+  .ab-game {
+    padding: 10px;
+    padding-bottom: 185px;
+  }
+
+  .ab-hud {
+    grid-template-columns: 52px 74px 1fr;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .ab-back {
+    width: 52px;
+    height: 52px;
+    border-radius: 13px;
+    font-size: 1.6rem;
+  }
+
+  .ab-level-card {
+    min-height: 62px;
+    border-radius: 13px;
+  }
+
+  .ab-level-card strong {
+    font-size: 2rem;
+  }
+
+  .ab-level-card span {
+    font-size: 0.65rem;
+  }
+
+  .ab-xp {
+    padding: 8px;
+    border-radius: 13px;
+  }
+
+  .ab-xp-label {
+    font-size: 0.76rem;
+    margin-bottom: 5px;
+  }
+
+  .ab-xp-bar {
+    height: 14px;
+  }
+
+  .ab-phase {
+    grid-column: 1 / -1;
+    min-height: 60px;
+    grid-template-columns: 48px 1fr;
+    padding: 8px;
+  }
+
+  .ab-phase span {
+    width: 42px;
+    height: 42px;
+    font-size: 1.5rem;
+    border-radius: 11px;
+  }
+
+  .ab-phase strong {
+    font-size: 0.96rem;
+  }
+
+  .ab-score-card {
+    min-height: 58px;
+    border-radius: 13px;
+  }
+
+  .ab-score-card span {
+    font-size: 0.68rem;
+  }
+
+  .ab-score-card strong {
+    font-size: 1.35rem;
+  }
+
+  .ab-board {
+    margin-bottom: 10px;
+  }
+
+  .ab-word-panel {
+    border-radius: 16px;
+    padding: 14px;
+  }
+
+  .ab-word-panel h2 {
+    font-size: 1.05rem;
+    margin-bottom: 10px;
+  }
+
+  .ab-slots {
+    gap: 7px;
+  }
+
+  .ab-slot {
+    width: 42px;
+    height: 42px;
+    font-size: 1.18rem;
+    border-width: 3px;
+  }
+
+  .ab-word-panel p {
+    font-size: 0.9rem;
+  }
+
+  .ab-message {
+    min-height: 44px;
+    padding: 10px;
+    font-size: 0.9rem;
+    border-radius: 12px;
+  }
+
+  .ab-world {
+    min-height: 520px;
+    border-radius: 20px;
+  }
+
+  .ab-world::after {
+    height: 120px;
+  }
+
+  .ab-sun {
+    right: 25px;
+    top: 32px;
+    width: 48px;
+    height: 48px;
+  }
+
+  .ab-cloud.one {
+    left: 22px;
+    top: 48px;
+    transform: scale(0.75);
+  }
+
+  .ab-cloud.two {
+    left: 155px;
+    top: 95px;
+    transform: scale(0.55);
+  }
+
+  .ab-mountain {
+    bottom: 110px;
+    width: 190px;
+    height: 120px;
+  }
+
+  .ab-mountain.one {
+    left: 15px;
+  }
+
+  .ab-mountain.two {
+    right: 10px;
+  }
+
+  .ab-player {
+    left: 34px;
+    bottom: 126px;
+    transform: scale(0.78);
+    transform-origin: bottom left;
+  }
+
+  .ab-object {
+    right: 22px;
+    bottom: 200px;
+    width: 70px;
+    height: 70px;
+    font-size: 2.2rem;
+    border-radius: 14px;
+  }
+
+  .ab-blocks-line {
+    left: 112px;
+    right: 12px;
+    bottom: 70px;
+    gap: 9px;
+  }
+
+  .ab-block {
+    width: 54px;
+    height: 54px;
+    font-size: 1.22rem;
+    border-width: 4px;
+    border-radius: 10px;
+  }
+
+  .ab-pointer {
+    top: -28px;
+    font-size: 1.25rem;
+  }
+
+  /* CONTROLES FLUTUANTES MOBILE */
+  .ab-controls {
+    position: fixed;
+    z-index: 99;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    max-width: none;
+    margin: 0;
+    padding: 10px;
+    border: 4px solid rgba(79, 163, 255, 0.75);
+    border-radius: 22px;
+    background: rgba(3, 18, 38, 0.92);
+    backdrop-filter: blur(10px);
+    box-shadow:
+      0 -12px 30px rgba(0, 0, 0, 0.34),
+      inset 0 -8px 0 rgba(0, 0, 0, 0.16);
+    display: grid;
+    grid-template-columns: 1fr 1.35fr 1fr;
+    gap: 8px;
+  }
+
+  .ab-controls button {
+    min-height: 58px;
+    border-radius: 15px;
+    font-size: 0.9rem;
+    border-width: 3px;
+  }
+
+  .ab-controls button.main {
+    grid-column: span 1;
+    background: linear-gradient(180deg, #59c23a, #15803d);
+    font-size: 0.95rem;
+  }
+
+  .ab-controls button:nth-child(4),
+  .ab-controls button:nth-child(5),
+  .ab-controls button:nth-child(6) {
+    min-height: 46px;
+    font-size: 0.82rem;
+  }
+
+  .ab-phase-cards {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .ab-phase-cards article {
+    min-height: 90px;
+    padding: 10px;
+    border-radius: 14px;
+  }
+
+  .ab-phase-cards span {
+    font-size: 1.6rem;
+  }
+
+  .ab-phase-cards strong {
+    font-size: 0.88rem;
+  }
+
+  .ab-phase-cards small {
+    font-size: 0.78rem;
+  }
+
+  .ab-ranking {
+    margin-top: 14px;
+    border-radius: 14px;
+    padding: 12px;
+  }
+}
+
+/* =========================================================
+   MOBILE PEQUENO
+========================================================= */
+
+@media (max-width: 420px) {
+  .ab-game {
+    padding: 8px;
+    padding-bottom: 190px;
+  }
+
+  .ab-hud {
+    grid-template-columns: 48px 68px 1fr;
+  }
+
+  .ab-back {
+    width: 48px;
+    height: 48px;
+  }
+
+  .ab-level-card {
+    min-height: 56px;
+  }
+
+  .ab-level-card strong {
+    font-size: 1.65rem;
+  }
+
+  .ab-word-panel {
+    padding: 12px;
+  }
+
+  .ab-slot {
+    width: 37px;
+    height: 37px;
+    font-size: 1rem;
+  }
+
+  .ab-world {
+    min-height: 500px;
+  }
+
+  .ab-player {
+    left: 20px;
+    bottom: 118px;
+    transform: scale(0.68);
+  }
+
+  .ab-object {
+    right: 14px;
+    bottom: 195px;
+    width: 62px;
+    height: 62px;
+  }
+
+  .ab-blocks-line {
+    left: 85px;
+    right: 8px;
+    bottom: 66px;
+  }
+
+  .ab-block {
+    width: 48px;
+    height: 48px;
+    font-size: 1.05rem;
+  }
+
+  .ab-controls {
+    grid-template-columns: 1fr 1.25fr 1fr;
+    gap: 7px;
+    padding: 8px;
+    border-radius: 18px;
+  }
+
+  .ab-controls button {
+    min-height: 52px;
+    font-size: 0.78rem;
+  }
+
+  .ab-controls button:nth-child(4),
+  .ab-controls button:nth-child(5),
+  .ab-controls button:nth-child(6) {
+    min-height: 42px;
+    font-size: 0.74rem;
+  }
+}

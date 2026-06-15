@@ -1,0 +1,1359 @@
+/* =========================================================
+   PÁGINA EXCLUSIVA — AVENTURA DOS BLOCOS
+   Telas:
+   1. Início
+   2. Escolha de personagem
+   3. Criar personagem
+   4. Tela exclusiva do jogo
+========================================================= */
+
+.aventura-menu-page {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(47, 128, 237, 0.35), transparent 25%),
+    radial-gradient(circle at 80% 5%, rgba(255, 201, 40, 0.16), transparent 20%),
+    linear-gradient(180deg, #06172e 0%, #07274d 45%, #020b19 100%);
+  color: #ffffff;
+  overflow-x: hidden;
+}
+
+.aventura-menu-page * {
+  box-sizing: border-box;
+}
+
+.aventura-menu-page button,
+.aventura-menu-page input {
+  font-family: inherit;
+}
+
+/* =========================================================
+   FUNDO GERAL DO MUNDO
+========================================================= */
+
+.aventura-bg-world {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.55;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(0, 153, 255, 0.22), transparent 20%),
+    radial-gradient(circle at 75% 35%, rgba(0, 255, 157, 0.12), transparent 18%),
+    linear-gradient(135deg, transparent 0 30%, rgba(255, 255, 255, 0.02) 30% 32%, transparent 32% 100%);
+}
+
+.aventura-bg-world::before,
+.aventura-bg-world::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  width: 42%;
+  height: 48%;
+  background:
+    linear-gradient(180deg, #1f6b32 0 18%, #8a5a2b 18% 100%);
+  clip-path: polygon(0 30%, 20% 10%, 40% 30%, 58% 12%, 80% 28%, 100% 15%, 100% 100%, 0 100%);
+  filter: blur(0.2px);
+  opacity: 0.52;
+}
+
+.aventura-bg-world::before {
+  left: -8%;
+}
+
+.aventura-bg-world::after {
+  right: -8%;
+  transform: scaleX(-1);
+}
+
+/* =========================================================
+   TELA INICIAL
+========================================================= */
+
+.aventura-home-screen,
+.aventura-select-screen,
+.aventura-create-screen {
+  position: relative;
+  min-height: 100vh;
+  padding: 32px 22px;
+}
+
+.aventura-home-content {
+  position: relative;
+  z-index: 2;
+  max-width: 1220px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.game-logo-cube {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 12px;
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, #8fe14f 0 32%, #7a4a22 32% 100%);
+  border: 5px solid #031226;
+  position: relative;
+  box-shadow:
+    inset 0 10px 0 rgba(255, 255, 255, 0.18),
+    12px 12px 0 rgba(0, 0, 0, 0.28);
+}
+
+.game-logo-cube::before {
+  content: '';
+  position: absolute;
+  inset: 18px;
+  background:
+    linear-gradient(90deg, #4a9229 0 18%, transparent 18% 32%, #4a9229 32% 50%, transparent 50% 72%, #4a9229 72% 90%, transparent 90%),
+    linear-gradient(#5b3418 0 0);
+  background-size: 100% 30px, 100% 100%;
+  background-position: top, center;
+  background-repeat: no-repeat;
+}
+
+.game-logo-cube.small {
+  width: 90px;
+  height: 90px;
+  margin-bottom: 10px;
+}
+
+.aventura-pill {
+  display: inline-flex;
+  width: fit-content;
+  background: linear-gradient(180deg, #ffd84d, #f4a900);
+  color: #10203d;
+  border: 3px solid #6d3f09;
+  border-radius: 999px;
+  padding: 10px 22px;
+  font-size: 0.95rem;
+  font-weight: 950;
+  text-transform: uppercase;
+  box-shadow:
+    inset 0 -6px 0 rgba(0, 0, 0, 0.16),
+    0 8px 0 rgba(0, 0, 0, 0.25);
+}
+
+.aventura-home-content h1,
+.aventura-screen-title h1 {
+  margin: 24px auto 14px;
+  max-width: 900px;
+  color: #ffffff;
+  font-size: clamp(3rem, 8vw, 6.8rem);
+  line-height: 0.92;
+  text-transform: uppercase;
+  font-weight: 950;
+  letter-spacing: 1px;
+  text-shadow:
+    5px 5px 0 #0a3d7a,
+    9px 9px 0 rgba(0, 0, 0, 0.32);
+}
+
+.aventura-screen-title h1 strong {
+  display: block;
+  color: #ffc928;
+}
+
+.aventura-home-content > p,
+.aventura-screen-title p {
+  max-width: 820px;
+  margin: 0 auto 26px;
+  color: #eef6ff;
+  font-size: clamp(1.1rem, 2vw, 1.55rem);
+  line-height: 1.55;
+  font-weight: 700;
+}
+
+.aventura-home-content > p strong {
+  display: inline;
+  color: #ffc928;
+}
+
+.aventura-home-panel {
+  margin: 0 auto;
+  max-width: 1100px;
+  background: rgba(3, 18, 38, 0.88);
+  border: 4px solid #0d67ba;
+  border-radius: 28px;
+  padding: 24px;
+  display: grid;
+  grid-template-columns: 0.92fr 1.08fr;
+  gap: 26px;
+  box-shadow:
+    0 20px 44px rgba(0, 0, 0, 0.38),
+    inset 0 0 0 2px rgba(255, 255, 255, 0.05);
+}
+
+.aventura-home-preview {
+  min-height: 420px;
+  border-radius: 22px;
+  border: 3px solid #094c88;
+  background:
+    linear-gradient(180deg, #71c4f2 0 54%, #5bad42 54% 100%);
+  overflow: hidden;
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.aventura-home-preview::before {
+  content: '';
+  position: absolute;
+  inset: auto 0 0;
+  height: 85px;
+  background:
+    linear-gradient(90deg, rgba(72, 138, 48, 0.9) 25%, transparent 25%) 0 0 / 42px 42px,
+    #3f8d33;
+}
+
+.floating-island {
+  position: relative;
+  width: 78%;
+  min-height: 260px;
+  display: grid;
+  place-items: center;
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, #78c84f 0 26%, #8a5a2b 26% 100%);
+  border: 5px solid #2f1b0b;
+  box-shadow:
+    inset 0 12px 0 rgba(255, 255, 255, 0.16),
+    0 22px 0 rgba(0, 0, 0, 0.28);
+}
+
+.preview-block {
+  position: absolute;
+  right: 38px;
+  bottom: 50px;
+  width: 54px;
+  height: 54px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(180deg, #a78bfa, #6d28d9);
+  color: #ffffff;
+  border: 4px solid #2b160a;
+  font-size: 1.8rem;
+  font-weight: 950;
+  box-shadow: inset 0 -8px 0 rgba(0, 0, 0, 0.2);
+}
+
+.preview-flower {
+  position: absolute;
+  left: 48px;
+  bottom: 62px;
+  width: 18px;
+  height: 18px;
+  background: #ffc928;
+  border-radius: 50%;
+  box-shadow:
+    14px 0 #ffc928,
+    7px -9px #ffc928,
+    7px 9px #ffc928,
+    7px 22px #2f8b2f;
+}
+
+.aventura-home-actions {
+  display: grid;
+  gap: 18px;
+  align-content: center;
+}
+
+.aventura-home-actions button {
+  min-height: 116px;
+  border-radius: 18px;
+  border: 4px solid #0d67ba;
+  background: linear-gradient(180deg, #0b65bd, #063b7a);
+  color: #ffffff;
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: 90px 1fr 40px;
+  align-items: center;
+  gap: 18px;
+  padding: 16px 22px;
+  font-size: clamp(1.3rem, 3vw, 2.1rem);
+  font-weight: 950;
+  text-align: left;
+  text-transform: uppercase;
+  box-shadow:
+    inset 0 -12px 0 rgba(0, 0, 0, 0.2),
+    0 10px 0 rgba(0, 0, 0, 0.24);
+  transition: 0.18s ease;
+}
+
+.aventura-home-actions button:hover {
+  transform: translateY(-4px);
+}
+
+.aventura-home-actions button.purple {
+  background: linear-gradient(180deg, #7c3aed, #4c1d95);
+  border-color: #a78bfa;
+}
+
+.aventura-home-actions button.play {
+  background: linear-gradient(180deg, #ffd84d, #e79600);
+  border-color: #fff0a3;
+  color: #3b220d;
+  font-size: clamp(2rem, 5vw, 3.6rem);
+}
+
+.aventura-home-actions button strong {
+  font-size: 2.6rem;
+}
+
+.play-icon {
+  width: 70px;
+  height: 70px;
+  display: grid;
+  place-items: center;
+  background: #ffffff;
+  color: #e79600;
+  border-radius: 16px;
+  border: 3px solid #8a5a2b;
+}
+
+.mini-face {
+  width: 62px;
+  height: 62px;
+  background: #f1b27a;
+  border: 4px solid #2b160a;
+  border-radius: 8px;
+  position: relative;
+}
+
+.mini-face::before {
+  content: '';
+  position: absolute;
+  left: 16px;
+  top: 22px;
+  width: 7px;
+  height: 7px;
+  background: #111827;
+  box-shadow: 22px 0 #111827;
+}
+
+.aventura-unlocks {
+  max-width: 1100px;
+  margin: 24px auto 0;
+  display: grid;
+  grid-template-columns: 1fr 220px 1fr;
+  gap: 18px;
+}
+
+.aventura-unlocks div {
+  background: rgba(3, 18, 38, 0.8);
+  border: 3px solid #0d67ba;
+  border-radius: 18px;
+  padding: 18px;
+  box-shadow: inset 0 -8px 0 rgba(0, 0, 0, 0.16);
+}
+
+.aventura-unlocks strong {
+  display: block;
+  color: #7ec8ff;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.aventura-unlocks span {
+  display: block;
+  color: #ffffff;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.aventura-bottom-links {
+  max-width: 1100px;
+  margin: 22px auto 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.aventura-bottom-links a {
+  min-height: 70px;
+  border-radius: 16px;
+  border: 3px solid #0d67ba;
+  display: grid;
+  place-items: center;
+  text-decoration: none;
+  color: #ffffff;
+  font-weight: 950;
+  background: rgba(3, 18, 38, 0.75);
+  box-shadow: inset 0 -8px 0 rgba(0, 0, 0, 0.18);
+}
+
+.aventura-bottom-links a:last-child {
+  background: linear-gradient(180deg, #ffd84d, #e79600);
+  color: #3b220d;
+  border-color: #fff0a3;
+}
+
+/* =========================================================
+   TELA ESCOLHER PERSONAGEM
+========================================================= */
+
+.back-square {
+  position: fixed;
+  left: 28px;
+  top: 28px;
+  z-index: 10;
+  width: 74px;
+  height: 74px;
+  border-radius: 16px;
+  border: 4px solid #0d67ba;
+  background: linear-gradient(180deg, #1b75d0, #063b7a);
+  color: #ffffff;
+  font-size: 2.2rem;
+  font-weight: 950;
+  cursor: pointer;
+  box-shadow:
+    inset 0 -10px 0 rgba(0, 0, 0, 0.24),
+    0 8px 0 rgba(0, 0, 0, 0.28);
+}
+
+.aventura-screen-title {
+  position: relative;
+  z-index: 2;
+  max-width: 1160px;
+  margin: 0 auto 28px;
+  text-align: center;
+  padding-top: 24px;
+}
+
+.character-grid-big {
+  position: relative;
+  z-index: 2;
+  max-width: 1240px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 26px;
+}
+
+.character-choice {
+  min-height: 430px;
+  border-radius: 24px;
+  border: 4px solid #0d67ba;
+  background:
+    radial-gradient(circle at 25% 15%, rgba(126, 200, 255, 0.14), transparent 25%),
+    rgba(3, 18, 38, 0.88);
+  padding: 22px;
+  display: grid;
+  grid-template-rows: 1fr auto auto;
+  gap: 16px;
+  box-shadow:
+    inset 0 -12px 0 rgba(0, 0, 0, 0.2),
+    0 16px 34px rgba(0, 0, 0, 0.35);
+}
+
+.character-choice.active {
+  border-color: #ffc928;
+  box-shadow:
+    0 0 0 5px rgba(255, 201, 40, 0.18),
+    inset 0 -12px 0 rgba(0, 0, 0, 0.2),
+    0 16px 34px rgba(0, 0, 0, 0.35);
+}
+
+.character-stage {
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, #4fa3ff 0 48%, #3f8d33 48% 100%);
+  border: 3px solid #061b35;
+  display: grid;
+  place-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.character-stage::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0;
+  height: 58px;
+  background:
+    linear-gradient(90deg, #2f7429 25%, transparent 25%) 0 0 / 34px 34px,
+    #3f8d33;
+}
+
+.character-choice h2 {
+  margin: 0;
+  color: #ffffff;
+  text-align: center;
+  font-size: clamp(1.4rem, 3vw, 2.2rem);
+  text-transform: uppercase;
+  text-shadow: 3px 3px 0 rgba(0, 0, 0, 0.35);
+}
+
+.character-choice button {
+  min-height: 58px;
+  border-radius: 14px;
+  border: 4px solid #4fa3ff;
+  background: linear-gradient(180deg, #1b75d0, #063b7a);
+  color: #ffffff;
+  font-weight: 950;
+  text-transform: uppercase;
+  font-size: 1.1rem;
+  cursor: pointer;
+  box-shadow:
+    inset 0 -8px 0 rgba(0, 0, 0, 0.2),
+    0 7px 0 rgba(0, 0, 0, 0.28);
+}
+
+.select-tip {
+  max-width: 1240px;
+  margin: 28px auto 0;
+  border-radius: 22px;
+  border: 4px solid #0d67ba;
+  background: rgba(3, 18, 38, 0.88);
+  padding: 22px;
+  display: grid;
+  grid-template-columns: 82px 1fr;
+  gap: 22px;
+  align-items: center;
+}
+
+.select-tip > span {
+  width: 78px;
+  height: 78px;
+  display: grid;
+  place-items: center;
+  background: #0b65bd;
+  border: 3px solid #4fa3ff;
+  border-radius: 16px;
+  font-size: 2.8rem;
+}
+
+.select-tip strong {
+  color: #ffc928;
+  font-size: 1.35rem;
+  text-transform: uppercase;
+}
+
+.select-tip p {
+  margin: 8px 0 0;
+  color: #ffffff;
+  font-size: 1.05rem;
+  line-height: 1.55;
+}
+
+.screen-actions {
+  max-width: 1240px;
+  margin: 26px auto 0;
+  display: grid;
+  grid-template-columns: 1fr 1.25fr 1.25fr;
+  gap: 18px;
+}
+
+.screen-actions button {
+  min-height: 74px;
+  border-radius: 16px;
+  border: 4px solid #0d67ba;
+  background: linear-gradient(180deg, #0b65bd, #063b7a);
+  color: #ffffff;
+  font-size: clamp(1rem, 2vw, 1.6rem);
+  font-weight: 950;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow:
+    inset 0 -10px 0 rgba(0, 0, 0, 0.2),
+    0 8px 0 rgba(0, 0, 0, 0.25);
+}
+
+.screen-actions button.purple {
+  background: linear-gradient(180deg, #7c3aed, #4c1d95);
+  border-color: #a78bfa;
+}
+
+.screen-actions button.yellow {
+  background: linear-gradient(180deg, #ffd84d, #e79600);
+  border-color: #fff0a3;
+  color: #3b220d;
+}
+
+/* =========================================================
+   TELA CRIAR PERSONAGEM
+========================================================= */
+
+.aventura-create-screen {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.create-title {
+  text-align: center;
+  padding-top: 24px;
+  margin-bottom: 24px;
+}
+
+.create-title span {
+  display: inline-flex;
+  width: fit-content;
+  background: #ffc928;
+  color: #061b35;
+  border: 3px solid #7b4f25;
+  border-radius: 999px;
+  padding: 10px 18px;
+  font-weight: 950;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+.create-title p {
+  max-width: 780px;
+  margin: 0 auto;
+  color: #eaf3ff;
+  line-height: 1.7;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.create-layout {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 24px;
+  align-items: stretch;
+}
+
+.create-left,
+.create-preview,
+.create-tabs,
+.item-grid,
+.create-actions {
+  border: 4px solid #0d67ba;
+  background: rgba(3, 18, 38, 0.88);
+  border-radius: 24px;
+  padding: 22px;
+  box-shadow:
+    inset 0 -12px 0 rgba(0, 0, 0, 0.14),
+    0 16px 34px rgba(0, 0, 0, 0.28);
+}
+
+.create-left label {
+  display: block;
+  color: #ffffff;
+  font-weight: 950;
+  margin-bottom: 18px;
+}
+
+.create-left input {
+  width: 100%;
+  min-height: 54px;
+  border-radius: 12px;
+  border: 3px solid #0d67ba;
+  background: #061b35;
+  color: #ffffff;
+  padding: 0 14px;
+  font-size: 1rem;
+  font-weight: 800;
+  margin-top: 8px;
+}
+
+.create-left small {
+  display: block;
+  color: #9ecfff;
+  margin-top: 8px;
+  font-weight: 700;
+}
+
+.unlock-box,
+.evolution-box {
+  border-radius: 18px;
+  border: 3px solid #0d67ba;
+  background: rgba(11, 101, 189, 0.25);
+  padding: 18px;
+  margin-top: 18px;
+}
+
+.unlock-box strong,
+.evolution-box strong {
+  display: block;
+  color: #ffc928;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.unlock-box p {
+  margin: 0;
+  color: #ffffff;
+  line-height: 1.6;
+  font-weight: 700;
+}
+
+.evolution-box > div {
+  display: grid;
+  grid-template-columns: 1fr 24px 1fr 24px 1fr;
+  gap: 8px;
+  align-items: center;
+  margin-top: 14px;
+}
+
+.evolution-box > div > span {
+  color: #ffc928;
+  font-weight: 950;
+  font-size: 1.5rem;
+  text-align: center;
+}
+
+.evolution-step {
+  border-radius: 14px;
+  background: #061b35;
+  border: 2px solid #0d67ba;
+  padding: 10px;
+  text-align: center;
+}
+
+.evolution-step span {
+  display: block;
+  color: #ffffff;
+  font-weight: 900;
+  font-size: 0.9rem;
+  margin-top: 6px;
+}
+
+.evolution-step small {
+  color: #ffc928;
+  font-weight: 900;
+}
+
+.create-preview {
+  min-height: 500px;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  gap: 18px;
+}
+
+.create-world {
+  border-radius: 20px;
+  border: 4px solid #061b35;
+  background:
+    linear-gradient(180deg, #67bdf4 0 52%, #58aa43 52% 100%);
+  display: grid;
+  place-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.create-world::before {
+  content: '';
+  position: absolute;
+  top: 44px;
+  left: 12%;
+  width: 86px;
+  height: 28px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 240px 70px 0 -4px rgba(255, 255, 255, 0.84);
+}
+
+.create-world::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0;
+  height: 80px;
+  background:
+    linear-gradient(90deg, #2f7429 25%, transparent 25%) 0 0 / 40px 40px,
+    #3f8d33;
+}
+
+.preview-tools {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.preview-tools button {
+  min-height: 50px;
+  border-radius: 12px;
+  border: 3px solid #0d67ba;
+  background: #0b65bd;
+  color: #ffffff;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.create-tabs {
+  margin-top: 24px;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+
+.create-tabs button {
+  min-height: 60px;
+  border-radius: 14px;
+  border: 3px solid #0d67ba;
+  background: #061b35;
+  color: #ffffff;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.create-tabs button.active {
+  background: linear-gradient(180deg, #ffd84d, #e79600);
+  color: #3b220d;
+  border-color: #fff0a3;
+}
+
+.item-grid {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+.item-grid button {
+  min-height: 128px;
+  border-radius: 16px;
+  border: 3px solid #0d67ba;
+  background: rgba(11, 101, 189, 0.26);
+  color: #ffffff;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  position: relative;
+}
+
+.item-grid button.active {
+  border-color: #ffc928;
+  box-shadow: 0 0 0 4px rgba(255, 201, 40, 0.16);
+}
+
+.item-grid button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(0.5);
+}
+
+.item-grid button strong {
+  font-size: 1rem;
+}
+
+.item-grid button span {
+  color: #ffc928;
+  font-weight: 950;
+}
+
+.item-icon {
+  width: 58px;
+  height: 58px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: #0b65bd;
+  border: 3px solid #4fa3ff;
+  font-size: 1.7rem;
+}
+
+.create-actions {
+  margin-top: 18px;
+}
+
+/* =========================================================
+   TELA JOGO
+========================================================= */
+
+.aventura-only-game {
+  min-height: 100vh;
+}
+
+/* =========================================================
+   BONECO PIXEL
+========================================================= */
+
+.pixel-boneco {
+  width: 78px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+}
+
+.pixel-boneco.grande {
+  width: 130px;
+}
+
+.pixel-boneco.gigante {
+  width: 190px;
+}
+
+.p-cabeca {
+  width: 58px;
+  height: 54px;
+  margin: 0 auto;
+  background: #f1b27a;
+  border: 5px solid #2b160a;
+  border-radius: 6px;
+  position: relative;
+  box-shadow: inset 0 -8px 0 rgba(0, 0, 0, 0.12);
+}
+
+.pixel-boneco.grande .p-cabeca {
+  width: 90px;
+  height: 82px;
+}
+
+.pixel-boneco.gigante .p-cabeca {
+  width: 130px;
+  height: 118px;
+  border-width: 8px;
+}
+
+.p-cabelo {
+  width: 62px;
+  height: 22px;
+  margin: 0 auto -10px;
+  background: #5b3418;
+  border: 5px solid #2b160a;
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+  position: relative;
+  z-index: 3;
+}
+
+.pixel-boneco.grande .p-cabelo {
+  width: 94px;
+  height: 32px;
+}
+
+.pixel-boneco.gigante .p-cabelo {
+  width: 136px;
+  height: 46px;
+  border-width: 8px;
+  margin-bottom: -16px;
+}
+
+.pixel-boneco.preto .p-cabelo {
+  background: #151515;
+}
+
+.pixel-boneco.loiro .p-cabelo {
+  background: #d99a19;
+}
+
+.pixel-boneco.ruivo .p-cabelo {
+  background: #c2410c;
+}
+
+.pixel-boneco.castanho-longo .p-cabelo,
+.pixel-boneco.castanho-roxo .p-cabelo {
+  height: 34px;
+}
+
+.p-olho {
+  position: absolute;
+  top: 22px;
+  width: 7px;
+  height: 7px;
+  background: #111827;
+}
+
+.pixel-boneco.grande .p-olho {
+  top: 34px;
+  width: 10px;
+  height: 10px;
+}
+
+.pixel-boneco.gigante .p-olho {
+  top: 50px;
+  width: 14px;
+  height: 14px;
+}
+
+.p-olho.esquerdo {
+  left: 15px;
+}
+
+.p-olho.direito {
+  right: 15px;
+}
+
+.pixel-boneco.grande .p-olho.esquerdo {
+  left: 25px;
+}
+
+.pixel-boneco.grande .p-olho.direito {
+  right: 25px;
+}
+
+.pixel-boneco.gigante .p-olho.esquerdo {
+  left: 35px;
+}
+
+.pixel-boneco.gigante .p-olho.direito {
+  right: 35px;
+}
+
+.pixel-boneco.azul .p-olho,
+.pixel-boneco.verde .p-olho {
+  background: #0f172a;
+}
+
+.pixel-boneco.olhos.azul .p-olho {
+  background: #38bdf8;
+}
+
+.pixel-boneco.olhos.verde .p-olho {
+  background: #22c55e;
+}
+
+.p-boca {
+  position: absolute;
+  left: 21px;
+  bottom: 12px;
+  width: 16px;
+  height: 5px;
+  background: #7f1d1d;
+  border-radius: 999px;
+}
+
+.pixel-boneco.grande .p-boca {
+  left: 35px;
+  bottom: 18px;
+  width: 20px;
+  height: 6px;
+}
+
+.pixel-boneco.gigante .p-boca {
+  left: 52px;
+  bottom: 28px;
+  width: 30px;
+  height: 9px;
+}
+
+.p-oculos {
+  position: absolute;
+  left: 8px;
+  top: 18px;
+  width: 42px;
+  height: 15px;
+  border-top: 4px solid #0f172a;
+  border-left: 4px solid #0f172a;
+  border-right: 4px solid #0f172a;
+}
+
+.pixel-boneco.grande .p-oculos {
+  left: 18px;
+  top: 31px;
+  width: 54px;
+}
+
+.p-corpo {
+  width: 78px;
+  height: 68px;
+  margin: -2px auto 0;
+  display: grid;
+  grid-template-columns: 17px 1fr 17px;
+  gap: 4px;
+}
+
+.pixel-boneco.grande .p-corpo {
+  width: 124px;
+  height: 108px;
+  grid-template-columns: 28px 1fr 28px;
+}
+
+.pixel-boneco.gigante .p-corpo {
+  width: 182px;
+  height: 158px;
+  grid-template-columns: 40px 1fr 40px;
+  gap: 8px;
+}
+
+.p-braco,
+.p-tronco {
+  border: 5px solid #2b160a;
+  box-shadow: inset 0 -8px 0 rgba(0, 0, 0, 0.16);
+}
+
+.p-braco {
+  transform: translateY(8px);
+}
+
+.p-pernas {
+  width: 56px;
+  height: 46px;
+  margin: -2px auto 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.pixel-boneco.grande .p-pernas {
+  width: 86px;
+  height: 72px;
+}
+
+.pixel-boneco.gigante .p-pernas {
+  width: 130px;
+  height: 104px;
+  gap: 10px;
+}
+
+.p-pernas span {
+  background: #243b53;
+  border: 5px solid #2b160a;
+  border-radius: 4px;
+}
+
+/* Roupas */
+.pixel-boneco.azul .p-braco,
+.pixel-boneco.azul .p-tronco {
+  background: #2563eb;
+}
+
+.pixel-boneco.verde .p-braco,
+.pixel-boneco.verde .p-tronco {
+  background: #16a34a;
+}
+
+.pixel-boneco.vermelho .p-braco,
+.pixel-boneco.vermelho .p-tronco {
+  background: #dc2626;
+}
+
+.pixel-boneco.rosa .p-braco,
+.pixel-boneco.rosa .p-tronco {
+  background: #ec4899;
+}
+
+.pixel-boneco.roxo .p-braco,
+.pixel-boneco.roxo .p-tronco {
+  background: #7c3aed;
+}
+
+.pixel-boneco.turquesa .p-braco,
+.pixel-boneco.turquesa .p-tronco {
+  background: #0891b2;
+}
+
+.pixel-boneco.laranja .p-braco,
+.pixel-boneco.laranja .p-tronco {
+  background: #f97316;
+}
+
+.pixel-boneco.preto .p-braco,
+.pixel-boneco.preto .p-tronco {
+  background: #1f2937;
+}
+
+/* Sapatos */
+.pixel-boneco.sapato.azul .p-pernas span {
+  box-shadow: inset 0 -14px 0 #2563eb;
+}
+
+.pixel-boneco.sapato.vermelho .p-pernas span {
+  box-shadow: inset 0 -14px 0 #dc2626;
+}
+
+.pixel-boneco.sapato.marrom .p-pernas span {
+  box-shadow: inset 0 -14px 0 #92400e;
+}
+
+.pixel-boneco.sapato.rosa .p-pernas span {
+  box-shadow: inset 0 -14px 0 #ec4899;
+}
+
+.pixel-boneco.sapato.dourado .p-pernas span {
+  box-shadow: inset 0 -14px 0 #fbbf24;
+}
+
+/* Mini cabeça */
+.mini-head {
+  width: 64px;
+  height: 64px;
+  background: #f1b27a;
+  border: 4px solid #2b160a;
+  border-radius: 8px;
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.mini-head::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  height: 22px;
+  background: #5b3418;
+  border: 4px solid #2b160a;
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+}
+
+.mini-head span {
+  width: 6px;
+  height: 6px;
+  background: #111827;
+  box-shadow: 20px 0 #111827;
+}
+
+/* =========================================================
+   RESPONSIVO
+========================================================= */
+
+@media (max-width: 1100px) {
+  .aventura-home-panel,
+  .create-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .character-grid-big {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .aventura-unlocks {
+    grid-template-columns: 1fr;
+  }
+
+  .create-tabs {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .item-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 760px) {
+  .aventura-home-screen,
+  .aventura-select-screen,
+  .aventura-create-screen {
+    padding: 18px 12px;
+  }
+
+  .back-square {
+    position: static;
+    margin-bottom: 16px;
+    width: 58px;
+    height: 58px;
+    font-size: 1.7rem;
+  }
+
+  .game-logo-cube {
+    width: 86px;
+    height: 86px;
+  }
+
+  .aventura-home-content h1,
+  .aventura-screen-title h1 {
+    font-size: 2.55rem;
+    line-height: 0.98;
+  }
+
+  .aventura-home-content > p,
+  .aventura-screen-title p {
+    font-size: 1rem;
+  }
+
+  .aventura-home-panel {
+    padding: 14px;
+    border-radius: 20px;
+  }
+
+  .aventura-home-preview {
+    min-height: 310px;
+  }
+
+  .aventura-home-actions button {
+    min-height: 92px;
+    grid-template-columns: 70px 1fr 28px;
+    font-size: 1.2rem;
+    padding: 12px 14px;
+  }
+
+  .aventura-home-actions button.play {
+    font-size: 2rem;
+  }
+
+  .play-icon {
+    width: 54px;
+    height: 54px;
+  }
+
+  .aventura-bottom-links {
+    grid-template-columns: 1fr;
+  }
+
+  .character-grid-big {
+    grid-template-columns: 1fr;
+  }
+
+  .character-choice {
+    min-height: 360px;
+  }
+
+  .select-tip {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .select-tip > span {
+    margin: 0 auto;
+  }
+
+  .screen-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .create-tabs {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .item-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .evolution-box > div {
+    grid-template-columns: 1fr;
+  }
+
+  .evolution-box > div > span {
+    transform: rotate(90deg);
+  }
+
+  .create-preview {
+    min-height: 420px;
+  }
+
+  .pixel-boneco.gigante {
+    width: 140px;
+  }
+
+  .pixel-boneco.gigante .p-cabeca {
+    width: 100px;
+    height: 90px;
+  }
+
+  .pixel-boneco.gigante .p-cabelo {
+    width: 106px;
+  }
+
+  .pixel-boneco.gigante .p-corpo {
+    width: 138px;
+    height: 120px;
+    grid-template-columns: 32px 1fr 32px;
+  }
+
+  .pixel-boneco.gigante .p-pernas {
+    width: 96px;
+    height: 78px;
+  }
+}
+
+@media (max-width: 420px) {
+  .aventura-home-content h1,
+  .aventura-screen-title h1 {
+    font-size: 2.15rem;
+  }
+
+  .aventura-home-actions button {
+    grid-template-columns: 52px 1fr 24px;
+    font-size: 1rem;
+  }
+
+  .item-grid,
+  .create-tabs {
+    grid-template-columns: 1fr;
+  }
+}

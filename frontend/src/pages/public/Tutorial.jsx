@@ -1,164 +1,240 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { registrarInteracao } from '../../services/analyticsService'
+import './tutorial.css'
 
 function Tutorial() {
   return (
-    <main style={styles.page}>
-      <section style={styles.hero}>
-        <span style={styles.tag}>Chully Explica</span>
+    <main className="jogos-page">
+      <section className="jogos-hero">
+        <div className="jogos-hero-texto">
+          <span className="jogos-tag">Jogue e Divirta-se</span>
 
-        <h1 style={styles.title}>Tutoriais do Site</h1>
+          <h1>
+            Jogos educativos para aprender, brincar e ajudar
+          </h1>
 
-        <p style={styles.subtitle}>
-          Aprenda de forma simples como navegar, fazer doações, enviar currículo,
-          acompanhar notícias e consultar a transparência da instituição.
-        </p>
+          <p>
+            Um espaço interativo do Lar Batista com jogos, desafios, atividades
+            educativas e experiências pensadas para crianças, visitantes,
+            doadores e voluntários.
+          </p>
+
+          <div className="jogos-hero-botoes">
+            <Link to="/jogos/aventura-blocos" className="jogos-btn-primary">
+              Jogar Aventura dos Blocos
+            </Link>
+
+            <Link to="/doar-agora" className="jogos-btn-secondary">
+              Doe Agora
+            </Link>
+          </div>
+        </div>
+
+        <div className="jogos-hero-card">
+          <div className="jogos-hero-screen">
+            <span>🧱</span>
+            <strong>Aventura dos Blocos</strong>
+            <p>
+              Monte palavras, resolva continhas e avance por níveis infinitos.
+            </p>
+          </div>
+        </div>
       </section>
 
-      <section style={styles.grid}>
-        <TutorialCard
-          title="Como fazer uma doação"
-          text="Veja como acessar a página de doações, escolher a forma de contribuição e realizar o apoio com segurança."
-          link="/doar-agora"
+      <section className="jogos-info-grid">
+        <InfoCard
+          icon="🧠"
+          title="Aprendizado"
+          text="Jogos com palavras, animais, objetos, materiais escolares e matemática."
         />
 
-        <TutorialCard
-          title="Como enviar currículo"
-          text="Aprenda como preencher o formulário de vagas, anexar currículo e participar do banco de talentos."
-          link="/vagas"
+        <InfoCard
+          icon="📱"
+          title="Funciona no celular"
+          text="A tela se adapta para computador, tablet e celular."
         />
 
-        <TutorialCard
-          title="Como ser voluntário"
-          text="Entenda como acessar a página de voluntariado e conhecer as formas de apoio à instituição."
-          link="/voluntario"
+        <InfoCard
+          icon="🏆"
+          title="Ranking local"
+          text="A pontuação fica salva no navegador e mostra os melhores resultados."
         />
 
-        <TutorialCard
-          title="Como consultar transparência"
-          text="Veja onde encontrar relatórios, documentos e informações públicas sobre prestação de contas."
-          link="/transparencia"
+        <InfoCard
+          icon="💛"
+          title="Doação"
+          text="Depois dos jogos, o visitante é convidado a conhecer a página de doação."
         />
       </section>
 
-      <section style={styles.videoBox}>
-        <div>
-          <h2 style={styles.videoTitle}>Vídeo institucional da Chully</h2>
+      <section className="jogos-tutorial-section">
+        <div className="jogos-section-header">
+          <span className="jogos-tag">Jogos disponíveis</span>
 
-          <p style={styles.videoText}>
-            Aqui ficará o vídeo explicativo da assistente virtual Chully,
-            orientando os usuários sobre o funcionamento do site.
+          <h2>
+            Escolha uma experiência
+          </h2>
+
+          <p>
+            Cada jogo abrirá em uma página própria, deixando a tela mais limpa
+            e melhor para jogar no celular.
           </p>
         </div>
 
-        <div style={styles.videoPlaceholder}>
-          ▶ Vídeo tutorial
+        <div className="jogos-tutorial-grid">
+          <GamePortalCard
+            icon="🧱"
+            title="Aventura dos Blocos"
+            text="Jogo educativo de palavras, matemática, animais, utensílios e materiais escolares."
+            link="/jogos/aventura-blocos"
+            status="Disponível"
+          />
+
+          <GamePortalCard
+            icon="🏆"
+            title="Show da Solidariedade"
+            text="Quiz de perguntas com pontuação progressiva e temas sociais."
+            link="#"
+            status="Em breve"
+            locked
+          />
+
+          <GamePortalCard
+            icon="💛"
+            title="Perfil do Doador"
+            text="Perguntas para descobrir o perfil solidário do visitante e incentivar a doação."
+            link="#"
+            status="Em breve"
+            locked
+          />
+
+          <GamePortalCard
+            icon="🔎"
+            title="Caça-palavras do Bem"
+            text="Atividade educativa com palavras sobre cuidado, respeito e solidariedade."
+            link="#"
+            status="Em breve"
+            locked
+          />
+        </div>
+      </section>
+
+      <section className="jogos-tutorial-section">
+        <div className="jogos-section-header">
+          <span className="jogos-tag">Como usar o site</span>
+
+          <h2>
+            Acesso rápido às principais áreas
+          </h2>
+
+          <p>
+            Além dos jogos, o visitante pode aprender rapidamente como doar,
+            enviar currículo, ser voluntário e acompanhar a transparência.
+          </p>
+        </div>
+
+        <div className="jogos-tutorial-grid">
+          <TutorialCard
+            icon="💛"
+            title="Como fazer uma doação"
+            text="Acesse a página de doações, escolha a forma de contribuição e apoie a instituição com segurança."
+            link="/doar-agora"
+          />
+
+          <TutorialCard
+            icon="📄"
+            title="Como enviar currículo"
+            text="Preencha o formulário de vagas, anexe seu currículo e participe do banco de talentos."
+            link="/vagas"
+          />
+
+          <TutorialCard
+            icon="🤝"
+            title="Como ser voluntário"
+            text="Conheça as formas de apoio voluntário e veja como participar das ações da instituição."
+            link="/voluntario"
+          />
+
+          <TutorialCard
+            icon="📊"
+            title="Como consultar transparência"
+            text="Veja relatórios, documentos públicos e informações sobre prestação de contas."
+            link="/transparencia"
+          />
         </div>
       </section>
     </main>
   )
 }
 
-function TutorialCard({ title, text, link }) {
+function InfoCard({ icon, title, text }) {
   return (
-    <article style={styles.card}>
-      <div style={styles.icon}>🤖</div>
-
-      <h2 style={styles.cardTitle}>{title}</h2>
-
-      <p style={styles.cardText}>{text}</p>
-
-      <Link to={link} style={styles.cardLink}>
-        Acessar →
-      </Link>
+    <article className="jogos-info-card">
+      <span>{icon}</span>
+      <h2>{title}</h2>
+      <p>{text}</p>
     </article>
   )
 }
 
-const styles = {
-  page: {
-    minHeight: '100vh',
-    background: '#f1f7ff',
-    padding: '60px 8%'
-  },
-  hero: {
-    maxWidth: '900px',
-    marginBottom: '34px'
-  },
-  tag: {
-    background: '#ffc928',
-    color: '#002855',
-    padding: '9px 16px',
-    borderRadius: '999px',
-    fontWeight: '900'
-  },
-  title: {
-    color: '#0B3D91',
-    fontSize: '3rem',
-    marginBottom: '12px'
-  },
-  subtitle: {
-    color: '#475569',
-    fontSize: '1.1rem',
-    lineHeight: '1.7'
-  },
-  grid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-    gap: '22px'
-  },
-  card: {
-    background: '#fff',
-    borderRadius: '22px',
-    padding: '26px',
-    border: '1px solid #dbeafe',
-    boxShadow: '0 12px 28px rgba(0,0,0,0.08)'
-  },
-  icon: {
-    fontSize: '34px',
-    marginBottom: '14px'
-  },
-  cardTitle: {
-    color: '#0B3D91'
-  },
-  cardText: {
-    color: '#475569',
-    lineHeight: '1.6'
-  },
-  cardLink: {
-    color: '#0B3D91',
-    fontWeight: '900',
-    textDecoration: 'none'
-  },
-  videoBox: {
-    marginTop: '36px',
-    background: '#fff',
-    borderRadius: '26px',
-    padding: '30px',
-    border: '1px solid #dbeafe',
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '24px',
-    alignItems: 'center'
-  },
-  videoTitle: {
-    color: '#0B3D91'
-  },
-  videoText: {
-    color: '#475569',
-    lineHeight: '1.6'
-  },
-  videoPlaceholder: {
-    minHeight: '260px',
-    borderRadius: '22px',
-    background: 'linear-gradient(135deg, #002855, #0B3D91)',
-    color: '#ffc928',
-    display: 'grid',
-    placeItems: 'center',
-    fontSize: '1.4rem',
-    fontWeight: '900'
+function GamePortalCard({ icon, title, text, link, status, locked = false }) {
+  if (locked) {
+    return (
+      <article className="jogos-tutorial-card jogos-card-bloqueado">
+        <div className="jogos-card-icon">
+          {icon}
+        </div>
+
+        <h3>{title}</h3>
+
+        <p>{text}</p>
+
+        <span className="jogos-status-badge">
+          {status}
+        </span>
+      </article>
+    )
   }
+
+  return (
+    <article className="jogos-tutorial-card">
+      <div className="jogos-card-icon">
+        {icon}
+      </div>
+
+      <h3>{title}</h3>
+
+      <p>{text}</p>
+
+      <div className="jogos-card-footer">
+        <Link to={link}>
+          Jogar agora →
+        </Link>
+
+        <span className="jogos-status-badge ativo">
+          {status}
+        </span>
+      </div>
+    </article>
+  )
+}
+
+function TutorialCard({ icon, title, text, link }) {
+  return (
+    <article className="jogos-tutorial-card">
+      <div className="jogos-card-icon">
+        {icon}
+      </div>
+
+      <h3>{title}</h3>
+
+      <p>{text}</p>
+
+      <Link to={link}>
+        Acessar →
+      </Link>
+    </article>
+  )
 }
 
 export default Tutorial
