@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://plataforma-acolhimento-social.vercel.app/sitemap.xml
+Sitemap: https://www.larbatistaalbertinemeador.com.br/sitemap.xml
