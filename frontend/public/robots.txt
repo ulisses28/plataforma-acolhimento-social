@@ -1,4 +1,8 @@
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /admin/
+Disallow: /login
+Disallow: /painel-doador
 
 Sitemap: https://www.larbatistaalbertinemeador.com.br/sitemap.xml
