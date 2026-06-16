@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import './jogoAventuraBlocos.css'
 
-import AventuraBlocos from '../../components/games/AventuraBlocos'
+import VilaBlocos3D from '../../components/games/vila-blocos-3d/VilaBlocos3D'
 
 const STORAGE_KEY = 'aventura_blocos_personagem'
 
@@ -565,7 +565,7 @@ function TelaCriarPersonagem({
 function TelaJogo({ personagem, onVoltar, onNivel }) {
   return (
     <section className="aventura-only-game">
-      <AventuraBlocos
+      <VilaBlocos3D
         personagemExterno={personagem}
         onVoltarMenu={onVoltar}
         onNivelChange={onNivel}

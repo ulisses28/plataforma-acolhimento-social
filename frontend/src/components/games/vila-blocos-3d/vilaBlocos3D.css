@@ -1,0 +1,334 @@
+/* =========================================================
+   VILA DOS BLOCOS 3D
+
+   Estilo visual da primeira versão 3D do jogo.
+   A tela é independente do layout público do site porque a rota /jogos
+   já oculta Navbar, Footer e assistente virtual.
+========================================================= */
+
+.vila-3d-page {
+  min-height: 100svh;
+  background:
+    radial-gradient(circle at top left, rgba(79, 163, 255, 0.24), transparent 26%),
+    linear-gradient(180deg, #06172e, #020617);
+  color: #ffffff;
+  padding: 18px;
+  overflow-x: hidden;
+}
+
+.vila-3d-page * {
+  box-sizing: border-box;
+}
+
+.vila-3d-page button {
+  font-family: inherit;
+}
+
+/* =========================================================
+   HUD SUPERIOR
+========================================================= */
+
+.vila-3d-hud {
+  max-width: 1280px;
+  margin: 0 auto 14px;
+  display: grid;
+  grid-template-columns: 64px 1.2fr 1.4fr 120px;
+  gap: 14px;
+  align-items: stretch;
+}
+
+.vila-3d-back,
+.vila-3d-info,
+.vila-3d-word,
+.vila-3d-score {
+  background: rgba(3, 18, 38, 0.88);
+  border: 3px solid #0d67ba;
+  border-radius: 18px;
+  box-shadow:
+    inset 0 -8px 0 rgba(0, 0, 0, 0.2),
+    0 8px 0 rgba(0, 0, 0, 0.22);
+}
+
+.vila-3d-back {
+  color: #ffffff;
+  font-size: 2rem;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.vila-3d-info,
+.vila-3d-word,
+.vila-3d-score {
+  padding: 12px 16px;
+}
+
+.vila-3d-info span,
+.vila-3d-word span,
+.vila-3d-score span {
+  display: block;
+  color: #bcdcff;
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.vila-3d-info strong,
+.vila-3d-score strong {
+  display: block;
+  color: #ffc928;
+  font-size: 1.45rem;
+  line-height: 1.15;
+  margin-top: 3px;
+}
+
+.vila-3d-info small {
+  display: block;
+  color: #ffffff;
+  margin-top: 4px;
+  font-weight: 800;
+}
+
+.vila-3d-word div {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.vila-3d-word strong {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  background: #8b5a2b;
+  color: #ffffff;
+  border: 3px solid #3b220d;
+  border-radius: 10px;
+  font-size: 1.25rem;
+  font-weight: 950;
+  box-shadow: inset 0 -6px 0 rgba(0, 0, 0, 0.2);
+}
+
+.vila-3d-word strong.filled {
+  background: #22c55e;
+  border-color: #064e3b;
+}
+
+/* =========================================================
+   MENSAGEM
+========================================================= */
+
+.vila-3d-message {
+  max-width: 1280px;
+  margin: 0 auto 14px;
+  background: rgba(3, 18, 38, 0.78);
+  border: 3px solid rgba(79, 163, 255, 0.75);
+  border-radius: 18px;
+  padding: 14px 18px;
+  box-shadow:
+    inset 0 -7px 0 rgba(0, 0, 0, 0.16),
+    0 6px 0 rgba(0, 0, 0, 0.18);
+}
+
+.vila-3d-message strong {
+  display: block;
+  color: #ffc928;
+  margin-bottom: 5px;
+}
+
+.vila-3d-message p {
+  margin: 0;
+  color: #ffffff;
+  line-height: 1.55;
+  font-weight: 750;
+}
+
+/* =========================================================
+   ÁREA 3D
+========================================================= */
+
+.vila-3d-canvas-wrap {
+  position: relative;
+  max-width: 1280px;
+  height: min(66vh, 680px);
+  min-height: 520px;
+  margin: 0 auto;
+  border: 5px solid #031226;
+  border-radius: 28px;
+  overflow: hidden;
+  background: #0f172a;
+  box-shadow:
+    0 20px 0 rgba(0, 0, 0, 0.28),
+    0 26px 50px rgba(0, 0, 0, 0.38);
+}
+
+.vila-3d-canvas-wrap canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* =========================================================
+   CONTROLES MOBILE / TOUCH
+========================================================= */
+
+.vila-3d-mobile-controls {
+  position: absolute;
+  left: 18px;
+  bottom: 18px;
+  z-index: 5;
+  width: 178px;
+  display: grid;
+  gap: 8px;
+  place-items: center;
+}
+
+.vila-3d-mobile-controls div {
+  display: flex;
+  gap: 8px;
+}
+
+.vila-3d-mobile-controls button {
+  width: 54px;
+  height: 54px;
+  border-radius: 15px;
+  border: 3px solid #4fa3ff;
+  background: rgba(3, 18, 38, 0.86);
+  color: #ffffff;
+  font-size: 1.7rem;
+  font-weight: 950;
+  cursor: pointer;
+  box-shadow:
+    inset 0 -6px 0 rgba(0, 0, 0, 0.2),
+    0 6px 0 rgba(0, 0, 0, 0.22);
+}
+
+/* =========================================================
+   BOTÕES INFERIORES
+========================================================= */
+
+.vila-3d-actions {
+  max-width: 1280px;
+  margin: 22px auto 0;
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.vila-3d-actions button {
+  min-height: 56px;
+  border: 3px solid #0d67ba;
+  background: linear-gradient(180deg, #1f7ddb, #073d83);
+  color: #ffffff;
+  padding: 12px 18px;
+  border-radius: 16px;
+  font-size: 1rem;
+  font-weight: 950;
+  cursor: pointer;
+  text-transform: uppercase;
+  box-shadow:
+    inset 0 -7px 0 rgba(0, 0, 0, 0.2),
+    0 7px 0 rgba(0, 0, 0, 0.22);
+}
+
+.vila-3d-actions button.yellow {
+  background: linear-gradient(180deg, #ffd84d, #e79600);
+  border-color: #fff0a3;
+  color: #3b220d;
+}
+
+.vila-3d-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* =========================================================
+   VARIAÇÕES DE CLIMA NA UI
+========================================================= */
+
+.vila-3d-page.clima-neve {
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.28), transparent 28%),
+    linear-gradient(180deg, #0f3b73, #020617);
+}
+
+.vila-3d-page.clima-chuva {
+  background:
+    radial-gradient(circle at top left, rgba(79, 163, 255, 0.16), transparent 26%),
+    linear-gradient(180deg, #0f172a, #020617);
+}
+
+.vila-3d-page.clima-frio {
+  background:
+    radial-gradient(circle at top left, rgba(186, 230, 253, 0.24), transparent 28%),
+    linear-gradient(180deg, #0b3d6e, #020617);
+}
+
+/* =========================================================
+   RESPONSIVIDADE
+========================================================= */
+
+@media (max-width: 960px) {
+  .vila-3d-hud {
+    grid-template-columns: 58px 1fr;
+  }
+
+  .vila-3d-word,
+  .vila-3d-score {
+    grid-column: span 1;
+  }
+
+  .vila-3d-canvas-wrap {
+    height: 62vh;
+    min-height: 480px;
+  }
+}
+
+@media (max-width: 620px) {
+  .vila-3d-page {
+    padding: 12px;
+  }
+
+  .vila-3d-hud {
+    grid-template-columns: 54px 1fr;
+    gap: 10px;
+  }
+
+  .vila-3d-back {
+    font-size: 1.6rem;
+  }
+
+  .vila-3d-info,
+  .vila-3d-word,
+  .vila-3d-score {
+    padding: 10px;
+  }
+
+  .vila-3d-info strong,
+  .vila-3d-score strong {
+    font-size: 1.1rem;
+  }
+
+  .vila-3d-word strong {
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
+  }
+
+  .vila-3d-canvas-wrap {
+    height: 58vh;
+    min-height: 430px;
+    border-radius: 22px;
+  }
+
+  .vila-3d-mobile-controls {
+    left: 12px;
+    bottom: 12px;
+  }
+
+  .vila-3d-mobile-controls button {
+    width: 48px;
+    height: 48px;
+  }
+}
