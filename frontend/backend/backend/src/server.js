@@ -30,6 +30,8 @@ const app = express()
 const allowedOrigins = [
   'http://localhost:5173',
   'https://plataforma-acolhimento-social.vercel.app',
+  'https://www.larbatistaalbertinemeador.com.br',
+  'https://larbatistaalbertinemeador.com.br',
   process.env.FRONTEND_URL
 ]
   .filter(Boolean)
