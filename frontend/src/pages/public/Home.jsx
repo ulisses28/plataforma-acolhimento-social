@@ -112,9 +112,9 @@ function Home() {
       to: '/noticias'
     },
     {
-      icon: '🖼️',
-      title: 'Galeria de Fotos',
-      to: '/projetos'
+  icon: '🎥',
+  title: 'Galeria de Vídeos',
+  to: '/galeria-videos'
     },
     {
       icon: '💬',
@@ -580,6 +580,7 @@ function Home() {
           <Link to="/transparencia">Transparência</Link>
           <Link to="/noticias">Notícias</Link>
           <Link to="/artigos">Artigos e Reflexões</Link>
+          <Link to="/galeria-videos">Galeria de vídeos</Link>
         </div>
 
         <div>

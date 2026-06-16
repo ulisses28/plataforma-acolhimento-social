@@ -18,6 +18,7 @@ import Noticias from './pages/public/Noticias'
 import Artigos from './pages/public/Artigos'
 import ArtigoDetalhe from './pages/public/ArtigoDetalhe'
 import NoticiaDetalhe from './pages/public/NoticiaDetalhe'
+import VideosEducativos from './pages/public/VideosEducativos'
 import Tutorial from './pages/public/Tutorial'
 import JogoAventuraBlocos from './pages/public/JogoAventuraBlocos'
 import JogosDiversao from './pages/public/JogosDiversao'
@@ -153,6 +154,10 @@ function Layout() {
         <Route
           path="/tutorial"
           element={<Tutorial />}
+        />
+        <Route
+          path="/galeria-videos"
+          element={<VideosEducativos />}
         />
         <Route
           path="/jogos/aventura-blocos"
