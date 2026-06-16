@@ -15,6 +15,8 @@ import DoadorLogin from './pages/public/DoadorLogin'
 import PainelDoadorPublico from './pages/public/PainelDoadorPublico'
 import Vagas from './pages/public/Vagas'
 import Noticias from './pages/public/Noticias'
+import Artigos from './pages/public/Artigos'
+import ArtigoDetalhe from './pages/public/ArtigoDetalhe'
 import NoticiaDetalhe from './pages/public/NoticiaDetalhe'
 import Tutorial from './pages/public/Tutorial'
 import JogoAventuraBlocos from './pages/public/JogoAventuraBlocos'
@@ -134,12 +136,20 @@ function Layout() {
           path="/noticias"
           element={<Noticias />}
         />
-
+        
         <Route
           path="/noticias/:id"
           element={<NoticiaDetalhe />}
         />
+        <Route
+          path="/artigos"
+          element={<Artigos />}
+        />
 
+        <Route
+          path="/artigos/:slug"
+          element={<ArtigoDetalhe />}
+        />
         <Route
           path="/tutorial"
           element={<Tutorial />}

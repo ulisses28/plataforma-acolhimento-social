@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import './home.css'
+import artigosData from '../../data/artigosData'
 
 import logoLar from '../../assets/logo-lar.jpg'
 import heroImg from '../../assets/banerHome.png'
@@ -205,7 +206,14 @@ function Home() {
           link: `/noticias/${item._id || item.id}`
         }))
       : noticiasFallback
+    /*
+    Artigos exibidos na Home.
 
+    Mantemos todos os 7 artigos para dar aparência de portal informativo.
+    Se quiser mostrar só 4 futuramente, troque para:
+    artigosData.slice(0, 4)
+  */
+  const artigosHome = artigosData
   return (
     <main className="home-page" id="top">
       <section
@@ -401,23 +409,27 @@ function Home() {
         </div>
       </section>
 
-      <section className="projects-showcase-section">
+      <section className="articles-showcase-section">
         <div className="section-header">
-          <h2>Nossos projetos</h2>
+          <div>
+            <h2>Artigos e Reflexões</h2>
 
-          <Link to="/projetos">
-            Conheça todos os projetos →
+            <p className="section-subtitle">
+              Conteúdos sobre solidariedade, infância, tecnologia, comportamento
+              humano e transformação social.
+            </p>
+          </div>
+
+          <Link to="/artigos">
+            Ver todos os artigos →
           </Link>
         </div>
 
-        <div className="projects-showcase-grid">
-          {projetos.map((item) => (
-            <ProjectCard
-              key={item.title}
-              image={item.image}
-              title={item.title}
-              text={item.text}
-              link={item.link}
+        <div className="articles-showcase-grid">
+          {artigosHome.map((item) => (
+            <ArticleCard
+              key={item.slug}
+              artigo={item}
             />
           ))}
         </div>
@@ -567,6 +579,7 @@ function Home() {
           <Link to="/projetos">Projetos</Link>
           <Link to="/transparencia">Transparência</Link>
           <Link to="/noticias">Notícias</Link>
+          <Link to="/artigos">Artigos e Reflexões</Link>
         </div>
 
         <div>
@@ -651,7 +664,38 @@ function ProjectCard({ image, title, text, link }) {
     </article>
   )
 }
+/*
+  Card de artigo usado na Home.
 
+  Ele não usa imagem externa. O visual é criado por CSS com:
+  - tema
+  - ícone
+  - gradiente
+  Isso facilita manutenção e evita depender de arquivos de imagem.
+*/
+function ArticleCard({ artigo }) {
+  return (
+    <article className="article-home-card">
+      <div className={`article-home-visual tema-${artigo.tema}`}>
+        <span>{artigo.icone}</span>
+      </div>
+
+      <div className="article-home-content">
+        <span className="article-home-category">
+          {artigo.categoria}
+        </span>
+
+        <h3>{artigo.titulo}</h3>
+
+        <p>{artigo.resumo}</p>
+
+        <Link to={`/artigos/${artigo.slug}`}>
+          Ler artigo →
+        </Link>
+      </div>
+    </article>
+  )
+}
 function NewsCard({ image, date, title, text, categoria, id, link }) {
   const resumo =
     text?.length > 120

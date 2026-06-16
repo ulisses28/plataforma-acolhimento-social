@@ -1,0 +1,484 @@
+/* =========================================================
+   ARTIGOS E REFLEXÕES
+   Estilo branco, limpo e profissional.
+
+   Objetivo:
+   - Criar aparência de portal editorial.
+   - Manter identidade azul institucional.
+   - Evitar dependência de imagens externas.
+   - Usar cards visuais com gradientes e ícones.
+========================================================= */
+
+.artigos-page,
+.artigo-detalhe-page {
+  min-height: 100vh;
+  background: #ffffff;
+  color: #0b2447;
+}
+
+/* =========================================================
+   TOPO DA PÁGINA DE ARTIGOS
+========================================================= */
+
+.artigos-hero {
+  background:
+    radial-gradient(circle at top left, rgba(11, 79, 163, 0.12), transparent 36%),
+    linear-gradient(180deg, #ffffff 0%, #f4f8ff 100%);
+  border-bottom: 1px solid #e5edf8;
+  padding: 72px 7% 58px;
+}
+
+.artigos-hero > div {
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.artigos-kicker {
+  display: inline-block;
+  color: #0b4fa3;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+
+.artigos-hero h1 {
+  color: #0b3d91;
+  font-size: clamp(2.2rem, 5vw, 4rem);
+  line-height: 1.05;
+  margin: 0;
+  font-weight: 950;
+}
+
+.artigos-hero p {
+  max-width: 760px;
+  color: #475569;
+  font-size: 1.15rem;
+  line-height: 1.7;
+  margin: 18px 0 0;
+}
+
+/* =========================================================
+   LISTAGEM DE ARTIGOS
+========================================================= */
+
+.artigos-container {
+  padding: 54px 7% 72px;
+}
+
+.artigos-grid {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.artigo-card-page {
+  background: #ffffff;
+  border: 1px solid #e5edf8;
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: 0 12px 30px rgba(11, 61, 145, 0.08);
+  display: flex;
+  flex-direction: column;
+  transition: 0.25s ease;
+}
+
+.artigo-card-page:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 18px 38px rgba(11, 61, 145, 0.13);
+}
+
+.artigo-card-visual {
+  height: 180px;
+  display: grid;
+  place-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.artigo-card-visual::before,
+.artigo-detalhe-visual::before {
+  content: '';
+  position: absolute;
+  inset: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  border-radius: 24px;
+}
+
+.artigo-card-visual span,
+.artigo-detalhe-visual span {
+  position: relative;
+  z-index: 2;
+  width: 82px;
+  height: 82px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.94);
+  font-size: 38px;
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.14);
+}
+
+.artigo-card-body {
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.artigo-categoria {
+  width: fit-content;
+  display: inline-block;
+  background: #eaf3ff;
+  color: #0b4fa3;
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+.artigo-card-body h2 {
+  color: #0b3d91;
+  font-size: 1.25rem;
+  line-height: 1.28;
+  margin: 0 0 12px;
+  font-weight: 950;
+}
+
+.artigo-card-body p {
+  color: #475569;
+  font-size: 0.96rem;
+  line-height: 1.7;
+  margin: 0 0 18px;
+}
+
+.artigo-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: auto;
+  margin-bottom: 16px;
+}
+
+.artigo-card-meta span {
+  color: #64748b;
+  background: #f8fbff;
+  border: 1px solid #e5edf8;
+  border-radius: 999px;
+  padding: 6px 9px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.artigo-card-body a {
+  color: #0b4fa3;
+  text-decoration: none;
+  font-weight: 950;
+  text-transform: uppercase;
+  font-size: 12px;
+}
+
+/* =========================================================
+   TEMAS VISUAIS DOS CARDS
+========================================================= */
+
+.tema-solidariedade {
+  background:
+    linear-gradient(135deg, rgba(11, 79, 163, 0.92), rgba(34, 197, 94, 0.86)),
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.35), transparent 38%);
+}
+
+.tema-mente {
+  background:
+    linear-gradient(135deg, rgba(11, 61, 145, 0.95), rgba(99, 102, 241, 0.78)),
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.35), transparent 34%);
+}
+
+.tema-protecao {
+  background:
+    linear-gradient(135deg, rgba(11, 61, 145, 0.95), rgba(15, 23, 42, 0.80)),
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.26), transparent 38%);
+}
+
+.tema-tecnologia {
+  background:
+    linear-gradient(135deg, rgba(14, 116, 144, 0.94), rgba(37, 99, 235, 0.84)),
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.34), transparent 38%);
+}
+
+.tema-infancia {
+  background:
+    linear-gradient(135deg, rgba(245, 158, 11, 0.96), rgba(11, 79, 163, 0.88)),
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.35), transparent 38%);
+}
+
+.tema-ia {
+  background:
+    linear-gradient(135deg, rgba(30, 41, 59, 0.98), rgba(37, 99, 235, 0.86)),
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.30), transparent 40%);
+}
+
+/* =========================================================
+   PÁGINA DE DETALHE
+========================================================= */
+
+.artigo-detalhe-page {
+  padding: 54px 20px 74px;
+  background:
+    radial-gradient(circle at top left, rgba(11, 79, 163, 0.10), transparent 34%),
+    #ffffff;
+}
+
+.artigo-detalhe-container {
+  max-width: 980px;
+  margin: 0 auto;
+  background: #ffffff;
+  border: 1px solid #e5edf8;
+  border-radius: 26px;
+  padding: 38px;
+  box-shadow: 0 16px 42px rgba(11, 61, 145, 0.10);
+}
+
+.artigo-voltar {
+  display: inline-block;
+  color: #0b4fa3;
+  text-decoration: none;
+  font-weight: 950;
+  margin-bottom: 24px;
+}
+
+.artigo-detalhe-header {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 30px;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+.artigo-detalhe-visual {
+  min-height: 260px;
+  border-radius: 24px;
+  display: grid;
+  place-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.artigo-detalhe-header h1 {
+  color: #0b3d91;
+  font-size: clamp(2rem, 4vw, 3.3rem);
+  line-height: 1.08;
+  margin: 0 0 16px;
+  font-weight: 950;
+}
+
+.artigo-subtitulo {
+  color: #475569;
+  font-size: 1.12rem;
+  line-height: 1.75;
+  margin: 0 0 18px;
+}
+
+.artigo-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.artigo-meta span {
+  color: #64748b;
+  background: #f8fbff;
+  border: 1px solid #e5edf8;
+  border-radius: 999px;
+  padding: 8px 11px;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.artigo-texto {
+  max-width: 780px;
+  margin: 0 auto;
+}
+
+.artigo-texto p {
+  color: #26364b;
+  font-size: 1.08rem;
+  line-height: 1.95;
+  margin: 0 0 22px;
+}
+
+.artigo-destaque {
+  max-width: 780px;
+  margin: 32px auto;
+  background: #f4f8ff;
+  border-left: 5px solid #0b4fa3;
+  border-radius: 18px;
+  padding: 24px;
+}
+
+.artigo-destaque strong {
+  display: block;
+  color: #0b3d91;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+
+.artigo-destaque p {
+  color: #0b2447;
+  font-size: 1.15rem;
+  line-height: 1.7;
+  margin: 0;
+  font-weight: 800;
+}
+
+.artigo-fontes {
+  max-width: 780px;
+  margin: 0 auto;
+  background: #ffffff;
+  border: 1px solid #e5edf8;
+  border-radius: 20px;
+  padding: 24px;
+}
+
+.artigo-fontes h2 {
+  color: #0b3d91;
+  margin: 0 0 8px;
+}
+
+.artigo-fontes p {
+  color: #64748b;
+  line-height: 1.6;
+  margin: 0 0 18px;
+}
+
+.artigo-fontes-lista {
+  display: grid;
+  gap: 12px;
+}
+
+.artigo-fontes-lista a {
+  display: block;
+  background: #f8fbff;
+  border: 1px solid #dbeafe;
+  border-radius: 14px;
+  padding: 14px;
+  text-decoration: none;
+  transition: 0.2s ease;
+}
+
+.artigo-fontes-lista a:hover {
+  transform: translateY(-2px);
+  border-color: #0b4fa3;
+}
+
+.artigo-fontes-lista strong {
+  display: block;
+  color: #0b4fa3;
+  margin-bottom: 5px;
+}
+
+.artigo-fontes-lista span {
+  color: #475569;
+  line-height: 1.55;
+}
+
+.artigo-cta {
+  max-width: 780px;
+  margin: 28px auto 0;
+  background: linear-gradient(90deg, #0b4fa3, #075eb5);
+  color: #ffffff;
+  border-radius: 20px;
+  padding: 24px;
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: center;
+}
+
+.artigo-cta h2 {
+  margin: 0 0 8px;
+  font-size: 1.35rem;
+}
+
+.artigo-cta p {
+  margin: 0;
+  color: #eaf3ff;
+  line-height: 1.6;
+}
+
+.artigo-cta a,
+.artigo-not-found a {
+  min-width: max-content;
+  background: #ffc928;
+  color: #061f4a;
+  text-decoration: none;
+  padding: 13px 18px;
+  border-radius: 12px;
+  font-weight: 950;
+}
+
+.artigo-not-found {
+  max-width: 720px;
+  margin: 0 auto;
+  background: #ffffff;
+  border: 1px solid #e5edf8;
+  border-radius: 24px;
+  padding: 38px;
+  box-shadow: 0 16px 42px rgba(11, 61, 145, 0.10);
+}
+
+.artigo-not-found h1 {
+  color: #0b3d91;
+}
+
+/* =========================================================
+   RESPONSIVIDADE
+========================================================= */
+
+@media (max-width: 980px) {
+  .artigos-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .artigo-detalhe-header {
+    grid-template-columns: 1fr;
+  }
+
+  .artigo-detalhe-visual {
+    min-height: 220px;
+  }
+}
+
+@media (max-width: 640px) {
+  .artigos-hero,
+  .artigos-container {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .artigos-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .artigo-detalhe-container {
+    padding: 24px;
+  }
+
+  .artigo-cta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .artigo-cta a {
+    width: 100%;
+    text-align: center;
+  }
+}
