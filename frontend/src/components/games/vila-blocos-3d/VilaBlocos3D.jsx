@@ -1,33 +1,44 @@
-import React, { useEffect, useMemo, useState } from 'react'
-import { Canvas, useFrame } from '@react-three/fiber'
-import { OrbitControls, Text } from '@react-three/drei'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { Canvas, useFrame, useThree } from '@react-three/fiber'
+import { OrbitControls } from '@react-three/drei'
 import './vilaBlocos3D.css'
 
-import { FASES_VILA_BLOCOS_3D } from './fasesVilaBlocos3D'
+import {
+  criarBlocosDaFase,
+  obterFasePorIndice
+} from './fasesVilaBlocos3D'
+
+import Player3D from './components/Player3D'
+import LetterBlock3D from './components/LetterBlock3D'
+import WordPlatform3D from './components/WordPlatform3D'
+import MapBuilder3D from './components/MapBuilder3D'
+import HazardSystem3D, {
+  calcularProgressoPerigo
+} from './components/HazardSystem3D'
 
 /*
-  VILA DOS BLOCOS 3D
+  VILA DOS BLOCOS 3D — MOTOR PRINCIPAL
 
-  Primeira versão 3D do jogo educativo:
-  - Mundo de blocos em 3D.
-  - Personagem simples em formato cúbico.
-  - Letras espalhadas pelo cenário.
-  - Coleta automática ao chegar perto da letra correta.
-  - Plataforma para montar a palavra.
-  - Fases com clima diferente.
-
-  Integração:
-  Este componente recebe as mesmas props usadas no jogo antigo:
-  - personagemExterno
-  - onVoltarMenu
-  - onNivelChange
-
-  Assim podemos trocar o jogo 2D pelo 3D sem quebrar o menu atual.
+  Este arquivo controla a lógica principal do jogo:
+  - troca de fases;
+  - movimento do jogador;
+  - blocos de letras corretas e falsas;
+  - pegar bloco na mão;
+  - levar o bloco até a plataforma;
+  - soltar e validar a palavra;
+  - tempo das fases especiais;
+  - perigos como fogo e enchente;
+  - controle mobile estilo jogo.
 */
 
-const PASSO = 0.8
+const PASSO = 0.82
+const INTERVALO_MOVIMENTO = 85
 
 function VilaBlocos3D({ personagemExterno, onVoltarMenu, onNivelChange }) {
+  /*
+    Personagem padrão caso o jogador entre direto no jogo
+    sem escolher/criar um personagem antes.
+  */
   const personagem = personagemExterno || {
     nome: 'Explorador',
     roupa: 'azul',
@@ -37,39 +48,153 @@ function VilaBlocos3D({ personagemExterno, onVoltarMenu, onNivelChange }) {
     acessorio: 'nenhum'
   }
 
-  const [faseIndex, setFaseIndex] = useState(0)
-  const [posicaoJogador, setPosicaoJogador] = useState([0, 0, 4])
-  const [letrasColetadas, setLetrasColetadas] = useState([])
-  const [pontos, setPontos] = useState(0)
-  const [mensagem, setMensagem] = useState('Use as setas ou WASD para andar e coletar as letras na ordem certa.')
-
-  const fase = FASES_VILA_BLOCOS_3D[faseIndex]
-  const proximaLetra = fase.palavra[letrasColetadas.length]
-  const faseConcluida = letrasColetadas.join('') === fase.palavra
-
   /*
-    Mapa de letras já coletadas.
-
-    Usamos o índice porque algumas palavras podem repetir letras.
-    Exemplo: AJUDA tem duas letras A.
+    Controle da fase atual.
+    O índice começa em 0, mas a fase tem número próprio: 1, 2, 3...
   */
-  const indicesColetados = useMemo(() => {
-    return letrasColetadas.map((_, index) => index)
-  }, [letrasColetadas])
+  const [faseIndex, setFaseIndex] = useState(0)
 
   /*
-    Movimento pelo teclado.
+    Busca a fase atual no arquivo fasesVilaBlocos3D.js.
+  */
+  const fase = useMemo(() => obterFasePorIndice(faseIndex), [faseIndex])
 
-    Setas e WASD alteram a posição do jogador no plano X/Z.
+  /*
+    Calcula onde o jogador começa e onde a plataforma fica.
+    Isso varia conforme o tamanho do mapa de cada fase.
+  */
+  const posicaoInicialFase = useMemo(() => {
+    return obterPosicaoInicialDaFase(fase)
+  }, [fase])
+
+  const posicaoPlataformaFase = useMemo(() => {
+    return obterPosicaoPlataformaDaFase(fase)
+  }, [fase])
+
+  /*
+    Estados principais do jogo.
+  */
+  const [posicaoJogador, setPosicaoJogador] = useState(() =>
+    obterPosicaoInicialDaFase(fase)
+  )
+  const [blocos, setBlocos] = useState(() => criarBlocosDaFase(fase))
+  const [blocoNaMao, setBlocoNaMao] = useState(null)
+  const [letrasColocadas, setLetrasColocadas] = useState([])
+  const [pontos, setPontos] = useState(0)
+  const [mensagem, setMensagem] = useState(
+    'No computador use WASD ou setas. No celular use o controle e toque na bolinha para pegar.'
+  )
+  const [status, setStatus] = useState('jogando')
+  const [tempoRestante, setTempoRestante] = useState(fase.tempoLimite)
+
+  /*
+    Referência usada para o movimento contínuo no mobile.
+    Quando o jogador segura uma direção, o personagem continua andando.
+  */
+  const movimentoTimerRef = useRef(null)
+
+  /*
+    Informações calculadas da fase.
+  */
+  const nivelAtual = fase.numero
+  const palavraAtual = fase.palavra
+  const proximaLetra = palavraAtual[letrasColocadas.length]
+  const faseConcluida = letrasColocadas.join('') === palavraAtual
+  const temTempo = Boolean(fase.tempoLimite)
+
+  const progressoPerigo = calcularProgressoPerigo(
+    tempoRestante,
+    fase.tempoLimite
+  )
+
+  /*
+    Sempre que a fase muda, reiniciamos o estado da fase:
+    - blocos voltam ao mapa;
+    - jogador volta para o início;
+    - palavra fica vazia;
+    - timer volta ao início.
+  */
+  useEffect(() => {
+    setBlocos(criarBlocosDaFase(fase))
+    setPosicaoJogador(posicaoInicialFase)
+    setBlocoNaMao(null)
+    setLetrasColocadas([])
+    setStatus('jogando')
+    setTempoRestante(fase.tempoLimite)
+    setMensagem(`Fase ${fase.numero}: ${fase.nome}. ${fase.objetivo}`)
+
+    if (onNivelChange) {
+      onNivelChange(fase.numero)
+    }
+  }, [fase, posicaoInicialFase, onNivelChange])
+
+  /*
+    Timer das fases especiais.
+
+    Exemplo:
+    - floresta com fogo;
+    - cidade com enchente.
+  */
+  useEffect(() => {
+    if (!temTempo || status !== 'jogando') return
+
+    const intervalo = setInterval(() => {
+      setTempoRestante((valorAtual) => {
+        if (valorAtual === null) return valorAtual
+
+        if (valorAtual <= 1) {
+          clearInterval(intervalo)
+
+          setStatus('perdeu')
+          setBlocoNaMao(null)
+          setMensagem(
+            'O tempo acabou! Reinicie a fase e tente montar a palavra mais rápido.'
+          )
+
+          return 0
+        }
+
+        return valorAtual - 1
+      })
+    }, 1000)
+
+    return () => clearInterval(intervalo)
+  }, [temTempo, status, faseIndex])
+
+  /*
+    Teclado para computador.
+
+    WASD ou setas: andar.
+    E: pegar bloco.
+    Espaço: soltar bloco.
+    R: reiniciar fase.
   */
   useEffect(() => {
     function aoPressionarTecla(event) {
       const tecla = event.key.toLowerCase()
 
+      if (tecla === ' ' || tecla === 'spacebar') {
+        event.preventDefault()
+      }
+
+      if (status !== 'jogando') return
+
       if (['arrowup', 'w'].includes(tecla)) moverJogador(0, -PASSO)
       if (['arrowdown', 's'].includes(tecla)) moverJogador(0, PASSO)
       if (['arrowleft', 'a'].includes(tecla)) moverJogador(-PASSO, 0)
       if (['arrowright', 'd'].includes(tecla)) moverJogador(PASSO, 0)
+
+      if (tecla === 'e') {
+        pegarBlocoProximo()
+      }
+
+      if (tecla === ' ' || tecla === 'spacebar') {
+        soltarBloco()
+      }
+
+      if (tecla === 'r') {
+        reiniciarFase()
+      }
     }
 
     window.addEventListener('keydown', aoPressionarTecla)
@@ -77,97 +202,340 @@ function VilaBlocos3D({ personagemExterno, onVoltarMenu, onNivelChange }) {
     return () => {
       window.removeEventListener('keydown', aoPressionarTecla)
     }
-  }, [faseIndex, letrasColetadas])
+  }, [status, posicaoJogador, blocoNaMao, blocos, letrasColocadas, faseIndex])
 
   /*
-    Verifica automaticamente se o jogador chegou perto da próxima letra.
+    Segurança:
+    quando sair da tela, parar qualquer movimento contínuo do mobile.
   */
   useEffect(() => {
-    if (faseConcluida) return
-
-    const indiceProximaLetra = letrasColetadas.length
-    const letraAlvo = fase.letras[indiceProximaLetra]
-
-    if (!letraAlvo) return
-
-    const distancia = calcularDistanciaXZ(posicaoJogador, letraAlvo.posicao)
-
-    if (distancia <= 1.15) {
-      coletarLetra(letraAlvo.letra)
+    return () => {
+      pararMovimentoContinuo()
     }
-  }, [posicaoJogador, faseIndex, letrasColetadas, faseConcluida])
+  }, [])
 
+  /*
+    Se o jogador venceu ou perdeu, interrompe movimento contínuo.
+  */
+  useEffect(() => {
+    if (status !== 'jogando') {
+      pararMovimentoContinuo()
+    }
+  }, [status])
+
+  /*
+    Descobre qual bloco está mais próximo do jogador.
+    Isso permite pegar a letra com botão/tecla sem precisar clicar no bloco.
+  */
+  const blocoProximo = useMemo(() => {
+    if (blocoNaMao || status !== 'jogando') return null
+
+    const disponiveis = blocos.filter(
+      (bloco) => !bloco.coletado && !bloco.colocado
+    )
+
+    let maisProximo = null
+    let menorDistancia = Infinity
+
+    disponiveis.forEach((bloco) => {
+      const distancia = calcularDistanciaXZ(posicaoJogador, bloco.position)
+
+      if (distancia < menorDistancia) {
+        menorDistancia = distancia
+        maisProximo = bloco
+      }
+    })
+
+    if (menorDistancia <= 1.35) {
+      return maisProximo
+    }
+
+    return null
+  }, [blocos, blocoNaMao, posicaoJogador, status])
+
+  /*
+    Verifica se o jogador está perto da plataforma.
+    Só perto da plataforma ele consegue encaixar a letra.
+  */
+  const pertoDaPlataforma = useMemo(() => {
+    return calcularDistanciaXZ(posicaoJogador, posicaoPlataformaFase) <= 2.65
+  }, [posicaoJogador, posicaoPlataformaFase])
+
+  /*
+    Move o personagem respeitando o limite do mapa.
+  */
   function moverJogador(deltaX, deltaZ) {
+    if (status !== 'jogando') return
+
+    const limite = obterLimiteMapa(fase)
+
     setPosicaoJogador(([x, y, z]) => {
-      const novoX = limitar(x + deltaX, -6, 6)
-      const novoZ = limitar(z + deltaZ, -5, 5)
+      const novoX = limitar(x + deltaX, -limite, limite)
+      const novoZ = limitar(z + deltaZ, -limite, limite)
 
       return [novoX, y, novoZ]
     })
   }
 
-  function coletarLetra(letra) {
-    if (letra !== proximaLetra) {
-      setMensagem(`Procure primeiro a letra ${proximaLetra}.`)
-      return
-    }
+  /*
+    Movimento contínuo para mobile.
 
-    const novasLetras = [...letrasColetadas, letra]
+    O jogador segura o botão do controle e o personagem anda
+    até soltar o dedo.
+  */
+  function iniciarMovimentoContinuo(deltaX, deltaZ) {
+    if (status !== 'jogando') return
 
-    setLetrasColetadas(novasLetras)
-    setPontos((valor) => valor + 10)
+    pararMovimentoContinuo()
+    moverJogador(deltaX, deltaZ)
 
-    if (novasLetras.join('') === fase.palavra) {
-      setMensagem(`Parabéns! Você formou ${fase.palavra}. ${fase.mensagemFinal}`)
-
-      if (onNivelChange) {
-        onNivelChange(faseIndex + 2)
-      }
-
-      return
-    }
-
-    setMensagem(`Boa! Você coletou a letra ${letra}. Agora procure ${fase.palavra[novasLetras.length]}.`)
+    movimentoTimerRef.current = setInterval(() => {
+      moverJogador(deltaX, deltaZ)
+    }, INTERVALO_MOVIMENTO)
   }
 
+  function pararMovimentoContinuo() {
+    if (movimentoTimerRef.current) {
+      clearInterval(movimentoTimerRef.current)
+      movimentoTimerRef.current = null
+    }
+  }
+
+  /*
+    Cria os eventos do botão de movimento.
+    Usamos pointer events porque funcionam com mouse e toque.
+  */
+  function criarControleMovimento(deltaX, deltaZ) {
+    return {
+      onPointerDown: () => iniciarMovimentoContinuo(deltaX, deltaZ),
+      onPointerUp: pararMovimentoContinuo,
+      onPointerLeave: pararMovimentoContinuo,
+      onPointerCancel: pararMovimentoContinuo
+    }
+  }
+
+  /*
+    Pega automaticamente o bloco mais próximo.
+  */
+  function pegarBlocoProximo() {
+    if (blocoNaMao) {
+      setMensagem(
+        `Você já está carregando a letra ${blocoNaMao.letra}. Leve até a plataforma e solte.`
+      )
+      return
+    }
+
+    if (!blocoProximo) {
+      setMensagem('Chegue mais perto de um bloco de letra para pegar.')
+      return
+    }
+
+    pegarBloco(blocoProximo)
+  }
+
+  /*
+    Pega um bloco específico.
+    Também é chamado quando o jogador clica direto no bloco 3D.
+  */
+  function pegarBloco(bloco) {
+    if (blocoNaMao || status !== 'jogando') return
+
+    const distancia = calcularDistanciaXZ(posicaoJogador, bloco.position)
+
+    if (distancia > 1.6) {
+      setMensagem('Chegue mais perto desse bloco para pegar.')
+      return
+    }
+
+    setBlocoNaMao(bloco)
+
+    setBlocos((lista) =>
+      lista.map((item) =>
+        item.id === bloco.id ? { ...item, coletado: true } : item
+      )
+    )
+
+    setMensagem(
+      `Você pegou a letra ${bloco.letra}. Leve até a plataforma e solte.`
+    )
+  }
+
+  /*
+    Solta o bloco.
+
+    Se estiver perto da plataforma, tenta encaixar.
+    Se estiver longe, devolve o bloco ao cenário.
+  */
+  function soltarBloco() {
+    if (!blocoNaMao) {
+      setMensagem('Você precisa pegar um bloco antes de soltar.')
+      return
+    }
+
+    if (!pertoDaPlataforma) {
+      const letraSolta = blocoNaMao.letra
+
+      devolverBlocoParaOCenario()
+
+      setMensagem(
+        `Você soltou a letra ${letraSolta} no cenário. Chegue perto da plataforma para encaixar.`
+      )
+      return
+    }
+
+    validarBlocoNaPlataforma()
+  }
+
+  /*
+    Valida se a letra carregada é a próxima letra correta da palavra.
+  */
+  function validarBlocoNaPlataforma() {
+    if (!blocoNaMao) return
+
+    const letraEsperada = palavraAtual[letrasColocadas.length]
+
+    if (blocoNaMao.letra !== letraEsperada) {
+      const letraErrada = blocoNaMao.letra
+
+      devolverBlocoParaOCenario()
+
+      setMensagem(
+        `Essa letra não encaixa agora. Você trouxe ${letraErrada}, mas a próxima letra é ${letraEsperada}.`
+      )
+      return
+    }
+
+    const novasLetras = [...letrasColocadas, blocoNaMao.letra]
+    const pontosGanhos = blocoNaMao.correta ? 15 : 8
+
+    setLetrasColocadas(novasLetras)
+    setPontos((valor) => valor + pontosGanhos)
+
+    setBlocos((lista) =>
+      lista.map((item) =>
+        item.id === blocoNaMao.id
+          ? { ...item, colocado: true, coletado: true }
+          : item
+      )
+    )
+
+    setBlocoNaMao(null)
+
+    if (novasLetras.join('') === palavraAtual) {
+      concluirFase()
+      return
+    }
+
+    setMensagem(
+      `Letra ${letraEsperada} encaixada! Agora procure a letra ${palavraAtual[novasLetras.length]}.`
+    )
+  }
+
+  /*
+    Devolve o bloco para perto do jogador quando ele solta fora da plataforma
+    ou quando erra a letra.
+  */
+  function devolverBlocoParaOCenario() {
+    if (!blocoNaMao) return
+
+    const limite = obterLimiteMapa(fase)
+
+    const novaPosicao = [
+      limitar(posicaoJogador[0] + 1, -limite, limite),
+      0.75,
+      limitar(posicaoJogador[2] + 1, -limite, limite)
+    ]
+
+    setBlocos((lista) =>
+      lista.map((item) =>
+        item.id === blocoNaMao.id
+          ? {
+              ...item,
+              coletado: false,
+              colocado: false,
+              position: novaPosicao
+            }
+          : item
+      )
+    )
+
+    setBlocoNaMao(null)
+  }
+
+  /*
+    Conclui a fase e libera o botão de próxima fase.
+  */
+  function concluirFase() {
+    setStatus('vitoria')
+    setBlocoNaMao(null)
+
+    const bonusTempo = tempoRestante ? Math.max(0, tempoRestante) : 0
+    const bonusFase = fase.numero * 20
+
+    setPontos((valor) => valor + bonusFase + bonusTempo)
+
+    setMensagem(
+      `Parabéns! Você completou ${fase.palavra}. ${fase.tema}: missão concluída!`
+    )
+  }
+
+  /*
+    Vai para a próxima fase.
+    Quando chegar ao fim, obterFasePorIndice faz o ciclo continuar.
+  */
   function proximaFase() {
-    const novoIndex = faseIndex + 1 >= FASES_VILA_BLOCOS_3D.length ? 0 : faseIndex + 1
-
-    setFaseIndex(novoIndex)
-    setPosicaoJogador([0, 0, 4])
-    setLetrasColetadas([])
-    setMensagem('Nova fase! Colete as letras na ordem certa.')
+    setFaseIndex((indiceAtual) => indiceAtual + 1)
   }
 
+  /*
+    Reinicia somente a fase atual.
+  */
   function reiniciarFase() {
-    setPosicaoJogador([0, 0, 4])
-    setLetrasColetadas([])
-    setMensagem('Fase reiniciada. Tente novamente!')
+    setBlocos(criarBlocosDaFase(fase))
+    setPosicaoJogador(posicaoInicialFase)
+    setBlocoNaMao(null)
+    setLetrasColocadas([])
+    setStatus('jogando')
+    setTempoRestante(fase.tempoLimite)
+    setMensagem(`Fase reiniciada. ${fase.objetivo}`)
+  }
+
+  /*
+    Volta para o menu de seleção/criação do personagem.
+  */
+  function voltarMenu() {
+    pararMovimentoContinuo()
+
+    if (onVoltarMenu) {
+      onVoltarMenu()
+    }
   }
 
   return (
     <main className={`vila-3d-page clima-${fase.clima}`}>
       <section className="vila-3d-hud">
-        <button type="button" className="vila-3d-back" onClick={onVoltarMenu}>
+        <button type="button" className="vila-3d-back" onClick={voltarMenu}>
           ←
         </button>
 
         <div className="vila-3d-info">
-          <span>{fase.icone} {fase.nome}</span>
-          <strong>{fase.tema}</strong>
-          <small>{fase.ambiente}</small>
+          <span>
+            {fase.icone} Fase {fase.numero}
+          </span>
+          <strong>{fase.nome}</strong>
+          <small>{fase.tema}</small>
         </div>
 
         <div className="vila-3d-word">
-          <span>Palavra</span>
+          <span>Monte a palavra</span>
 
           <div>
-            {fase.palavra.split('').map((letra, index) => (
+            {palavraAtual.split('').map((letra, index) => (
               <strong
-                key={`${fase.id}-${letra}-${index}`}
-                className={letrasColetadas[index] ? 'filled' : ''}
+                key={`${fase.id}-hud-${letra}-${index}`}
+                className={letrasColocadas[index] ? 'filled' : ''}
               >
-                {letrasColetadas[index] || ''}
+                {letrasColocadas[index] || ''}
               </strong>
             ))}
           </div>
@@ -179,54 +547,170 @@ function VilaBlocos3D({ personagemExterno, onVoltarMenu, onNivelChange }) {
         </div>
       </section>
 
-      <section className="vila-3d-message">
-        <strong>{fase.missao}</strong>
+      <section className={`vila-3d-message ${status}`}>
+        <strong>{fase.objetivo}</strong>
+
         <p>{mensagem}</p>
+
+        <div className="vila-3d-mini-status">
+          <span>
+            Próxima letra: <b>{faseConcluida ? '✓' : proximaLetra}</b>
+          </span>
+
+          <span>
+            Na mão: <b>{blocoNaMao ? blocoNaMao.letra : 'nenhum'}</b>
+          </span>
+
+          {temTempo && (
+            <span>
+              Tempo: <b>{formatarTempo(tempoRestante)}</b>
+            </span>
+          )}
+
+          {fase.perigo && (
+            <span>
+              Perigo: <b>{Math.round(progressoPerigo * 100)}%</b>
+            </span>
+          )}
+        </div>
       </section>
 
       <section className="vila-3d-canvas-wrap">
         <Canvas
           camera={{
             position: [8, 8, 10],
-            fov: 45
+            fov: 46
           }}
-          shadows
+          dpr={[1, 1.25]}
+          shadows={false}
+          gl={{
+            antialias: false,
+            powerPreference: 'high-performance'
+          }}
         >
-          <color attach="background" args={[fase.ceu]} />
+          <color attach="background" args={[fase.cores.ceu]} />
 
-          <ambientLight intensity={0.7} />
+          <ambientLight intensity={fase.clima === 'noite' ? 0.42 : 0.72} />
 
           <directionalLight
             position={[6, 10, 6]}
-            intensity={1.15}
-            castShadow
+            intensity={fase.clima === 'noite' ? 0.75 : 1.05}
           />
 
-          <MundoBlocos
+          <MapBuilder3D fase={fase} />
+
+          <HazardSystem3D
             fase={fase}
-            personagem={personagem}
-            posicaoJogador={posicaoJogador}
-            indicesColetados={indicesColetados}
-            coletarLetra={coletarLetra}
+            tempoRestante={tempoRestante}
+            tempoTotal={fase.tempoLimite}
           />
+
+          <WordPlatform3D
+            fase={fase}
+            letrasColocadas={letrasColocadas}
+            position={posicaoPlataformaFase}
+          />
+
+          <Player3D
+            personagem={personagem}
+            position={posicaoJogador}
+            blocoNaMao={blocoNaMao}
+            nivel={nivelAtual}
+          />
+
+          {blocos.map((bloco) => (
+            <LetterBlock3D
+              key={bloco.id}
+              bloco={bloco}
+              ativo={bloco.letra === proximaLetra}
+              selecionado={blocoProximo?.id === bloco.id}
+              onPegar={() => pegarBloco(bloco)}
+            />
+          ))}
+
+          <CameraFollow target={posicaoJogador} />
 
           <OrbitControls
             enablePan={false}
             enableZoom={false}
-            maxPolarAngle={Math.PI / 2.2}
-            minPolarAngle={Math.PI / 4}
+            enableRotate
+            maxPolarAngle={Math.PI / 2.25}
+            minPolarAngle={Math.PI / 4.2}
           />
         </Canvas>
 
-        <div className="vila-3d-mobile-controls">
-          <button type="button" onClick={() => moverJogador(0, -PASSO)}>↑</button>
+        {/* 
+          CONTROLE MOBILE / TOUCH
 
-          <div>
-            <button type="button" onClick={() => moverJogador(-PASSO, 0)}>←</button>
-            <button type="button" onClick={() => moverJogador(PASSO, 0)}>→</button>
+          Lado esquerdo:
+          - controle circular de movimento.
+
+          Lado direito:
+          - bolinha amarela para pegar;
+          - botão verde para soltar;
+          - botão cinza para reiniciar.
+
+          No desktop, o teclado continua funcionando.
+        */}
+        <div className="vila-3d-gamepad">
+          <div className="vila-3d-joystick">
+            <button
+              type="button"
+              className="joy-btn joy-up"
+              aria-label="Mover para cima"
+              {...criarControleMovimento(0, -PASSO)}
+            >
+              ▲
+            </button>
+
+            <button
+              type="button"
+              className="joy-btn joy-left"
+              aria-label="Mover para esquerda"
+              {...criarControleMovimento(-PASSO, 0)}
+            >
+              ◀
+            </button>
+
+            <div className="joy-center" />
+
+            <button
+              type="button"
+              className="joy-btn joy-right"
+              aria-label="Mover para direita"
+              {...criarControleMovimento(PASSO, 0)}
+            >
+              ▶
+            </button>
+
+            <button
+              type="button"
+              className="joy-btn joy-down"
+              aria-label="Mover para baixo"
+              {...criarControleMovimento(0, PASSO)}
+            >
+              ▼
+            </button>
           </div>
 
-          <button type="button" onClick={() => moverJogador(0, PASSO)}>↓</button>
+          <div className="vila-3d-game-buttons">
+            <button
+              type="button"
+              className="mobile-action-ball grab"
+              aria-label="Pegar bloco"
+              onClick={pegarBlocoProximo}
+            >
+              <span className="mobile-action-dot" />
+            </button>
+
+            <button type="button" className="drop" onClick={soltarBloco}>
+              Soltar
+            </button>
+
+            <button type="button" className="restart" onClick={reiniciarFase}>
+              Reiniciar
+            </button>
+          </div>
         </div>
       </section>
 
@@ -235,13 +719,20 @@ function VilaBlocos3D({ personagemExterno, onVoltarMenu, onNivelChange }) {
           Reiniciar fase
         </button>
 
-        <button
-          type="button"
-          className="yellow"
-          onClick={proximaFase}
-          disabled={!faseConcluida}
-        >
-          Próxima fase →
+        {status === 'perdeu' && (
+          <button type="button" className="yellow" onClick={reiniciarFase}>
+            Tentar novamente
+          </button>
+        )}
+
+        {status === 'vitoria' && (
+          <button type="button" className="yellow" onClick={proximaFase}>
+            Próxima fase →
+          </button>
+        )}
+
+        <button type="button" onClick={voltarMenu}>
+          Voltar ao menu
         </button>
       </section>
     </main>
@@ -249,334 +740,32 @@ function VilaBlocos3D({ personagemExterno, onVoltarMenu, onNivelChange }) {
 }
 
 /*
-  MUNDO 3D
+  CÂMERA SEGUINDO O JOGADOR
 
-  Agrupa:
-  - terreno
-  - personagem
-  - letras
-  - plataforma da palavra
-  - elementos decorativos
-  - clima visual
+  Mantém uma visão superior inclinada.
+  Isso ajuda nos mapas maiores.
 */
-function MundoBlocos({
-  fase,
-  personagem,
-  posicaoJogador,
-  indicesColetados,
-  coletarLetra
-}) {
-  return (
-    <group>
-      <Terreno fase={fase} />
+function CameraFollow({ target }) {
+  const { camera } = useThree()
 
-      <ElementosDecorativos fase={fase} />
+  useFrame(() => {
+    const destinoX = target[0] + 7.5
+    const destinoY = 8
+    const destinoZ = target[2] + 9
 
-      <EfeitoClima fase={fase} />
+    camera.position.x += (destinoX - camera.position.x) * 0.045
+    camera.position.y += (destinoY - camera.position.y) * 0.045
+    camera.position.z += (destinoZ - camera.position.z) * 0.045
 
-      <Personagem3D
-        personagem={personagem}
-        position={posicaoJogador}
-      />
-
-      {fase.letras.map((item, index) => {
-        const coletada = indicesColetados.includes(index)
-
-        if (coletada) return null
-
-        return (
-          <Letra3D
-            key={`${fase.id}-${item.letra}-${index}`}
-            letra={item.letra}
-            position={item.posicao}
-            ativa={fase.palavra[indicesColetados.length] === item.letra}
-            onClick={() => coletarLetra(item.letra)}
-          />
-        )
-      })}
-
-      <PlataformaPalavra
-        palavra={fase.palavra}
-        letrasColetadas={indicesColetados.length}
-      />
-    </group>
-  )
-}
-
-/*
-  TERRENO EM BLOCOS
-
-  Cria um chão quadriculado com blocos.
-  O visual lembra mundo voxel/blocos sem usar assets externos.
-*/
-function Terreno({ fase }) {
-  const blocos = []
-
-  for (let x = -6; x <= 6; x += 1) {
-    for (let z = -5; z <= 5; z += 1) {
-      blocos.push([x, z])
-    }
-  }
-
-  return (
-    <group>
-      {blocos.map(([x, z]) => (
-        <mesh
-          key={`bloco-${x}-${z}`}
-          position={[x, -0.35, z]}
-          receiveShadow
-        >
-          <boxGeometry args={[0.98, 0.65, 0.98]} />
-          <meshStandardMaterial
-            color={(x + z) % 2 === 0 ? fase.chao : escurecerCor(fase.chao)}
-          />
-        </mesh>
-      ))}
-    </group>
-  )
-}
-
-/*
-  PERSONAGEM 3D
-
-  Boneco formado por cubos.
-  As cores respeitam a roupa escolhida no menu de criação.
-*/
-function Personagem3D({ personagem, position }) {
-  const roupa = obterCorRoupa(personagem.roupa)
-  const cabelo = obterCorCabelo(personagem.cabelo)
-  const sapato = obterCorSapato(personagem.sapato)
-
-  return (
-    <group position={position}>
-      <group position={[0, 0.25, 0]}>
-        <mesh position={[0, 1.45, 0]} castShadow>
-          <boxGeometry args={[0.72, 0.72, 0.72]} />
-          <meshStandardMaterial color="#f1b27a" />
-        </mesh>
-
-        <mesh position={[0, 1.86, -0.04]} castShadow>
-          <boxGeometry args={[0.82, 0.24, 0.82]} />
-          <meshStandardMaterial color={cabelo} />
-        </mesh>
-
-        <mesh position={[0, 0.8, 0]} castShadow>
-          <boxGeometry args={[0.78, 0.95, 0.42]} />
-          <meshStandardMaterial color={roupa} />
-        </mesh>
-
-        <mesh position={[-0.55, 0.82, 0]} castShadow>
-          <boxGeometry args={[0.25, 0.82, 0.28]} />
-          <meshStandardMaterial color={roupa} />
-        </mesh>
-
-        <mesh position={[0.55, 0.82, 0]} castShadow>
-          <boxGeometry args={[0.25, 0.82, 0.28]} />
-          <meshStandardMaterial color={roupa} />
-        </mesh>
-
-        <mesh position={[-0.22, 0.15, 0]} castShadow>
-          <boxGeometry args={[0.28, 0.58, 0.30]} />
-          <meshStandardMaterial color={sapato} />
-        </mesh>
-
-        <mesh position={[0.22, 0.15, 0]} castShadow>
-          <boxGeometry args={[0.28, 0.58, 0.30]} />
-          <meshStandardMaterial color={sapato} />
-        </mesh>
-      </group>
-    </group>
-  )
-}
-
-/*
-  LETRA 3D COLETÁVEL
-
-  Cada letra é um cubo com texto.
-  A letra correta da sequência fica destacada com cor amarela.
-*/
-function Letra3D({ letra, position, ativa, onClick }) {
-  const [flutuacao, setFlutuacao] = useState(0)
-
-  useFrame((state) => {
-    setFlutuacao(Math.sin(state.clock.elapsedTime * 2) * 0.12)
+    camera.lookAt(target[0], 0.8, target[2])
   })
-
-  return (
-    <group
-      position={[position[0], position[1] + flutuacao, position[2]]}
-      onClick={onClick}
-    >
-      <mesh castShadow>
-        <boxGeometry args={[0.9, 0.9, 0.9]} />
-        <meshStandardMaterial color={ativa ? '#ffc928' : '#2563eb'} />
-      </mesh>
-
-      <Text
-        position={[0, 0.02, 0.47]}
-        fontSize={0.45}
-        color={ativa ? '#3b220d' : '#ffffff'}
-        anchorX="center"
-        anchorY="middle"
-      >
-        {letra}
-      </Text>
-    </group>
-  )
-}
-
-/*
-  PLATAFORMA DA PALAVRA
-
-  Mostra a palavra a ser montada em blocos fixos no cenário.
-*/
-function PlataformaPalavra({ palavra, letrasColetadas }) {
-  const letras = palavra.split('')
-  const inicio = -(letras.length - 1) * 0.55
-
-  return (
-    <group position={[0, 0.45, 5.3]}>
-      {letras.map((letra, index) => {
-        const preenchida = index < letrasColetadas
-
-        return (
-          <group
-            key={`slot-3d-${letra}-${index}`}
-            position={[inicio + index * 1.1, 0, 0]}
-          >
-            <mesh castShadow receiveShadow>
-              <boxGeometry args={[0.92, 0.45, 0.92]} />
-              <meshStandardMaterial color={preenchida ? '#22c55e' : '#8b5a2b'} />
-            </mesh>
-
-            <Text
-              position={[0, 0.27, 0]}
-              rotation={[-Math.PI / 2, 0, 0]}
-              fontSize={0.38}
-              color="#ffffff"
-              anchorX="center"
-              anchorY="middle"
-            >
-              {preenchida ? letra : ''}
-            </Text>
-          </group>
-        )
-      })}
-    </group>
-  )
-}
-
-/*
-  ELEMENTOS DECORATIVOS
-
-  Árvores, pedras e blocos extras para dar aparência de mundo.
-*/
-function ElementosDecorativos({ fase }) {
-  return (
-    <group>
-      <Arvore position={[-5.5, 0.2, 4]} />
-      <Arvore position={[5.5, 0.2, -4]} />
-      <Arvore position={[-5.2, 0.2, -4.2]} />
-
-      <mesh position={[5, 0.05, 4]} castShadow>
-        <boxGeometry args={[1, 0.5, 1]} />
-        <meshStandardMaterial color={fase.lateralBloco} />
-      </mesh>
-
-      <mesh position={[-2, 0.08, -4.6]} castShadow>
-        <boxGeometry args={[1.2, 0.55, 1.2]} />
-        <meshStandardMaterial color="#64748b" />
-      </mesh>
-    </group>
-  )
-}
-
-function Arvore({ position }) {
-  return (
-    <group position={position}>
-      <mesh position={[0, 0.6, 0]} castShadow>
-        <boxGeometry args={[0.35, 1.1, 0.35]} />
-        <meshStandardMaterial color="#7c2d12" />
-      </mesh>
-
-      <mesh position={[0, 1.35, 0]} castShadow>
-        <boxGeometry args={[1.05, 1.05, 1.05]} />
-        <meshStandardMaterial color="#15803d" />
-      </mesh>
-    </group>
-  )
-}
-
-/*
-  EFEITOS DE CLIMA
-
-  Simples e leve para navegador:
-  - neve: pontinhos brancos
-  - chuva: linhas azuis
-  - frio: cubos claros simulando gelo
-*/
-function EfeitoClima({ fase }) {
-  if (fase.clima === 'neve') {
-    return (
-      <group>
-        {Array.from({ length: 28 }).map((_, index) => (
-          <mesh
-            key={`neve-${index}`}
-            position={[
-              (index % 7) * 1.8 - 5.4,
-              3 + (index % 4) * 0.5,
-              Math.floor(index / 7) * 2 - 4
-            ]}
-          >
-            <sphereGeometry args={[0.06, 8, 8]} />
-            <meshStandardMaterial color="#ffffff" />
-          </mesh>
-        ))}
-      </group>
-    )
-  }
-
-  if (fase.clima === 'chuva') {
-    return (
-      <group>
-        {Array.from({ length: 32 }).map((_, index) => (
-          <mesh
-            key={`chuva-${index}`}
-            position={[
-              (index % 8) * 1.5 - 5.2,
-              3.2 + (index % 4) * 0.42,
-              Math.floor(index / 8) * 2 - 4
-            ]}
-            rotation={[0.4, 0, 0.2]}
-          >
-            <boxGeometry args={[0.035, 0.45, 0.035]} />
-            <meshStandardMaterial color="#93c5fd" />
-          </mesh>
-        ))}
-      </group>
-    )
-  }
-
-  if (fase.clima === 'frio') {
-    return (
-      <group>
-        <mesh position={[-4, 0.12, 4.2]} castShadow>
-          <boxGeometry args={[1.1, 0.35, 1.1]} />
-          <meshStandardMaterial color="#dbeafe" />
-        </mesh>
-
-        <mesh position={[4.2, 0.12, -3.8]} castShadow>
-          <boxGeometry args={[1, 0.32, 1]} />
-          <meshStandardMaterial color="#bfdbfe" />
-        </mesh>
-      </group>
-    )
-  }
 
   return null
 }
 
-/* Utilitários */
+/* =========================================================
+   HELPERS
+========================================================= */
 
 function calcularDistanciaXZ(posicaoA, posicaoB) {
   const dx = posicaoA[0] - posicaoB[0]
@@ -589,59 +778,38 @@ function limitar(valor, minimo, maximo) {
   return Math.max(minimo, Math.min(maximo, valor))
 }
 
-function escurecerCor(cor) {
-  const mapa = {
-    '#4ade80': '#22c55e',
-    '#e0f2fe': '#bae6fd',
-    '#166534': '#14532d',
-    '#bae6fd': '#7dd3fc',
-    '#65a30d': '#4d7c0f'
-  }
+function formatarTempo(segundos) {
+  if (segundos === null || segundos === undefined) return '--:--'
 
-  return mapa[cor] || cor
+  const minutos = Math.floor(segundos / 60)
+  const resto = segundos % 60
+
+  return `${String(minutos).padStart(2, '0')}:${String(resto).padStart(2, '0')}`
 }
 
-function obterCorRoupa(roupa) {
-  const cores = {
-    azul: '#2563eb',
-    verde: '#16a34a',
-    vermelho: '#dc2626',
-    rosa: '#ec4899',
-    roxo: '#7c3aed',
-    turquesa: '#0891b2',
-    laranja: '#ea580c',
-    preto: '#111827'
-  }
-
-  return cores[roupa] || '#2563eb'
+/*
+  Calcula o limite de movimento de acordo com o tamanho do mapa.
+*/
+function obterLimiteMapa(fase) {
+  return Math.floor((fase.tamanhoMapa || 17) / 2) - 1
 }
 
-function obterCorCabelo(cabelo) {
-  const cores = {
-    castanho: '#5b3418',
-    preto: '#111827',
-    loiro: '#d99a19',
-    ruivo: '#c2410c',
-    'castanho-longo': '#5b3418',
-    'castanho-roxo': '#7c3aed',
-    cacheado: '#3b2213',
-    adulto: '#1f2937'
-  }
+/*
+  O jogador começa perto de uma ponta do mapa.
+*/
+function obterPosicaoInicialDaFase(fase) {
+  const limite = obterLimiteMapa(fase)
 
-  return cores[cabelo] || '#5b3418'
+  return [0, 0, limite - 1]
 }
 
-function obterCorSapato(sapato) {
-  const cores = {
-    preto: '#111827',
-    azul: '#1d4ed8',
-    vermelho: '#b91c1c',
-    marrom: '#7c2d12',
-    rosa: '#db2777',
-    dourado: '#ca8a04'
-  }
+/*
+  A plataforma fica do outro lado do mapa.
+*/
+function obterPosicaoPlataformaDaFase(fase) {
+  const limite = obterLimiteMapa(fase)
 
-  return cores[sapato] || '#111827'
+  return [0, 0.35, -limite + 1]
 }
 
 export default VilaBlocos3D

@@ -332,3 +332,722 @@
     height: 48px;
   }
 }
+/* =========================================================
+   COMPLEMENTOS DA PARTE 3
+   Status, botões de ação e painel de informações do jogo
+========================================================= */
+
+.vila-3d-message.vitoria {
+  border-color: #4ade80;
+  background: rgba(20, 83, 45, 0.88);
+}
+
+.vila-3d-message.perdeu {
+  border-color: #f87171;
+  background: rgba(127, 29, 29, 0.88);
+}
+
+.vila-3d-message.jogando {
+  border-color: rgba(79, 163, 255, 0.75);
+}
+
+.vila-3d-mini-status {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.vila-3d-mini-status span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 34px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(3, 18, 38, 0.72);
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-size: 0.88rem;
+  font-weight: 850;
+}
+
+.vila-3d-mini-status b {
+  color: #ffc928;
+}
+
+.vila-3d-action-pad {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  z-index: 6;
+  display: flex;
+  gap: 10px;
+}
+
+.vila-3d-action-pad button {
+  width: 94px;
+  min-height: 62px;
+  border-radius: 16px;
+  border: 3px solid #fff0a3;
+  background: linear-gradient(180deg, #ffd84d, #e79600);
+  color: #3b220d;
+  font-size: 1.05rem;
+  font-weight: 950;
+  cursor: pointer;
+  text-transform: uppercase;
+  box-shadow:
+    inset 0 -7px 0 rgba(0, 0, 0, 0.18),
+    0 7px 0 rgba(0, 0, 0, 0.24);
+}
+
+.vila-3d-action-pad button span {
+  display: block;
+  font-size: 0.72rem;
+}
+
+.vila-3d-actions button:nth-last-child(1) {
+  background: linear-gradient(180deg, #475569, #1e293b);
+  border-color: #94a3b8;
+}
+
+@media (max-width: 720px) {
+  .vila-3d-action-pad {
+    right: 12px;
+    bottom: 12px;
+    flex-direction: column;
+  }
+
+  .vila-3d-action-pad button {
+    width: 82px;
+    min-height: 54px;
+    font-size: 0.9rem;
+  }
+
+  .vila-3d-mini-status {
+    gap: 7px;
+  }
+
+  .vila-3d-mini-status span {
+    font-size: 0.78rem;
+    min-height: 30px;
+  }
+}
+/* =========================================================
+   PARTE 4 — CONTROLE MOBILE ESTILO JOGO
+   E OTIMIZAÇÕES DE USABILIDADE
+========================================================= */
+
+.vila-3d-canvas-wrap {
+  touch-action: none;
+}
+
+/* Esconde os controles antigos, caso ainda existam no CSS */
+.vila-3d-mobile-controls,
+.vila-3d-action-pad {
+  display: none;
+}
+
+.vila-3d-gamepad {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 18px;
+  z-index: 8;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 0 22px;
+  pointer-events: none;
+}
+
+.vila-3d-joystick,
+.vila-3d-game-buttons {
+  pointer-events: auto;
+}
+
+.vila-3d-joystick {
+  width: 172px;
+  height: 172px;
+  border-radius: 50%;
+  position: relative;
+  background:
+    radial-gradient(circle, rgba(255, 255, 255, 0.12), rgba(3, 18, 38, 0.82));
+  border: 3px solid rgba(79, 163, 255, 0.75);
+  box-shadow:
+    inset 0 -10px 0 rgba(0, 0, 0, 0.22),
+    0 10px 24px rgba(0, 0, 0, 0.3);
+}
+
+.vila-3d-joystick button {
+  position: absolute;
+  width: 54px;
+  height: 54px;
+  border-radius: 16px;
+  border: 3px solid #4fa3ff;
+  background: rgba(3, 18, 38, 0.92);
+  color: #ffffff;
+  font-size: 1.65rem;
+  font-weight: 950;
+  cursor: pointer;
+  box-shadow:
+    inset 0 -6px 0 rgba(0, 0, 0, 0.22),
+    0 5px 0 rgba(0, 0, 0, 0.22);
+  user-select: none;
+  touch-action: none;
+}
+
+.vila-3d-joystick button:active {
+  transform: translateY(3px);
+  box-shadow:
+    inset 0 -3px 0 rgba(0, 0, 0, 0.22),
+    0 2px 0 rgba(0, 0, 0, 0.22);
+}
+
+.vila-3d-joystick .up {
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.vila-3d-joystick .down {
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.vila-3d-joystick .left {
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.vila-3d-joystick .right {
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.vila-3d-joystick .center-dot {
+  position: absolute;
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(180deg, #4fa3ff, #0b65bd);
+  border: 3px solid #bcdcff;
+  box-shadow: inset 0 -5px 0 rgba(0, 0, 0, 0.2);
+}
+
+.vila-3d-game-buttons {
+  display: grid;
+  grid-template-columns: 92px 92px;
+  gap: 12px;
+  align-items: end;
+}
+
+.vila-3d-game-buttons button {
+  min-height: 72px;
+  border-radius: 18px;
+  border: 3px solid #fff0a3;
+  background: linear-gradient(180deg, #ffd84d, #e79600);
+  color: #3b220d;
+  font-weight: 950;
+  cursor: pointer;
+  text-transform: uppercase;
+  box-shadow:
+    inset 0 -8px 0 rgba(0, 0, 0, 0.2),
+    0 7px 0 rgba(0, 0, 0, 0.28);
+  user-select: none;
+  touch-action: none;
+}
+
+.vila-3d-game-buttons button:active {
+  transform: translateY(3px);
+}
+
+.vila-3d-game-buttons button span {
+  display: block;
+  margin-top: 3px;
+  font-size: 0.68rem;
+  opacity: 0.85;
+}
+
+.vila-3d-game-buttons .drop {
+  background: linear-gradient(180deg, #22c55e, #15803d);
+  border-color: #bbf7d0;
+  color: #ffffff;
+}
+
+.vila-3d-game-buttons .restart {
+  grid-column: span 2;
+  min-height: 48px;
+  background: linear-gradient(180deg, #475569, #1e293b);
+  border-color: #94a3b8;
+  color: #ffffff;
+}
+
+@media (max-width: 720px) {
+  .vila-3d-gamepad {
+    bottom: 12px;
+    padding: 0 12px;
+  }
+
+  .vila-3d-joystick {
+    width: 142px;
+    height: 142px;
+  }
+
+  .vila-3d-joystick button {
+    width: 46px;
+    height: 46px;
+    font-size: 1.35rem;
+  }
+
+  .vila-3d-joystick .center-dot {
+    width: 34px;
+    height: 34px;
+  }
+
+  .vila-3d-game-buttons {
+    grid-template-columns: 74px 74px;
+    gap: 9px;
+  }
+
+  .vila-3d-game-buttons button {
+    min-height: 62px;
+    font-size: 0.78rem;
+    border-radius: 16px;
+  }
+
+  .vila-3d-game-buttons .restart {
+    min-height: 42px;
+  }
+}
+
+@media (min-width: 1000px) {
+  .vila-3d-gamepad {
+    opacity: 0.92;
+  }
+}
+/* ==========================================
+   CONTROLES MOBILE - NOVO VISUAL
+   ========================================== */
+
+.mobile-controls-hud {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 18px;
+  z-index: 120;
+  pointer-events: none;
+}
+
+/* --------------------------
+   JOYSTICK
+-------------------------- */
+.mobile-joystick {
+  position: absolute;
+  left: 16px;
+  bottom: 6px;
+  width: 148px;
+  height: 148px;
+  pointer-events: none;
+}
+
+.joy-btn,
+.mobile-action-ball {
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Botões do joystick */
+.joy-btn {
+  position: absolute;
+  width: 52px;
+  height: 52px;
+  border: none;
+  border-radius: 50%;
+  background: linear-gradient(180deg, rgba(16, 73, 145, 0.96), rgba(7, 36, 83, 0.96));
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 900;
+  box-shadow:
+    0 8px 20px rgba(0, 0, 0, 0.28),
+    inset 0 2px 0 rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+}
+
+.joy-btn:active {
+  transform: scale(0.94);
+  background: linear-gradient(180deg, rgba(28, 96, 186, 1), rgba(9, 47, 108, 1));
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* Posicionamento em cruz */
+.joy-up {
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.joy-left {
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.joy-right {
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.joy-down {
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.joy-up:active {
+  transform: translateX(-50%) scale(0.94);
+}
+
+.joy-left:active {
+  transform: translateY(-50%) scale(0.94);
+}
+
+.joy-right:active {
+  transform: translateY(-50%) scale(0.94);
+}
+
+.joy-down:active {
+  transform: translateX(-50%) scale(0.94);
+}
+
+/* Miolo do joystick */
+.joy-center {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle at 30% 30%, #1e66d0, #0a2f6c);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 4px 10px rgba(0, 0, 0, 0.22);
+}
+
+/* --------------------------
+   BOTÃO REDONDO DE PEGAR
+-------------------------- */
+.mobile-action-ball {
+  position: absolute;
+  right: 18px;
+  bottom: 20px;
+  width: 76px;
+  height: 76px;
+  border: none;
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 30%, #ffd94c, #f3b300);
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.28),
+    inset 0 2px 0 rgba(255, 255, 255, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.mobile-action-ball:active {
+  transform: scale(0.94);
+  box-shadow:
+    0 5px 14px rgba(0, 0, 0, 0.24),
+    inset 0 2px 0 rgba(255, 255, 255, 0.25);
+}
+
+.mobile-action-ball-inner {
+  font-size: 26px;
+  line-height: 1;
+  color: #0b2b63;
+  font-weight: 900;
+}
+
+/* ==========================================
+   APENAS MOBILE
+   ========================================== */
+@media (min-width: 901px) {
+  .mobile-controls-hud {
+    display: none;
+  }
+}
+
+/* ==========================================
+   MOBILE MENOR
+   ========================================== */
+@media (max-width: 480px) {
+  .mobile-joystick {
+    width: 132px;
+    height: 132px;
+    left: 12px;
+    bottom: 2px;
+  }
+
+  .joy-btn {
+    width: 46px;
+    height: 46px;
+    font-size: 18px;
+  }
+
+  .joy-center {
+    width: 36px;
+    height: 36px;
+  }
+
+  .mobile-action-ball {
+    width: 68px;
+    height: 68px;
+    right: 14px;
+    bottom: 18px;
+  }
+
+  .mobile-action-ball-inner {
+    font-size: 22px;
+  }
+}
+/* =========================================================
+   CONTROLE MOBILE MELHORADO
+   Joystick circular + bolinha de pegar
+========================================================= */
+
+.vila-3d-gamepad {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 18px;
+  z-index: 20;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 0 20px;
+  pointer-events: none;
+}
+
+.vila-3d-joystick,
+.vila-3d-game-buttons {
+  pointer-events: auto;
+}
+
+.vila-3d-joystick {
+  width: 154px;
+  height: 154px;
+  position: relative;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(79, 163, 255, 0.22), rgba(3, 18, 38, 0.84));
+  border: 3px solid rgba(126, 200, 255, 0.72);
+  box-shadow:
+    inset 0 -10px 0 rgba(0, 0, 0, 0.22),
+    0 12px 28px rgba(0, 0, 0, 0.32);
+}
+
+.joy-btn {
+  position: absolute;
+  width: 48px;
+  height: 48px;
+  border: 0;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #1f7ddb, #073d83);
+  color: #ffffff;
+  font-size: 1.25rem;
+  font-weight: 950;
+  cursor: pointer;
+  box-shadow:
+    inset 0 -6px 0 rgba(0, 0, 0, 0.22),
+    0 6px 0 rgba(0, 0, 0, 0.24);
+  user-select: none;
+  touch-action: none;
+}
+
+.joy-btn:active {
+  transform: scale(0.92);
+}
+
+.joy-up {
+  top: 7px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.joy-down {
+  bottom: 7px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.joy-left {
+  left: 7px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.joy-right {
+  right: 7px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.joy-up:active {
+  transform: translateX(-50%) scale(0.92);
+}
+
+.joy-down:active {
+  transform: translateX(-50%) scale(0.92);
+}
+
+.joy-left:active {
+  transform: translateY(-50%) scale(0.92);
+}
+
+.joy-right:active {
+  transform: translateY(-50%) scale(0.92);
+}
+
+.joy-center {
+  position: absolute;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle at 35% 30%, #7ec8ff, #0b65bd);
+  border: 3px solid #dbeafe;
+  box-shadow:
+    inset 0 -5px 0 rgba(0, 0, 0, 0.18),
+    0 5px 14px rgba(0, 0, 0, 0.25);
+}
+
+.vila-3d-game-buttons {
+  display: grid;
+  grid-template-columns: 78px 78px;
+  gap: 10px;
+  align-items: end;
+}
+
+.vila-3d-game-buttons button {
+  border: 0;
+  cursor: pointer;
+  user-select: none;
+  touch-action: none;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.mobile-action-ball {
+  width: 78px;
+  height: 78px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 28%, #fff4a3, #ffc928 48%, #e79600);
+  box-shadow:
+    inset 0 3px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -8px 0 rgba(0, 0, 0, 0.16),
+    0 10px 24px rgba(0, 0, 0, 0.32);
+}
+
+.mobile-action-ball:active {
+  transform: scale(0.92);
+}
+
+.mobile-action-dot {
+  width: 28px;
+  height: 28px;
+  display: block;
+  margin: 0 auto;
+  border-radius: 50%;
+  background: #0b2b63;
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.22),
+    0 2px 6px rgba(0, 0, 0, 0.22);
+}
+
+.vila-3d-game-buttons .drop {
+  min-height: 62px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #22c55e, #15803d);
+  color: #ffffff;
+  box-shadow:
+    inset 0 -7px 0 rgba(0, 0, 0, 0.2),
+    0 7px 0 rgba(0, 0, 0, 0.24);
+}
+
+.vila-3d-game-buttons .restart {
+  grid-column: span 2;
+  min-height: 44px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #475569, #1e293b);
+  color: #ffffff;
+  box-shadow:
+    inset 0 -6px 0 rgba(0, 0, 0, 0.2),
+    0 6px 0 rgba(0, 0, 0, 0.22);
+}
+
+@media (max-width: 520px) {
+  .vila-3d-gamepad {
+    bottom: 12px;
+    padding: 0 12px;
+  }
+
+  .vila-3d-joystick {
+    width: 132px;
+    height: 132px;
+  }
+
+  .joy-btn {
+    width: 42px;
+    height: 42px;
+    font-size: 1.05rem;
+  }
+
+  .joy-center {
+    width: 34px;
+    height: 34px;
+  }
+
+  .vila-3d-game-buttons {
+    grid-template-columns: 68px 68px;
+    gap: 8px;
+  }
+
+  .mobile-action-ball {
+    width: 68px;
+    height: 68px;
+  }
+
+  .mobile-action-dot {
+    width: 24px;
+    height: 24px;
+  }
+
+  .vila-3d-game-buttons .drop {
+    min-height: 56px;
+    font-size: 0.75rem;
+  }
+
+  .vila-3d-game-buttons .restart {
+    min-height: 40px;
+    font-size: 0.72rem;
+  }
+}
