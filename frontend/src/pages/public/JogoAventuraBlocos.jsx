@@ -307,7 +307,7 @@ function TelaInicio({ personagem, maiorNivel, onEscolher, onCriar, onJogar }) {
 
         <div className="aventura-bottom-links">
           <Link to="/tutorial">← Voltar para jogos</Link>
-          <Link to="/doar-agora">💛 Doe Agora</Link>
+          
         </div>
       </div>
     </section>

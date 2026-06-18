@@ -101,7 +101,7 @@ function LetterBlock3D({ bloco, ativo = false, selecionado = false, onPegar }) {
           anchorX="center"
           anchorY="middle"
         >
-          E para pegar
+          PEGAR
         </Text>
       )}
     </group>
