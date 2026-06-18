@@ -13,6 +13,9 @@ import HeroNewsCarousel from '../../components/news/HeroNewsCarousel'
 
 import { listarNoticias } from '../../services/noticiasService'
 
+/*
+  LINKS OFICIAIS DAS REDES SOCIAIS
+*/
 const INSTAGRAM_URL =
   'https://www.instagram.com/larbatistaalbertinemeador?igsh=aXludWIycTE0amlw'
 
@@ -41,10 +44,8 @@ function Home() {
   }, [])
 
   /*
-    Filtra apenas notícias publicadas.
-
-    Mantemos essa lógica para evitar exibir rascunhos ou notícias em revisão
-    na página inicial.
+    Filtra apenas publicações com status "Publicado".
+    Isso evita mostrar rascunhos ou publicações não liberadas.
   */
   const noticiasPublicadas = noticias.filter(
     (item) =>
@@ -54,9 +55,8 @@ function Home() {
   )
 
   /*
-    Notícia usada como mensagem do dia.
-
-    O admin pode escolher:
+    Busca a notícia usada como "Mensagem do Dia".
+    O admin pode selecionar:
     - Mensagem do Dia
     - Ambos
   */
@@ -68,9 +68,8 @@ function Home() {
     ) || null
 
   /*
-    Notícias exibidas na Home.
-
-    O admin pode escolher:
+    Notícias que aparecem na home.
+    O admin pode selecionar:
     - Últimas Notícias
     - Ambos
   */
@@ -90,6 +89,9 @@ function Home() {
       ? `${textoMensagem.slice(0, 300)}...`
       : textoMensagem
 
+  /*
+    Ações rápidas exibidas logo abaixo do banner principal.
+  */
   const quickLinks = [
     {
       icon: '👥',
@@ -112,9 +114,9 @@ function Home() {
       to: '/noticias'
     },
     {
-  icon: '🎥',
-  title: 'Galeria de Vídeos',
-  to: '/galeria-videos'
+      icon: '🎥',
+      title: 'Galeria de Vídeos',
+      to: '/galeria-videos'
     },
     {
       icon: '💬',
@@ -128,33 +130,10 @@ function Home() {
     }
   ]
 
-  const projetos = [
-    {
-      image: quemSomos,
-      title: 'Acolhimento Institucional',
-      text: 'Casa, cuidado e proteção para crianças e adolescentes em situação de vulnerabilidade.',
-      link: '/quem-somos'
-    },
-    {
-      image: nossosProjetosImg,
-      title: 'Educação e Apoio Escolar',
-      text: 'Reforço escolar, formação e incentivo para um futuro com mais oportunidades.',
-      link: '/projetos'
-    },
-    {
-      image: doeAgoraImg,
-      title: 'Assistência e Bem-estar',
-      text: 'Alimentação, saúde, cuidado diário e apoio integral ao desenvolvimento humano.',
-      link: '/doar-agora'
-    },
-    {
-      image: transparenciaImg,
-      title: 'Transparência e Governança',
-      text: 'Relatórios, prestação de contas e documentos públicos da instituição.',
-      link: '/transparencia'
-    }
-  ]
-
+  /*
+    Notícias fallback.
+    São usadas caso ainda não existam notícias cadastradas/publicadas.
+  */
   const noticiasFallback = [
     {
       id: 'fallback-1',
@@ -190,6 +169,9 @@ function Home() {
     }
   ]
 
+  /*
+    Monta os cards das notícias para a seção "Últimas notícias".
+  */
   const noticiasCards =
     noticiasHome.length > 0
       ? noticiasHome.slice(0, 4).map((item) => ({
@@ -206,16 +188,24 @@ function Home() {
           link: `/noticias/${item._id || item.id}`
         }))
       : noticiasFallback
-    /*
-    Artigos exibidos na Home.
 
-    Mantemos todos os 7 artigos para dar aparência de portal informativo.
-    Se quiser mostrar só 4 futuramente, troque para:
-    artigosData.slice(0, 4)
+  /*
+    Mantemos os artigos completos para dar visual de portal.
   */
   const artigosHome = artigosData
+
+  /*
+    Link do botão do topo:
+    - se tiver usuário logado, leva para painel
+    - se não tiver, leva para login do doador
+  */
+  const linkEntrada = perfilUsuario?.link || '/doador/login'
+
   return (
     <main className="home-page" id="top">
+      {/* =========================================================
+         HERO / TOPO DA HOME
+      ========================================================== */}
       <section
         className="hero-premium"
         style={{ backgroundImage: `url(${heroImg})` }}
@@ -230,6 +220,7 @@ function Home() {
               />
             </Link>
 
+            {/* BOTÃO MOBILE DO MENU */}
             <button
               type="button"
               className="home-menu-button"
@@ -239,6 +230,7 @@ function Home() {
               ☰
             </button>
 
+            {/* MENU DE NAVEGAÇÃO */}
             <nav className={`home-menu ${menuAberto ? 'home-menu-open' : ''}`}>
               <Link to="/" onClick={() => setMenuAberto(false)}>
                 Home
@@ -264,7 +256,10 @@ function Home() {
                 Parceiros
               </Link>
 
-              <Link to="/governanca-institucional" onClick={() => setMenuAberto(false)}>
+              <Link
+                to="/governanca-institucional"
+                onClick={() => setMenuAberto(false)}
+              >
                 Governança
               </Link>
 
@@ -272,23 +267,30 @@ function Home() {
                 Tutorial
               </Link>
 
+              {/* BOTÃO MOBILE:
+                 agora o texto fica "Entrar", como você pediu */}
               <Link
-                to={perfilUsuario ? '/doador/painel' : '/doador/login'}
+                to={linkEntrada}
                 className="login-top-mobile"
                 onClick={() => setMenuAberto(false)}
+                style={styles.enterButtonMobile}
               >
-                Painel do Doador
+                Entrar
               </Link>
             </nav>
 
+            {/* BOTÃO DESKTOP:
+               agora o texto fica "Entrar", amarelo como nas subpáginas */}
             <Link
-              to={perfilUsuario ? '/doador/painel' : '/doador/login'}
+              to={linkEntrada}
               className="login-top"
+              style={styles.enterButtonDesktop}
             >
-              Painel do Doador
+              Entrar
             </Link>
           </header>
 
+          {/* TEXTO PRINCIPAL DO HERO */}
           <div className="hero-content">
             <h1>
               Transformando vidas,
@@ -319,6 +321,9 @@ function Home() {
         </div>
       </section>
 
+      {/* =========================================================
+         AÇÕES RÁPIDAS
+      ========================================================== */}
       <section className="quick-actions-section">
         <div className="quick-actions-card">
           {quickLinks.map((item) => (
@@ -333,6 +338,10 @@ function Home() {
         </div>
       </section>
 
+      {/* =========================================================
+         CARROSSEL DE NOTÍCIAS EM DESTAQUE
+         OBS: sem câmera preta, mantendo clean
+      ========================================================== */}
       <section className="news-feature-section">
         <div className="section-header compact">
           <h2>Notícias</h2>
@@ -342,12 +351,17 @@ function Home() {
           </Link>
         </div>
 
-        <HeroNewsCarousel
-          noticias={noticiasHome.slice(0, 5)}
-          fallbackImage={quemSomos}
-        />
+        <div style={styles.newsFeatureFrame}>
+          <HeroNewsCarousel
+            noticias={noticiasHome.slice(0, 5)}
+            fallbackImage={quemSomos}
+          />
+        </div>
       </section>
 
+      {/* =========================================================
+         ÚLTIMAS NOTÍCIAS
+      ========================================================== */}
       <section className="latest-news-section">
         <div className="section-header">
           <h2>Últimas notícias</h2>
@@ -373,6 +387,9 @@ function Home() {
         </div>
       </section>
 
+      {/* =========================================================
+         MENSAGEM DO DIA
+      ========================================================== */}
       <section className="message-day-section">
         <div className="message-day-content">
           <div className="message-day-title">
@@ -383,9 +400,7 @@ function Home() {
             <span>“</span>
 
             <div>
-              <p>
-                {textoCurto}
-              </p>
+              <p>{textoCurto}</p>
 
               <small>
                 {noticiaDestaque?.titulo || 'Isaías 54:13'}
@@ -409,6 +424,9 @@ function Home() {
         </div>
       </section>
 
+      {/* =========================================================
+         ARTIGOS E REFLEXÕES
+      ========================================================== */}
       <section className="articles-showcase-section">
         <div className="section-header">
           <div>
@@ -427,14 +445,14 @@ function Home() {
 
         <div className="articles-showcase-grid">
           {artigosHome.map((item) => (
-            <ArticleCard
-              key={item.slug}
-              artigo={item}
-            />
+            <ArticleCard key={item.slug} artigo={item} />
           ))}
         </div>
       </section>
 
+      {/* =========================================================
+         BANNER COMO AJUDAR
+      ========================================================== */}
       <section className="help-banner-section">
         <div className="help-banner-card">
           <div className="help-banner-main">
@@ -451,25 +469,17 @@ function Home() {
           </div>
 
           <div className="help-banner-actions">
-            <Link to="/doar-agora">
-              Faça uma doação
-            </Link>
-
-            <Link to="/voluntario">
-              Seja voluntário
-            </Link>
-
-            <Link to="/necessidades">
-              Doe roupas e alimentos
-            </Link>
-
-            <Link to="/parceiros">
-              Empresas parceiras
-            </Link>
+            <Link to="/doar-agora">Faça uma doação</Link>
+            <Link to="/voluntario">Seja voluntário</Link>
+            <Link to="/necessidades">Doe roupas e alimentos</Link>
+            <Link to="/parceiros">Empresas parceiras</Link>
           </div>
         </div>
       </section>
 
+      {/* =========================================================
+         IMPACTO SOCIAL
+      ========================================================== */}
       <section className="impact-wide-section">
         <div className="impact-wide-image">
           <img
@@ -479,13 +489,9 @@ function Home() {
         </div>
 
         <div className="impact-wide-content">
-          <span className="section-kicker">
-            Impacto social
-          </span>
+          <span className="section-kicker">Impacto social</span>
 
-          <h2>
-            Nosso impacto em números
-          </h2>
+          <h2>Nosso impacto em números</h2>
 
           <p>
             Cada número representa cuidado, presença, compromisso e esperança
@@ -528,13 +534,16 @@ function Home() {
         </aside>
       </section>
 
+      {/* =========================================================
+         REDES SOCIAIS
+         Ajustado para UMA IMAGEM GRANDE por card
+         em vez das 3 imagens picotadas
+      ========================================================== */}
       <section className="social-section">
         <div className="section-header">
           <h2>Acompanhe nossas redes</h2>
 
-          <span>
-            Siga-nos nas redes sociais →
-          </span>
+          <span>Siga-nos nas redes sociais →</span>
         </div>
 
         <div className="social-grid">
@@ -542,9 +551,8 @@ function Home() {
             type="Instagram"
             handle="@larbatistaalbertinemeador"
             href={INSTAGRAM_URL}
-            imageOne={quemSomos}
-            imageTwo={nossosProjetosImg}
-            imageThree={doeAgoraImg}
+            image={quemSomos}
+            alt="Prévia do Instagram do Lar Batista"
             button="Ver no Instagram →"
           />
 
@@ -552,14 +560,16 @@ function Home() {
             type="Facebook"
             handle="/larbatistaam"
             href={FACEBOOK_URL}
-            imageOne={heroImg}
-            imageTwo={transparenciaImg}
-            imageThree={quemSomos}
+            image={heroImg}
+            alt="Prévia do Facebook do Lar Batista"
             button="Ver no Facebook →"
           />
         </div>
       </section>
 
+      {/* =========================================================
+         RODAPÉ
+      ========================================================== */}
       <footer className="home-footer">
         <div>
           <div className="footer-logo-box">
@@ -615,6 +625,7 @@ function Home() {
         </div>
       </footer>
 
+      {/* BOTÕES FLUTUANTES */}
       <Link to="/doar-agora" className="float-donate">
         ❤
       </Link>
@@ -626,6 +637,9 @@ function Home() {
   )
 }
 
+/* =========================================================
+   COMPONENTE DE AÇÃO RÁPIDA
+========================================================= */
 function QuickAction({ icon, title, to, href }) {
   const content = (
     <>
@@ -649,31 +663,9 @@ function QuickAction({ icon, title, to, href }) {
   )
 }
 
-function ProjectCard({ image, title, text, link }) {
-  return (
-    <article className="project-card">
-      <img src={image} alt={title} />
-
-      <div>
-        <h3>{title}</h3>
-        <p>{text}</p>
-
-        <Link to={link}>
-          Saiba mais →
-        </Link>
-      </div>
-    </article>
-  )
-}
-/*
-  Card de artigo usado na Home.
-
-  Ele não usa imagem externa. O visual é criado por CSS com:
-  - tema
-  - ícone
-  - gradiente
-  Isso facilita manutenção e evita depender de arquivos de imagem.
-*/
+/* =========================================================
+   CARD DE ARTIGO
+========================================================= */
 function ArticleCard({ artigo }) {
   return (
     <article className="article-home-card">
@@ -697,6 +689,10 @@ function ArticleCard({ artigo }) {
     </article>
   )
 }
+
+/* =========================================================
+   CARD DE NOTÍCIA
+========================================================= */
 function NewsCard({ image, date, title, text, categoria, id, link }) {
   const resumo =
     text?.length > 120
@@ -714,9 +710,7 @@ function NewsCard({ image, date, title, text, categoria, id, link }) {
       <div className="news-content">
         <h3>{title}</h3>
 
-        <p className="news-resumo">
-          {resumo}
-        </p>
+        <p className="news-resumo">{resumo}</p>
 
         <div className="news-card-links">
           <Link to={destino} className="news-read-link">
@@ -734,26 +728,31 @@ function NewsCard({ image, date, title, text, categoria, id, link }) {
   )
 }
 
+/* =========================================================
+   CARD SOCIAL
+   Agora usa UMA imagem grande em destaque
+========================================================= */
 function SocialCard({
   type,
   handle,
   href,
-  imageOne,
-  imageTwo,
-  imageThree,
+  image,
+  alt,
   button
 }) {
   return (
-    <article className="social-card">
+    <article className="social-card" style={styles.socialCardInline}>
       <div className="social-card-header">
         <strong>{type}</strong>
         <span>{handle}</span>
       </div>
 
-      <div className="social-card-images">
-        <img src={imageOne} alt={`${type} 1`} />
-        <img src={imageTwo} alt={`${type} 2`} />
-        <img src={imageThree} alt={`${type} 3`} />
+      <div style={styles.socialSingleImageBox}>
+        <img
+          src={image}
+          alt={alt}
+          style={styles.socialSingleImage}
+        />
       </div>
 
       <a
@@ -768,6 +767,9 @@ function SocialCard({
   )
 }
 
+/* =========================================================
+   FUNÇÕES AUXILIARES
+========================================================= */
 function obterMidiaPrincipal(item) {
   return (
     item.imagemUrl ||
@@ -791,10 +793,8 @@ function formatarDataNoticia(item) {
 }
 
 /*
-  Procura usuário logado sem quebrar caso as chaves mudem.
-
-  Isso permite exibir o botão como perfil quando houver algum dado salvo
-  no localStorage por login de doador, usuário ou admin.
+  Procura usuário logado no localStorage sem quebrar
+  caso o nome das chaves varie no futuro.
 */
 function obterUsuarioLogado() {
   if (typeof window === 'undefined') return null
@@ -838,6 +838,85 @@ function obterUsuarioLogado() {
   }
 
   return null
+}
+
+/* =========================================================
+   ESTILOS INLINE COMPLEMENTARES
+   Usados apenas nos pontos que você pediu para ajustar
+   sem depender de mudar todo o CSS.
+========================================================= */
+const styles = {
+  /*
+    Botão "Entrar" desktop
+    Amarelo igual à identidade das subpáginas.
+  */
+  enterButtonDesktop: {
+    background: '#f4c534',
+    color: '#0B3D91',
+    fontWeight: '800',
+    borderRadius: '16px',
+    padding: '14px 28px',
+    textDecoration: 'none',
+    boxShadow: '0 6px 18px rgba(0,0,0,0.12)'
+  },
+
+  /*
+    Botão "Entrar" mobile
+  */
+  enterButtonMobile: {
+    background: '#f4c534',
+    color: '#0B3D91',
+    fontWeight: '800',
+    borderRadius: '12px',
+    padding: '12px 18px',
+    textDecoration: 'none',
+    display: 'inline-block',
+    marginTop: '8px'
+  },
+
+  /*
+    Moldura do carrossel de notícias.
+    Mantém mais limpo e com aparência de quadro.
+  */
+  newsFeatureFrame: {
+    background: '#ffffff',
+    borderRadius: '28px',
+    padding: '18px',
+    boxShadow: '0 12px 32px rgba(0,0,0,0.08)',
+    overflow: 'hidden'
+  },
+
+  /*
+    Card social com aparência elegante.
+  */
+  socialCardInline: {
+    background: '#ffffff',
+    borderRadius: '24px',
+    boxShadow: '0 12px 28px rgba(0,0,0,0.08)'
+  },
+
+  /*
+    Caixa da imagem única das redes.
+  */
+  socialSingleImageBox: {
+    width: '100%',
+    height: '230px',
+    overflow: 'hidden',
+    borderRadius: '18px',
+    marginTop: '14px',
+    marginBottom: '18px',
+    background: '#f8fafc'
+  },
+
+  /*
+    Imagem única das redes.
+  */
+  socialSingleImage: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+    display: 'block'
+  }
 }
 
 export default Home
