@@ -1,100 +1,130 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
   <url>
     <loc>https://www.larbatistaalbertinemeador.com.br/</loc>
+    <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
 
   <url>
     <loc>https://www.larbatistaalbertinemeador.com.br/quem-somos</loc>
+    <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
 
   <url>
     <loc>https://www.larbatistaalbertinemeador.com.br/projetos</loc>
+    <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
 
   <url>
     <loc>https://www.larbatistaalbertinemeador.com.br/transparencia</loc>
+    <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
 
   <url>
     <loc>https://www.larbatistaalbertinemeador.com.br/governanca-institucional</loc>
+    <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
     <loc>https://www.larbatistaalbertinemeador.com.br/parceiros</loc>
+    <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
     <loc>https://www.larbatistaalbertinemeador.com.br/voluntario</loc>
+    <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
     <loc>https://www.larbatistaalbertinemeador.com.br/doar-agora</loc>
+    <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
 
   <url>
     <loc>https://www.larbatistaalbertinemeador.com.br/noticias</loc>
+    <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <url>
     <loc>https://www.larbatistaalbertinemeador.com.br/vagas</loc>
+    <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <url>
     <loc>https://www.larbatistaalbertinemeador.com.br/tutorial</loc>
+    <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
+
+  <url>
+    <loc>https://www.larbatistaalbertinemeador.com.br/artigos</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://www.larbatistaalbertinemeador.com.br/artigos/caridade-transforma-vidas</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://www.larbatistaalbertinemeador.com.br/artigos/mente-humana-e-empatia</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://www.larbatistaalbertinemeador.com.br/artigos/psicologia-da-solidariedade</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://www.larbatistaalbertinemeador.com.br/artigos/violencia-domestica-identificar-buscar-apoio</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://www.larbatistaalbertinemeador.com.br/artigos/criancas-tecnologia-comportamento-aprendizagem</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://www.larbatistaalbertinemeador.com.br/artigos/infancia-vulnerabilidade-brasil-dados</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://www.larbatistaalbertinemeador.com.br/artigos/globalizacao-tecnologia-ia-impactos</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://www.larbatistaalbertinemeador.com.br/galeria-videos</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <url>
+    <loc>https://www.larbatistaalbertinemeador.com.br/jogos/aventura-blocos</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
 </urlset>
-<url>
-  <loc>https://www.larbatistaalbertinemeador.com.br/artigos</loc>
-  <priority>0.8</priority>
-</url>
-
-<url>
-  <loc>https://www.larbatistaalbertinemeador.com.br/artigos/caridade-transforma-vidas</loc>
-  <priority>0.7</priority>
-</url>
-
-<url>
-  <loc>https://www.larbatistaalbertinemeador.com.br/artigos/mente-humana-e-empatia</loc>
-  <priority>0.7</priority>
-</url>
-
-<url>
-  <loc>https://www.larbatistaalbertinemeador.com.br/artigos/psicologia-da-solidariedade</loc>
-  <priority>0.7</priority>
-</url>
-
-<url>
-  <loc>https://www.larbatistaalbertinemeador.com.br/artigos/violencia-domestica-identificar-buscar-apoio</loc>
-  <priority>0.7</priority>
-</url>
-
-<url>
-  <loc>https://www.larbatistaalbertinemeador.com.br/artigos/criancas-tecnologia-comportamento-aprendizagem</loc>
-  <priority>0.7</priority>
-</url>
-
-<url>
-  <loc>https://www.larbatistaalbertinemeador.com.br/artigos/infancia-vulnerabilidade-brasil-dados</loc>
-  <priority>0.7</priority>
-</url>
-
-<url>
-  <loc>https://www.larbatistaalbertinemeador.com.br/artigos/globalizacao-tecnologia-ia-impactos</loc>
-  <priority>0.7</priority>
-</url>
-<url>
-  <loc>https://www.larbatistaalbertinemeador.com.br/galeria-videos</loc>
-  <priority>0.7</priority>
-</url>
