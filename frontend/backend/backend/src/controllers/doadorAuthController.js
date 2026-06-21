@@ -5,14 +5,56 @@ import Doador from '../models/Doador.js'
 import PasswordResetToken from '../models/PasswordResetToken.js'
 import { enviarEmailRecuperacao } from '../services/emailService.js'
 
+/*
+  CONTROLLER: AUTENTICAÇÃO DO DOADOR
+
+  Responsável por:
+  - cadastrar doador;
+  - fazer login;
+  - solicitar código de recuperação;
+  - redefinir senha.
+
+  Ajustes desta versão:
+  - Recebe e salva o campo "genero".
+  - Retorna "genero" no login.
+  - Retorna mais dados do doador após cadastro.
+  - Corrige mensagens de erro do cadastro.
+  - Evita erro quando documento vem vazio.
+*/
+
 function senhaForte(senha) {
-  return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.#_-]).{8,}$/.test(senha)
+  return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.#_-]).{8,}$/.test(
+    senha
+  )
 }
 
 function gerarCodigo() {
   return String(Math.floor(100000 + Math.random() * 900000))
 }
 
+function normalizarEmail(email) {
+  return String(email || '').trim().toLowerCase()
+}
+
+function limparDocumento(documento) {
+  return String(documento || '').replace(/\D/g, '')
+}
+
+/*
+  CADASTRAR DOADOR
+
+  O frontend envia:
+  - nome
+  - email
+  - senha
+  - telefone
+  - documento
+  - genero
+  - tipoPessoa
+  - pais
+  - estado
+  - municipio
+*/
 export async function registrarDoador(req, res) {
   try {
     const {
@@ -21,15 +63,16 @@ export async function registrarDoador(req, res) {
       senha,
       telefone,
       documento,
+      genero,
       tipoPessoa,
       pais,
       estado,
       municipio
     } = req.body
 
-    if (!nome || !email || !senha) {
+    if (!nome || !email || !senha || !documento) {
       return res.status(400).json({
-        mensagem: 'Informe nome, e-mail e senha.'
+        mensagem: 'Informe nome, e-mail, senha e documento.'
       })
     }
 
@@ -40,8 +83,14 @@ export async function registrarDoador(req, res) {
       })
     }
 
-    const emailNormalizado = email.trim().toLowerCase()
-    const documentoLimpo = documento.replace(/\D/g, '')
+    const emailNormalizado = normalizarEmail(email)
+    const documentoLimpo = limparDocumento(documento)
+
+    if (!documentoLimpo) {
+      return res.status(400).json({
+        mensagem: 'Informe um CPF/CNPJ válido.'
+      })
+    }
 
     const existe = await Doador.findOne({
       email: emailNormalizado
@@ -52,6 +101,7 @@ export async function registrarDoador(req, res) {
         mensagem: 'Este e-mail já está cadastrado.'
       })
     }
+
     const documentoExiste = await Doador.findOne({
       documento: documentoLimpo
     })
@@ -62,18 +112,20 @@ export async function registrarDoador(req, res) {
           'Já existe um cadastro vinculado a este CPF/CNPJ. Utilize a opção "Esqueci minha senha" para recuperar o acesso.'
       })
     }
+
     const senhaHash = await bcrypt.hash(senha, 10)
 
     const doador = await Doador.create({
       nome: nome.trim(),
       email: emailNormalizado,
       senha: senhaHash,
-      telefone,
+      telefone: telefone || '',
       documento: documentoLimpo,
-      tipoPessoa,
-      pais,
-      estado,
-      municipio
+      genero: genero || 'Prefiro não dizer',
+      tipoPessoa: tipoPessoa || 'fisica',
+      pais: pais || 'Brasil',
+      estado: estado || '',
+      municipio: municipio || ''
     })
 
     return res.status(201).json({
@@ -81,20 +133,32 @@ export async function registrarDoador(req, res) {
       doador: {
         id: doador._id,
         nome: doador.nome,
-        email: doador.email
+        email: doador.email,
+        telefone: doador.telefone,
+        documento: doador.documento,
+        genero: doador.genero,
+        tipoPessoa: doador.tipoPessoa,
+        pais: doador.pais,
+        estado: doador.estado,
+        municipio: doador.municipio
       }
     })
-    } catch (error) {
-    console.error('Erro recuperação doador:', error)
+  } catch (error) {
+    console.error('Erro ao cadastrar doador:', error)
 
     return res.status(500).json({
-      mensagem:
-        'Não foi possível enviar o código de recuperação. Verifique a configuração de e-mail do sistema.',
+      mensagem: 'Erro ao cadastrar doador.',
       erro: error.message
     })
   }
 }
 
+/*
+  LOGIN DO DOADOR
+
+  Retorna os dados necessários para salvar o doador logado
+  no localStorage do frontend.
+*/
 export async function loginDoador(req, res) {
   try {
     const { email, senha } = req.body
@@ -106,7 +170,7 @@ export async function loginDoador(req, res) {
     }
 
     const doador = await Doador.findOne({
-      email: email.trim().toLowerCase()
+      email: normalizarEmail(email)
     })
 
     if (!doador) {
@@ -143,6 +207,7 @@ export async function loginDoador(req, res) {
         email: doador.email,
         telefone: doador.telefone,
         documento: doador.documento,
+        genero: doador.genero || 'Prefiro não dizer',
         tipoPessoa: doador.tipoPessoa,
         pais: doador.pais,
         estado: doador.estado,
@@ -150,6 +215,8 @@ export async function loginDoador(req, res) {
       }
     })
   } catch (error) {
+    console.error('Erro ao fazer login doador:', error)
+
     return res.status(500).json({
       mensagem: 'Erro ao fazer login.',
       erro: error.message
@@ -157,6 +224,11 @@ export async function loginDoador(req, res) {
   }
 }
 
+/*
+  SOLICITAR RECUPERAÇÃO DE SENHA
+
+  Gera código de 6 dígitos e envia por e-mail.
+*/
 export async function solicitarRecuperacaoSenha(req, res) {
   try {
     const { email } = req.body
@@ -167,7 +239,7 @@ export async function solicitarRecuperacaoSenha(req, res) {
       })
     }
 
-    const emailNormalizado = email.trim().toLowerCase()
+    const emailNormalizado = normalizarEmail(email)
 
     const doador = await Doador.findOne({
       email: emailNormalizado
@@ -218,6 +290,15 @@ export async function solicitarRecuperacaoSenha(req, res) {
   }
 }
 
+/*
+  REDEFINIR SENHA DO DOADOR
+
+  Confere:
+  - e-mail;
+  - código;
+  - validade do código;
+  - força da nova senha.
+*/
 export async function redefinirSenhaDoador(req, res) {
   try {
     const { email, codigo, novaSenha } = req.body
@@ -235,8 +316,8 @@ export async function redefinirSenhaDoador(req, res) {
       })
     }
 
-    const emailNormalizado = email.trim().toLowerCase()
-    const codigoLimpo = codigo.trim()
+    const emailNormalizado = normalizarEmail(email)
+    const codigoLimpo = String(codigo || '').trim()
 
     const registroToken = await PasswordResetToken.findOne({
       email: emailNormalizado,

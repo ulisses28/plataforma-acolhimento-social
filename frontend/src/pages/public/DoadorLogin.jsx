@@ -8,7 +8,6 @@ import {
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import BackButton from '../../components/ui/BackButton'
-import { criarDoacao } from '../../services/doacoesService'
 
 import {
   registrarDoadorBackend,
@@ -23,8 +22,33 @@ import {
   listarMunicipiosPorEstado
 } from '../../services/localidadesService'
 
+/*
+  PÁGINA: ÁREA DO DOADOR
+
+  Objetivo desta versão:
+  - Manter login, cadastro e recuperação de senha.
+  - Adicionar campo "Gênero" no cadastro.
+  - Enviar o gênero para o backend no cadastro.
+  - Salvar o gênero também no localStorage para compatibilidade com telas antigas.
+  - Se o usuário quiser doar agora, após cadastrar será levado para /doador/doar.
+  - Não registra Pix/TED automaticamente no cadastro, porque agora Pix/TED
+    precisam ser gerados na tela própria de doação.
+*/
+
 const DOADORES_KEY = 'doadores_lar_batista'
 const DOADOR_LOGADO_KEY = 'doador_logado_lar_batista'
+
+const OPCOES_GENERO = [
+  'Prefiro não dizer',
+  'Feminino',
+  'Masculino',
+  'Mulher trans',
+  'Homem trans',
+  'Pessoa não binária',
+  'Agênero',
+  'Gênero fluido',
+  'Outro'
+]
 
 function DoadorLogin() {
   const navigate = useNavigate()
@@ -45,6 +69,7 @@ function DoadorLogin() {
   const [nome, setNome] = useState('')
   const [tipoPessoa, setTipoPessoa] = useState('fisica')
   const [documento, setDocumento] = useState('')
+  const [genero, setGenero] = useState('Prefiro não dizer')
   const [telefone, setTelefone] = useState('')
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
@@ -54,15 +79,13 @@ function DoadorLogin() {
   const [paises, setPaises] = useState([])
   const [estados, setEstados] = useState([])
   const [municipios, setMunicipios] = useState([])
+
   const [pais, setPais] = useState('BR')
   const [estadoId, setEstadoId] = useState('')
   const [estadoNome, setEstadoNome] = useState('')
   const [municipio, setMunicipio] = useState('')
 
   const [querDoar, setQuerDoar] = useState('')
-  const [forma, setForma] = useState('')
-  const [valorTED, setValorTED] = useState('')
-  const [comprovante, setComprovante] = useState('')
 
   useEffect(() => {
     async function carregarLocalidades() {
@@ -82,21 +105,28 @@ function DoadorLogin() {
       }
 
       const lista = await listarMunicipiosPorEstado(estadoId)
+
       setMunicipios(lista)
       setMunicipio('')
     }
 
-      carregarMunicipios()
-        }, [estadoId])
-  useEffect(() => {
-  const emailRecuperacao = localStorage.getItem('email_recuperacao_doador')
+    carregarMunicipios()
+  }, [estadoId])
 
-  if (emailRecuperacao) {
-    setEmailLogin(emailRecuperacao)
-    setModo('recuperar')
-    localStorage.removeItem('email_recuperacao_doador')
-  }
+  /*
+    Se alguma outra tela pedir recuperação de senha e salvar o e-mail
+    no localStorage, abrimos direto a aba de recuperação.
+  */
+  useEffect(() => {
+    const emailRecuperacao = localStorage.getItem('email_recuperacao_doador')
+
+    if (emailRecuperacao) {
+      setEmailLogin(emailRecuperacao)
+      setModo('recuperar')
+      localStorage.removeItem('email_recuperacao_doador')
+    }
   }, [])
+
   function listarDoadoresLocais() {
     const dados = localStorage.getItem(DOADORES_KEY)
     return dados ? JSON.parse(dados) : []
@@ -122,10 +152,27 @@ function DoadorLogin() {
     )
   }
 
+  function limparFormularioCadastro() {
+    setNome('')
+    setTipoPessoa('fisica')
+    setDocumento('')
+    setGenero('Prefiro não dizer')
+    setTelefone('')
+    setEmail('')
+    setSenha('')
+    setConfirmarSenha('')
+    setAceitouLGPD(false)
+    setPais('BR')
+    setEstadoId('')
+    setEstadoNome('')
+    setMunicipio('')
+    setMunicipios([])
+    setQuerDoar('')
+  }
+
   /*
     LOGIN DO DOADOR
-    Agora o login não compara senha no localStorage.
-    Ele chama o backend, que valida a senha criptografada com bcrypt.
+    Chama o backend, que valida senha criptografada.
   */
   async function entrarComoDoador(e) {
     e.preventDefault()
@@ -157,19 +204,23 @@ function DoadorLogin() {
 
   /*
     CADASTRO DO DOADOR
-    O cadastro principal vai para o backend/MongoDB.
-    O localStorage fica apenas como cópia de compatibilidade para telas antigas.
+    Agora inclui o campo "genero".
+    O cadastro vai para o backend e também é mantido localmente por compatibilidade.
   */
   async function cadastrarDoador(e) {
     e.preventDefault()
     setMensagem('')
 
     if (!nome.trim()) return mostrarErro('Informe o nome ou razão social.')
-    if (!documento.trim()) return mostrarErro('Informe CPF/RG ou CNPJ.')
+    if (!documento.trim()) return mostrarErro('Informe CPF ou CNPJ.')
+    if (!genero.trim()) {
+      return mostrarErro('Selecione o gênero ou marque Prefiro não dizer.')
+    }
     if (!telefone.trim()) return mostrarErro('Informe o telefone.')
     if (!email.trim()) return mostrarErro('Informe o e-mail.')
 
     if (!validarEmail(email)) return mostrarErro('Informe um e-mail válido.')
+
     if (!validarTelefone(telefone)) {
       return mostrarErro('Informe um telefone válido com DDD.')
     }
@@ -184,6 +235,7 @@ function DoadorLogin() {
 
     if (!pais) return mostrarErro('Selecione o país.')
     if (pais === 'BR' && !estadoId) return mostrarErro('Selecione o estado.')
+
     if (pais === 'BR' && !municipio) {
       return mostrarErro('Selecione o município.')
     }
@@ -209,14 +261,6 @@ function DoadorLogin() {
       return mostrarErro('Informe se deseja fazer uma doação agora.')
     }
 
-    if (querDoar === 'sim' && !forma) {
-      return mostrarErro('Selecione Pix ou TED.')
-    }
-
-    if (querDoar === 'sim' && forma === 'TED' && !valorTED.trim()) {
-      return mostrarErro('Informe o valor da TED.')
-    }
-
     const paisSelecionado =
       paises.find((p) => p.codigo === pais)?.nome || pais
 
@@ -226,6 +270,7 @@ function DoadorLogin() {
       categoria: tipoPessoa === 'juridica' ? 'Pessoa Jurídica' : 'Pessoa Física',
       tipoPessoa,
       documento: documento.trim(),
+      genero,
       telefone: telefone.trim(),
       email: email.trim().toLowerCase(),
       paisCodigo: pais,
@@ -247,6 +292,7 @@ function DoadorLogin() {
         senha: senha.trim(),
         telefone: novoDoador.telefone,
         documento: novoDoador.documento,
+        genero: novoDoador.genero,
         tipoPessoa: novoDoador.tipoPessoa,
         pais: novoDoador.pais,
         estado: novoDoador.estado,
@@ -266,42 +312,28 @@ function DoadorLogin() {
 
       salvarDoadoresLocais([doadorSeguro, ...semDuplicado])
 
-      if (querDoar === 'sim') {
-        criarDoacao({
-          doador: doadorSeguro,
-          tipoDoacao: 'Financeira',
-          forma,
-          valor: forma === 'TED' ? valorTED : '',
-          comprovante,
-          lgpdAceito: true,
-          lgpdAceitoEm: new Date().toLocaleString('pt-BR')
-        })
-      }
-
       localStorage.setItem(DOADOR_LOGADO_KEY, JSON.stringify(doadorSeguro))
 
       mostrarSucesso(
-        'Usuário cadastrado com sucesso! Redirecionando para o painel...'
+        querDoar === 'sim'
+          ? 'Usuário cadastrado com sucesso! Redirecionando para a doação...'
+          : 'Usuário cadastrado com sucesso! Redirecionando para o painel...'
       )
 
+      limparFormularioCadastro()
+
       setTimeout(() => {
-        navigate('/doador/painel')
-      }, 1800)
-    }catch (error) {
-
+        navigate(querDoar === 'sim' ? '/doador/doar' : '/doador/painel')
+      }, 1600)
+    } catch (error) {
       console.log('ERRO COMPLETO:', error)
-
-      if (error.data) {
-        console.log('DATA:', error.data)
-      }
 
       mostrarErro(
         error?.data?.mensagem ||
-        error?.mensagem ||
-        error?.message ||
-        'Erro ao cadastrar doador.'
+          error?.mensagem ||
+          error?.message ||
+          'Erro ao cadastrar doador.'
       )
-
     } finally {
       setCarregando(false)
     }
@@ -309,82 +341,86 @@ function DoadorLogin() {
 
   /*
     PRIMEIRA ETAPA DA RECUPERAÇÃO:
-    envia um código de 6 dígitos para o e-mail cadastrado.
+    Envia um código de 6 dígitos para o e-mail cadastrado.
   */
   async function solicitarRecuperacaoSenhaDoador() {
-  if (!emailLogin.trim()) {
-    mostrarErro(
-      'Digite seu e-mail cadastrado antes de solicitar recuperação de senha.'
-    )
-    return
+    if (!emailLogin.trim()) {
+      mostrarErro(
+        'Digite seu e-mail cadastrado antes de solicitar recuperação de senha.'
+      )
+      return
+    }
+
+    try {
+      setCarregando(true)
+
+      await solicitarCodigoRecuperacao(emailLogin.trim().toLowerCase())
+
+      mostrarSucesso('Código de recuperação enviado para o e-mail cadastrado.')
+      setModo('recuperar')
+    } catch (error) {
+      mostrarErro(
+        error?.response?.data?.mensagem ||
+          error?.data?.mensagem ||
+          error?.mensagem ||
+          error?.message ||
+          'Não foi possível enviar o código de recuperação de senha.'
+      )
+    } finally {
+      setCarregando(false)
+    }
   }
 
-  try {
-    setCarregando(true)
-
-    await solicitarCodigoRecuperacao(
-      emailLogin.trim().toLowerCase()
-    )
-
-    mostrarSucesso('Código de recuperação enviado para o e-mail cadastrado.')
-    setModo('recuperar')
-  } catch (error) {
-    mostrarErro(
-      error?.response?.data?.mensagem ||
-        error?.data?.mensagem ||
-        error?.mensagem ||
-        error?.message ||
-        'Não foi possível enviar o código de recuperação de senha.'
-    )
-  } finally {
-    setCarregando(false)
-  }
-}
   async function confirmarRedefinicaoSenha(e) {
-  e.preventDefault()
-  setMensagem('')
+    e.preventDefault()
+    setMensagem('')
 
-  if (!emailLogin.trim()) return mostrarErro('Informe o e-mail.')
-  if (!codigoRecuperacao.trim()) return mostrarErro('Informe o código recebido.')
-  if (!novaSenhaRecuperacao.trim()) return mostrarErro('Informe a nova senha.')
+    if (!emailLogin.trim()) return mostrarErro('Informe o e-mail.')
+    if (!codigoRecuperacao.trim()) {
+      return mostrarErro('Informe o código recebido.')
+    }
+    if (!novaSenhaRecuperacao.trim()) {
+      return mostrarErro('Informe a nova senha.')
+    }
 
-  if (!senhaForte(novaSenhaRecuperacao.trim())) {
-    return mostrarErro(
-      'A senha deve conter no mínimo 8 caracteres, letra maiúscula, minúscula, número e caractere especial.'
-    )
+    if (!senhaForte(novaSenhaRecuperacao.trim())) {
+      return mostrarErro(
+        'A senha deve conter no mínimo 8 caracteres, letra maiúscula, minúscula, número e caractere especial.'
+      )
+    }
+
+    if (novaSenhaRecuperacao !== confirmarNovaSenhaRecuperacao) {
+      return mostrarErro('As senhas não conferem.')
+    }
+
+    try {
+      setCarregando(true)
+
+      await redefinirSenhaDoador({
+        email: emailLogin.trim().toLowerCase(),
+        codigo: codigoRecuperacao.trim(),
+        novaSenha: novaSenhaRecuperacao.trim()
+      })
+
+      mostrarSucesso('Senha redefinida com sucesso. Faça login novamente.')
+
+      setCodigoRecuperacao('')
+      setNovaSenhaRecuperacao('')
+      setConfirmarNovaSenhaRecuperacao('')
+      setModo('login')
+    } catch (error) {
+      mostrarErro(
+        error?.response?.data?.mensagem ||
+          error?.data?.mensagem ||
+          error?.mensagem ||
+          error?.message ||
+          'Não foi possível redefinir a senha. Verifique o código.'
+      )
+    } finally {
+      setCarregando(false)
+    }
   }
 
-  if (novaSenhaRecuperacao !== confirmarNovaSenhaRecuperacao) {
-    return mostrarErro('As senhas não conferem.')
-  }
-
-  try {
-    setCarregando(true)
-
-    await redefinirSenhaDoador({
-      email: emailLogin.trim().toLowerCase(),
-      codigo: codigoRecuperacao.trim(),
-      novaSenha: novaSenhaRecuperacao.trim()
-    })
-
-    mostrarSucesso('Senha redefinida com sucesso. Faça login novamente.')
-
-    setCodigoRecuperacao('')
-    setNovaSenhaRecuperacao('')
-    setConfirmarNovaSenhaRecuperacao('')
-    setModo('login')
-  } catch (error) {
-    mostrarErro(
-      error?.response?.data?.mensagem ||
-        error?.data?.mensagem ||
-        error?.mensagem ||
-        error?.message ||
-        'Não foi possível redefinir a senha. Verifique o código.'
-    )
-  } finally {
-    setCarregando(false)
-  }
-}
   return (
     <main style={styles.page}>
       <div style={styles.container}>
@@ -401,16 +437,22 @@ function DoadorLogin() {
             <div style={styles.tabs}>
               <button
                 type="button"
-                style={styles.tabButton}
-                onClick={() => setModo('login')}
+                style={modo === 'login' ? styles.tabButtonActive : styles.tabButton}
+                onClick={() => {
+                  setModo('login')
+                  setMensagem('')
+                }}
               >
                 Entrar como doador
               </button>
 
               <button
                 type="button"
-                style={styles.tabButton}
-                onClick={() => setModo('cadastro')}
+                style={modo === 'cadastro' ? styles.tabButtonActive : styles.tabButton}
+                onClick={() => {
+                  setModo('cadastro')
+                  setMensagem('')
+                }}
               >
                 Cadastrar-se
               </button>
@@ -494,7 +536,10 @@ function DoadorLogin() {
               <button
                 type="button"
                 style={styles.linkButton}
-                onClick={() => setModo('login')}
+                onClick={() => {
+                  setModo('login')
+                  setMensagem('')
+                }}
               >
                 Voltar para login
               </button>
@@ -516,9 +561,12 @@ function DoadorLogin() {
                     type="radio"
                     name="tipoPessoa"
                     checked={tipoPessoa === 'fisica'}
-                    onChange={() => setTipoPessoa('fisica')}
+                    onChange={() => {
+                      setTipoPessoa('fisica')
+                      setDocumento('')
+                    }}
                   />
-                  CPF/RG
+                  CPF
                 </label>
 
                 <label>
@@ -526,25 +574,37 @@ function DoadorLogin() {
                     type="radio"
                     name="tipoPessoa"
                     checked={tipoPessoa === 'juridica'}
-                    onChange={() => setTipoPessoa('juridica')}
+                    onChange={() => {
+                      setTipoPessoa('juridica')
+                      setDocumento('')
+                    }}
                   />
                   CNPJ
                 </label>
               </div>
 
               <label style={styles.label}>
-                {tipoPessoa === 'juridica'
-                  ? 'CNPJ obrigatório'
-                  : 'CPF obrigatório'}
+                {tipoPessoa === 'juridica' ? 'CNPJ obrigatório' : 'CPF obrigatório'}
               </label>
               <input
                 value={documento}
                 onChange={(e) => setDocumento(e.target.value)}
                 style={styles.input}
-                placeholder={
-                  tipoPessoa === 'juridica' ? 'Digite o CNPJ' : 'Digite o CPF'
-                }
+                placeholder={tipoPessoa === 'juridica' ? 'Digite o CNPJ' : 'Digite o CPF'}
               />
+
+              <label style={styles.label}>Gênero</label>
+              <select
+                value={genero}
+                onChange={(e) => setGenero(e.target.value)}
+                style={styles.input}
+              >
+                {OPCOES_GENERO.map((opcao) => (
+                  <option key={opcao} value={opcao}>
+                    {opcao}
+                  </option>
+                ))}
+              </select>
 
               <label style={styles.label}>Telefone</label>
               <input
@@ -578,6 +638,7 @@ function DoadorLogin() {
                   style={styles.input}
                 >
                   <option value="">Selecione o país</option>
+
                   {paises.map((item) => (
                     <option key={item.codigo} value={item.codigo}>
                       {item.nome}
@@ -604,6 +665,7 @@ function DoadorLogin() {
                       style={styles.input}
                     >
                       <option value="">Selecione o estado</option>
+
                       {estados.map((estado) => (
                         <option key={estado.id} value={estado.id}>
                           {estado.nome} - {estado.sigla}
@@ -619,6 +681,7 @@ function DoadorLogin() {
                       disabled={!estadoId}
                     >
                       <option value="">Selecione o município</option>
+
                       {municipios.map((cidade) => (
                         <option key={cidade.id} value={cidade.nome}>
                           {cidade.nome}
@@ -664,12 +727,7 @@ function DoadorLogin() {
                     type="radio"
                     name="querDoar"
                     checked={querDoar === 'nao'}
-                    onChange={() => {
-                      setQuerDoar('nao')
-                      setForma('')
-                      setValorTED('')
-                      setComprovante('')
-                    }}
+                    onChange={() => setQuerDoar('nao')}
                   />
                   Não
                 </label>
@@ -677,80 +735,13 @@ function DoadorLogin() {
 
               {querDoar === 'sim' && (
                 <section style={styles.donationBox}>
-                  <label style={styles.label}>Forma da doação</label>
+                  <h3 style={styles.smallTitle}>Doação após cadastro</h3>
 
-                  <div style={styles.radioGroup}>
-                    <label>
-                      <input
-                        type="radio"
-                        name="forma"
-                        checked={forma === 'Pix'}
-                        onChange={() => {
-                          setForma('Pix')
-                          setValorTED('')
-                          setComprovante('')
-                        }}
-                      />
-                      Pix
-                    </label>
-
-                    <label>
-                      <input
-                        type="radio"
-                        name="forma"
-                        checked={forma === 'TED'}
-                        onChange={() => setForma('TED')}
-                      />
-                      TED
-                    </label>
-                  </div>
-
-                  {forma === 'Pix' && (
-                    <div style={styles.pixCard}>
-                      <h3 style={styles.smallTitle}>Dados Pix</h3>
-                      <div style={styles.pixBox}>
-                        <strong>PIX / CNPJ</strong>
-                        <span>27363944000180</span>
-                      </div>
-                      <p style={styles.note}>
-                        O valor é informado diretamente no aplicativo do banco.
-                      </p>
-                    </div>
-                  )}
-
-                  {forma === 'TED' && (
-                    <div style={styles.tedCard}>
-                      <h3 style={styles.smallTitle}>Dados bancários para TED</h3>
-
-                      <div style={styles.bankBox}>
-                        <p><strong>Banco:</strong> Banestes</p>
-                        <p><strong>Agência:</strong> 059</p>
-                        <p><strong>Conta corrente:</strong> 6.948.103</p>
-                        <p>
-                          <strong>Razão Social:</strong> Lar Batista Albertine
-                          Meador
-                        </p>
-                        <p><strong>CNPJ:</strong> 27.363.944/0001-80</p>
-                      </div>
-
-                      <label style={styles.label}>Valor da TED</label>
-                      <input
-                        value={valorTED}
-                        onChange={(e) => setValorTED(e.target.value)}
-                        style={styles.input}
-                        placeholder="Ex: 50,00"
-                      />
-
-                      <label style={styles.label}>Anexar comprovante</label>
-                      <input
-                        type="file"
-                        onChange={(e) =>
-                          setComprovante(e.target.files?.[0]?.name || '')
-                        }
-                        style={styles.input}
-                      />
-                    </div>
-                  )}
+                  <p style={styles.note}>
+                    Depois de finalizar o cadastro, você será direcionado para a
+                    tela de doação, onde poderá escolher Pix ou TED, gerar QR Code
+                    Pix ou dados bancários e registrar sua contribuição.
+                  </p>
                 </section>
               )}
 
@@ -758,9 +749,9 @@ function DoadorLogin() {
                 <h3 style={styles.smallTitle}>Termo LGPD</h3>
 
                 <p style={styles.note}>
-                  Ao continuar, você autoriza o Lar Batista Albertine Meador a
-                  armazenar seus dados para fins de cadastro, histórico de
-                  doações, comunicação institucional e prestação de contas.
+                  Ao cadastrar-se, você autoriza o uso dos dados informados para
+                  identificação do doador, histórico de doações, emissão de
+                  comprovantes e prestação de contas institucional.
                 </p>
 
                 <label style={styles.lgpdCheck}>
@@ -769,23 +760,18 @@ function DoadorLogin() {
                     checked={aceitouLGPD}
                     onChange={(e) => setAceitouLGPD(e.target.checked)}
                   />
-                  Li e aceito os termos de uso e privacidade.
+                  Li e aceito os termos LGPD.
                 </label>
               </section>
 
               <button type="submit" style={styles.button} disabled={carregando}>
-                {carregando ? 'Cadastrando...' : 'Criar cadastro'}
+                {carregando ? 'Cadastrando...' : 'Finalizar cadastro'}
               </button>
             </form>
           )}
 
           {mensagem && (
-            <p
-              style={{
-                ...styles.message,
-                color: tipoMensagem === 'sucesso' ? '#166534' : '#991b1b'
-              }}
-            >
+            <p style={tipoMensagem === 'sucesso' ? styles.successMessage : styles.errorMessage}>
               {mensagem}
             </p>
           )}
@@ -796,18 +782,46 @@ function DoadorLogin() {
 }
 
 const styles = {
-  page: { minHeight: '100vh', background: '#F1F5F9', padding: '40px 20px' },
-  container: { maxWidth: '760px', margin: '0 auto' },
+  page: {
+    minHeight: '100vh',
+    background: '#f1f7ff',
+    padding: '40px 20px'
+  },
+  container: {
+    maxWidth: '760px',
+    margin: '0 auto'
+  },
   card: {
     background: '#fff',
-    borderRadius: '20px',
-    padding: '30px',
+    borderRadius: '22px',
+    padding: '32px',
     boxShadow: '0 4px 18px rgba(0,0,0,0.08)'
   },
-  title: { color: '#0B3D91', margin: 0, fontSize: '2rem' },
-  subtitle: { color: '#4b5563', lineHeight: '1.6' },
-  tabs: { display: 'flex', gap: '12px', margin: '24px 0', flexWrap: 'wrap' },
+  title: {
+    color: '#0B3D91',
+    margin: 0,
+    fontSize: '2rem'
+  },
+  subtitle: {
+    color: '#4b5563',
+    lineHeight: '1.6'
+  },
+  tabs: {
+    display: 'flex',
+    gap: '12px',
+    margin: '24px 0',
+    flexWrap: 'wrap'
+  },
   tabButton: {
+    border: '1px solid #bfdbfe',
+    background: '#eef6ff',
+    color: '#0B3D91',
+    padding: '11px 18px',
+    borderRadius: '999px',
+    fontWeight: '800',
+    cursor: 'pointer'
+  },
+  tabButtonActive: {
     border: 'none',
     background: '#0B3D91',
     color: '#fff',
@@ -816,7 +830,10 @@ const styles = {
     fontWeight: '800',
     cursor: 'pointer'
   },
-  form: { display: 'flex', flexDirection: 'column' },
+  form: {
+    display: 'flex',
+    flexDirection: 'column'
+  },
   label: {
     marginTop: '14px',
     marginBottom: '6px',
@@ -867,25 +884,17 @@ const styles = {
     color: '#374151',
     fontWeight: '700'
   },
-  smallTitle: { color: '#0B3D91', marginBottom: '10px' },
-  pixBox: {
-    background: '#fff',
-    border: '1px solid #dbeafe',
-    borderRadius: '14px',
-    padding: '16px',
+  smallTitle: {
     color: '#0B3D91',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px'
+    marginBottom: '10px',
+    marginTop: 0
   },
-  bankBox: {
-    background: '#fff',
-    border: '1px solid #dbeafe',
-    borderRadius: '14px',
-    padding: '16px',
-    color: '#374151'
+  note: {
+    color: '#6b7280',
+    lineHeight: '1.6',
+    fontSize: '14px',
+    margin: 0
   },
-  note: { color: '#6b7280', lineHeight: '1.6', fontSize: '14px' },
   button: {
     marginTop: '24px',
     background: '#0B3D91',
@@ -906,9 +915,21 @@ const styles = {
     marginTop: '12px',
     alignSelf: 'flex-start'
   },
-  message: {
+  errorMessage: {
     marginTop: '16px',
-    fontWeight: '700'
+    padding: '12px',
+    borderRadius: '10px',
+    background: '#fee2e2',
+    color: '#991b1b',
+    fontWeight: '800'
+  },
+  successMessage: {
+    marginTop: '16px',
+    padding: '12px',
+    borderRadius: '10px',
+    background: '#dcfce7',
+    color: '#166534',
+    fontWeight: '900'
   }
 }
 

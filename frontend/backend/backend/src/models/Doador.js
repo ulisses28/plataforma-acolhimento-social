@@ -1,16 +1,30 @@
 import mongoose from 'mongoose'
 
+/*
+  MODEL: DOADOR
+
+  Este schema representa o cadastro do doador no MongoDB.
+
+  Ajuste feito nesta versão:
+  - Adicionado o campo "genero".
+  - O campo é opcional e começa como "Prefiro não dizer".
+  - Mantivemos os campos antigos para não quebrar cadastros já existentes.
+*/
+
 const doadorSchema = new mongoose.Schema(
   {
     nome: {
       type: String,
-      required: true
+      required: true,
+      trim: true
     },
 
     email: {
       type: String,
       required: true,
-      unique: true
+      unique: true,
+      trim: true,
+      lowercase: true
     },
 
     senha: {
@@ -20,33 +34,65 @@ const doadorSchema = new mongoose.Schema(
 
     telefone: {
       type: String,
-      default: ''
+      default: '',
+      trim: true
     },
 
     documento: {
       type: String,
       required: true,
-      unique: true
+      unique: true,
+      trim: true
     },
 
+    /*
+      Tipo de pessoa:
+      - fisica
+      - juridica
+    */
     tipoPessoa: {
       type: String,
-      default: 'fisica'
+      default: 'fisica',
+      trim: true
+    },
+
+    /*
+      Campo novo:
+      Usado para salvar a opção marcada no cadastro do doador.
+
+      Exemplos:
+      - Prefiro não dizer
+      - Feminino
+      - Masculino
+      - Mulher trans
+      - Homem trans
+      - Pessoa não binária
+      - Agênero
+      - Gênero fluido
+      - Outro
+    */
+    genero: {
+      type: String,
+      default: 'Prefiro não dizer',
+      trim: true
     },
 
     pais: {
       type: String,
-      default: 'Brasil'
+      default: 'Brasil',
+      trim: true
     },
 
     estado: {
       type: String,
-      default: ''
+      default: '',
+      trim: true
     },
 
     municipio: {
       type: String,
-      default: ''
+      default: '',
+      trim: true
     }
   },
   {

@@ -5,8 +5,31 @@ import { listarDoacoes } from '../../services/doacoesService'
 import logoLar from '../../assets/logo-lar.jpg'
 import { registrarInteracao } from '../../services/analyticsService'
 
+/*
+  PÁGINA: PAINEL DO DOADOR
+
+  Objetivo desta versão:
+  - Manter ações principais do painel.
+  - Adicionar campo "Gênero" no cadastro do doador.
+  - Permitir visualizar e editar gênero.
+  - Manter histórico de doações e comprovante.
+  - Atualizar localStorage para compatibilidade com o sistema atual.
+*/
+
 const DOADORES_KEY = 'doadores_lar_batista'
 const DOADOR_LOGADO_KEY = 'doador_logado_lar_batista'
+
+const OPCOES_GENERO = [
+  'Prefiro não dizer',
+  'Feminino',
+  'Masculino',
+  'Mulher trans',
+  'Homem trans',
+  'Pessoa não binária',
+  'Agênero',
+  'Gênero fluido',
+  'Outro'
+]
 
 function PainelDoadorPublico() {
   const navigate = useNavigate()
@@ -20,6 +43,7 @@ function PainelDoadorPublico() {
   const [telefone, setTelefone] = useState('')
   const [email, setEmail] = useState('')
   const [documento, setDocumento] = useState('')
+  const [genero, setGenero] = useState('Prefiro não dizer')
   const [cidade, setCidade] = useState('')
   const [estado, setEstado] = useState('')
 
@@ -44,13 +68,44 @@ function PainelDoadorPublico() {
     setTelefone(dados.telefone || '')
     setEmail(dados.email || '')
     setDocumento(dados.documento || '')
+    setGenero(dados.genero || 'Prefiro não dizer')
     setCidade(dados.cidade || dados.municipio || '')
     setEstado(dados.estado || '')
   }, [navigate])
 
+  function registrarAcao() {
+    try {
+      registrarInteracao()
+    } catch {
+      /*
+        Não interrompe o painel se o analytics falhar.
+      */
+    }
+  }
+
+  /*
+    Atualiza o cadastro no localStorage.
+    Em uma próxima etapa, se houver endpoint de atualização no backend,
+    podemos trocar essa parte por uma chamada API.
+  */
   function salvarAtualizacao(e) {
     e.preventDefault()
-    registrarInteracao()
+    registrarAcao()
+
+    if (!nome.trim()) {
+      setMensagem('Informe o nome ou razão social.')
+      return
+    }
+
+    if (!email.trim()) {
+      setMensagem('Informe o e-mail.')
+      return
+    }
+
+    if (!genero.trim()) {
+      setMensagem('Selecione o gênero ou marque Prefiro não dizer.')
+      return
+    }
 
     const atualizado = {
       ...doador,
@@ -58,15 +113,19 @@ function PainelDoadorPublico() {
       telefone: telefone.trim(),
       email: email.trim().toLowerCase(),
       documento: documento.trim(),
+      genero,
       cidade: cidade.trim(),
       municipio: cidade.trim(),
       estado: estado.trim()
     }
 
     const lista = JSON.parse(localStorage.getItem(DOADORES_KEY)) || []
-    const novaLista = lista.map((item) =>
-      item.id === atualizado.id ? atualizado : item
-    )
+
+    const existeNaLista = lista.some((item) => item.id === atualizado.id)
+
+    const novaLista = existeNaLista
+      ? lista.map((item) => (item.id === atualizado.id ? atualizado : item))
+      : [atualizado, ...lista]
 
     localStorage.setItem(DOADORES_KEY, JSON.stringify(novaLista))
     localStorage.setItem(DOADOR_LOGADO_KEY, JSON.stringify(atualizado))
@@ -76,10 +135,15 @@ function PainelDoadorPublico() {
     setMensagem('Cadastro atualizado com sucesso.')
   }
 
+  /*
+    Mantido por compatibilidade, embora o fluxo mais seguro de senha
+    esteja no login com envio de código por e-mail.
+  */
   function gerarCodigoRecuperacao() {
-    registrarInteracao()
+    registrarAcao()
 
     const codigo = String(Math.floor(100000 + Math.random() * 900000))
+
     setCodigoRecuperacao(codigo)
     setMensagem(
       `Código de recuperação gerado: ${codigo}. Em produção real, ele seria enviado para ${email || telefone}.`
@@ -88,7 +152,7 @@ function PainelDoadorPublico() {
 
   function alterarSenha(e) {
     e.preventDefault()
-    registrarInteracao()
+    registrarAcao()
 
     if (!senhaAtual.trim()) {
       setMensagem('Informe a senha atual.')
@@ -137,8 +201,12 @@ function PainelDoadorPublico() {
     setMensagem('Senha alterada com sucesso.')
   }
 
+  /*
+    Gera comprovante visual em uma nova janela.
+    O comprovante pode ser impresso ou salvo em PDF.
+  */
   function gerarComprovante(doacao, doadorLogado) {
-    registrarInteracao()
+    registrarAcao()
 
     const janela = window.open('', '_blank')
     const municipioDoador = doadorLogado.cidade || doadorLogado.municipio || '-'
@@ -262,6 +330,7 @@ function PainelDoadorPublico() {
               <h3>Dados do Doador</h3>
               <p><span class="label">Nome/Razão Social:</span> ${doadorLogado.nome || '-'}</p>
               <p><span class="label">CPF/CNPJ:</span> ${doadorLogado.documento || '-'}</p>
+              <p><span class="label">Gênero:</span> ${doadorLogado.genero || 'Prefiro não dizer'}</p>
               <p><span class="label">E-mail:</span> ${doadorLogado.email || '-'}</p>
               <p><span class="label">Telefone:</span> ${doadorLogado.telefone || '-'}</p>
               <p><span class="label">Município:</span> ${municipioDoador}</p>
@@ -292,7 +361,7 @@ function PainelDoadorPublico() {
   }
 
   function sair() {
-    registrarInteracao()
+    registrarAcao()
     localStorage.removeItem(DOADOR_LOGADO_KEY)
     navigate('/doador/login')
   }
@@ -300,10 +369,10 @@ function PainelDoadorPublico() {
   if (!doador) return null
 
   const minhasDoacoes = listarDoacoes().filter(
-  (doacao) =>
-    doacao.doadorId === doador.id ||
-    doacao.email === doador.email ||
-    doacao.documento === doador.documento
+    (doacao) =>
+      doacao.doadorId === doador.id ||
+      doacao.email === doador.email ||
+      doacao.documento === doador.documento
   )
 
   return (
@@ -320,9 +389,10 @@ function PainelDoadorPublico() {
 
           <div style={styles.botoes}>
             <button
+              type="button"
               style={styles.botao}
               onClick={() => {
-                registrarInteracao()
+                registrarAcao()
                 navigate('/doador/doar')
               }}
             >
@@ -330,9 +400,10 @@ function PainelDoadorPublico() {
             </button>
 
             <button
+              type="button"
               style={styles.botao}
               onClick={() => {
-                registrarInteracao()
+                registrarAcao()
                 setAba('cadastro')
                 setMensagem('')
               }}
@@ -341,9 +412,10 @@ function PainelDoadorPublico() {
             </button>
 
             <button
+              type="button"
               style={styles.botao}
               onClick={() => {
-                registrarInteracao()
+                registrarAcao()
                 setAba('historico')
                 setMensagem('')
               }}
@@ -352,15 +424,24 @@ function PainelDoadorPublico() {
             </button>
 
             <button
+              type="button"
               style={styles.botao}
               onClick={() => {
-                registrarInteracao()
+                registrarAcao()
                 localStorage.setItem('email_recuperacao_doador', doador.email || '')
                 localStorage.removeItem(DOADOR_LOGADO_KEY)
                 navigate('/doador/login')
               }}
             >
               Alterar senha
+            </button>
+
+            <button
+              type="button"
+              style={styles.sairButton}
+              onClick={sair}
+            >
+              Sair
             </button>
           </div>
 
@@ -380,22 +461,66 @@ function PainelDoadorPublico() {
 
               <form onSubmit={salvarAtualizacao} style={styles.form}>
                 <label style={styles.label}>Nome ou razão social</label>
-                <input value={nome} onChange={(e) => setNome(e.target.value)} disabled={!editando} style={editando ? styles.input : styles.inputDisabled} />
+                <input
+                  value={nome}
+                  onChange={(e) => setNome(e.target.value)}
+                  disabled={!editando}
+                  style={editando ? styles.input : styles.inputDisabled}
+                />
 
                 <label style={styles.label}>Documento</label>
-                <input value={documento} onChange={(e) => setDocumento(e.target.value)} disabled={!editando} style={editando ? styles.input : styles.inputDisabled} />
+                <input
+                  value={documento}
+                  onChange={(e) => setDocumento(e.target.value)}
+                  disabled={!editando}
+                  style={editando ? styles.input : styles.inputDisabled}
+                />
+
+                <label style={styles.label}>Gênero</label>
+                <select
+                  value={genero}
+                  onChange={(e) => setGenero(e.target.value)}
+                  disabled={!editando}
+                  style={editando ? styles.input : styles.inputDisabled}
+                >
+                  {OPCOES_GENERO.map((opcao) => (
+                    <option key={opcao} value={opcao}>
+                      {opcao}
+                    </option>
+                  ))}
+                </select>
 
                 <label style={styles.label}>Telefone</label>
-                <input value={telefone} onChange={(e) => setTelefone(e.target.value)} disabled={!editando} style={editando ? styles.input : styles.inputDisabled} />
+                <input
+                  value={telefone}
+                  onChange={(e) => setTelefone(e.target.value)}
+                  disabled={!editando}
+                  style={editando ? styles.input : styles.inputDisabled}
+                />
 
                 <label style={styles.label}>E-mail</label>
-                <input value={email} onChange={(e) => setEmail(e.target.value)} disabled={!editando} style={editando ? styles.input : styles.inputDisabled} />
+                <input
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={!editando}
+                  style={editando ? styles.input : styles.inputDisabled}
+                />
 
                 <label style={styles.label}>Município</label>
-                <input value={cidade} onChange={(e) => setCidade(e.target.value)} disabled={!editando} style={editando ? styles.input : styles.inputDisabled} />
+                <input
+                  value={cidade}
+                  onChange={(e) => setCidade(e.target.value)}
+                  disabled={!editando}
+                  style={editando ? styles.input : styles.inputDisabled}
+                />
 
                 <label style={styles.label}>Estado / UF</label>
-                <input value={estado} onChange={(e) => setEstado(e.target.value)} disabled={!editando} style={editando ? styles.input : styles.inputDisabled} />
+                <input
+                  value={estado}
+                  onChange={(e) => setEstado(e.target.value)}
+                  disabled={!editando}
+                  style={editando ? styles.input : styles.inputDisabled}
+                />
 
                 {editando && (
                   <button type="submit" style={styles.saveButton}>
@@ -414,22 +539,45 @@ function PainelDoadorPublico() {
                 Para segurança, gere um código de recuperação pelo e-mail ou telefone cadastrado.
               </p>
 
-              <button type="button" style={styles.recoveryButton} onClick={gerarCodigoRecuperacao}>
+              <button
+                type="button"
+                style={styles.recoveryButton}
+                onClick={gerarCodigoRecuperacao}
+              >
                 Gerar código por e-mail/telefone
               </button>
 
               <form onSubmit={alterarSenha} style={styles.form}>
                 <label style={styles.label}>Senha atual</label>
-                <input type="password" value={senhaAtual} onChange={(e) => setSenhaAtual(e.target.value)} style={styles.input} />
+                <input
+                  type="password"
+                  value={senhaAtual}
+                  onChange={(e) => setSenhaAtual(e.target.value)}
+                  style={styles.input}
+                />
 
                 <label style={styles.label}>Código de recuperação</label>
-                <input value={codigoDigitado} onChange={(e) => setCodigoDigitado(e.target.value)} style={styles.input} />
+                <input
+                  value={codigoDigitado}
+                  onChange={(e) => setCodigoDigitado(e.target.value)}
+                  style={styles.input}
+                />
 
                 <label style={styles.label}>Nova senha</label>
-                <input type="password" value={novaSenha} onChange={(e) => setNovaSenha(e.target.value)} style={styles.input} />
+                <input
+                  type="password"
+                  value={novaSenha}
+                  onChange={(e) => setNovaSenha(e.target.value)}
+                  style={styles.input}
+                />
 
                 <label style={styles.label}>Confirmar nova senha</label>
-                <input type="password" value={confirmarSenha} onChange={(e) => setConfirmarSenha(e.target.value)} style={styles.input} />
+                <input
+                  type="password"
+                  value={confirmarSenha}
+                  onChange={(e) => setConfirmarSenha(e.target.value)}
+                  style={styles.input}
+                />
 
                 <button type="submit" style={styles.saveButton}>
                   Confirmar alteração de senha
@@ -464,7 +612,9 @@ function PainelDoadorPublico() {
                           <td style={styles.td}>{d.data}</td>
                           <td style={styles.td}>{d.valor}</td>
                           <td style={styles.td}>{d.forma}</td>
-                          <td style={styles.td}>{d.bancoOrigem || d.banco || 'Não informado'}</td>
+                          <td style={styles.td}>
+                            {d.bancoOrigem || d.banco || 'Não informado'}
+                          </td>
                           <td style={styles.td}>{d.status}</td>
                           <td style={styles.td}>
                             <button
@@ -484,9 +634,7 @@ function PainelDoadorPublico() {
             </section>
           )}
 
-          {mensagem && <p style={styles.success}>{mensagem}</p>}
-
-          <button onClick={sair} style={styles.sair}>Sair</button>
+          {mensagem && <p style={styles.message}>{mensagem}</p>}
         </section>
       </div>
     </main>
@@ -494,32 +642,177 @@ function PainelDoadorPublico() {
 }
 
 const styles = {
-  page: { minHeight: '100vh', background: '#f4f8ff', padding: '40px 20px' },
-  container: { maxWidth: '900px', margin: '0 auto' },
-  card: { background: '#ffffff', padding: '34px', borderRadius: '20px', boxShadow: '0 4px 18px rgba(0,0,0,0.08)' },
-  title: { color: '#0B3D91', margin: 0, fontSize: '2rem' },
-  welcome: { marginTop: '18px', color: '#111827' },
-  botoes: { display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '24px' },
-  botao: { padding: '14px', background: '#0B3D91', color: '#ffffff', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: '700' },
-  section: { marginTop: '28px', background: '#f8fbff', border: '1px solid #dbeafe', borderRadius: '16px', padding: '22px' },
-  sectionHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' },
-  sectionTitle: { color: '#0B3D91', margin: 0 },
-  editButton: { background: '#ffffff', color: '#0B3D91', border: '1px solid #0B3D91', padding: '8px 12px', borderRadius: '999px', cursor: 'pointer', fontWeight: '700' },
-  form: { display: 'flex', flexDirection: 'column', marginTop: '14px' },
-  label: { marginTop: '12px', marginBottom: '6px', color: '#374151', fontWeight: '700' },
-  input: { minHeight: '44px', borderRadius: '10px', border: '1px solid #bfdbfe', padding: '0 12px', background: '#f8fbff' },
-  inputDisabled: { minHeight: '44px', borderRadius: '10px', border: '1px solid #e5e7eb', padding: '0 12px', background: '#f3f4f6', color: '#6b7280' },
-  saveButton: { marginTop: '20px', background: '#166534', color: '#ffffff', border: 'none', padding: '13px', borderRadius: '10px', fontWeight: '800', cursor: 'pointer' },
-  recoveryButton: { marginTop: '14px', background: '#ffc928', color: '#002855', border: 'none', padding: '12px', borderRadius: '10px', fontWeight: '900', cursor: 'pointer' },
-  infoText: { color: '#475569', lineHeight: '1.6' },
-  success: { color: '#166534', fontWeight: '700', marginTop: '12px' },
-  empty: { color: '#6b7280' },
-  tableWrapper: { overflowX: 'auto', marginTop: '16px' },
-  table: { width: '100%', borderCollapse: 'collapse', background: '#ffffff', borderRadius: '12px', overflow: 'hidden' },
-  th: { textAlign: 'left', padding: '12px', borderBottom: '1px solid #e5e7eb', color: '#374151' },
-  td: { padding: '12px', borderBottom: '1px solid #f1f5f9', color: '#1f2937' },
-  receiptButton: { background: '#0B3D91', color: '#ffffff', border: 'none', padding: '8px 12px', borderRadius: '8px', cursor: 'pointer', fontWeight: '700' },
-  sair: { marginTop: '28px', padding: '12px 22px', background: '#c0392b', color: '#ffffff', border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: '800' }
+  page: {
+    minHeight: '100vh',
+    background: '#f1f7ff',
+    padding: '40px 20px'
+  },
+  container: {
+    maxWidth: '1100px',
+    margin: '0 auto'
+  },
+  card: {
+    background: '#fff',
+    borderRadius: '24px',
+    padding: '34px',
+    boxShadow: '0 12px 32px rgba(0,0,0,0.08)'
+  },
+  title: {
+    color: '#0B3D91',
+    margin: 0,
+    fontSize: '2.3rem'
+  },
+  welcome: {
+    color: '#475569',
+    fontSize: '17px',
+    lineHeight: '1.6'
+  },
+  botoes: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '12px',
+    margin: '24px 0'
+  },
+  botao: {
+    background: '#0B3D91',
+    color: '#fff',
+    border: 'none',
+    padding: '12px 18px',
+    borderRadius: '999px',
+    fontWeight: '900',
+    cursor: 'pointer'
+  },
+  sairButton: {
+    background: '#dc2626',
+    color: '#fff',
+    border: 'none',
+    padding: '12px 18px',
+    borderRadius: '999px',
+    fontWeight: '900',
+    cursor: 'pointer'
+  },
+  section: {
+    marginTop: '24px',
+    background: '#f8fbff',
+    border: '1px solid #dbeafe',
+    borderRadius: '18px',
+    padding: '22px'
+  },
+  sectionHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '16px'
+  },
+  sectionTitle: {
+    color: '#0B3D91',
+    marginTop: 0
+  },
+  editButton: {
+    background: '#FACC15',
+    color: '#001B44',
+    border: 'none',
+    padding: '10px 16px',
+    borderRadius: '999px',
+    fontWeight: '900',
+    cursor: 'pointer'
+  },
+  form: {
+    display: 'flex',
+    flexDirection: 'column'
+  },
+  label: {
+    marginTop: '14px',
+    marginBottom: '6px',
+    color: '#374151',
+    fontWeight: '800'
+  },
+  input: {
+    width: '100%',
+    minHeight: '46px',
+    borderRadius: '10px',
+    border: '1px solid #bfdbfe',
+    background: '#fff',
+    padding: '0 12px',
+    boxSizing: 'border-box'
+  },
+  inputDisabled: {
+    width: '100%',
+    minHeight: '46px',
+    borderRadius: '10px',
+    border: '1px solid #e5e7eb',
+    background: '#f3f4f6',
+    color: '#6b7280',
+    padding: '0 12px',
+    boxSizing: 'border-box'
+  },
+  saveButton: {
+    marginTop: '20px',
+    background: '#16A34A',
+    color: '#fff',
+    border: 'none',
+    padding: '13px',
+    borderRadius: '12px',
+    fontWeight: '900',
+    cursor: 'pointer'
+  },
+  recoveryButton: {
+    background: '#0B5FC3',
+    color: '#fff',
+    border: 'none',
+    padding: '12px 18px',
+    borderRadius: '999px',
+    fontWeight: '900',
+    cursor: 'pointer'
+  },
+  infoText: {
+    color: '#475569',
+    lineHeight: '1.6'
+  },
+  empty: {
+    color: '#64748b',
+    fontWeight: '700'
+  },
+  tableWrapper: {
+    overflowX: 'auto'
+  },
+  table: {
+    width: '100%',
+    borderCollapse: 'collapse',
+    background: '#fff',
+    borderRadius: '14px',
+    overflow: 'hidden'
+  },
+  th: {
+    background: '#0B3D91',
+    color: '#fff',
+    padding: '12px',
+    textAlign: 'left',
+    fontSize: '14px'
+  },
+  td: {
+    borderBottom: '1px solid #e5e7eb',
+    padding: '12px',
+    color: '#374151',
+    fontSize: '14px'
+  },
+  receiptButton: {
+    background: '#FACC15',
+    color: '#001B44',
+    border: 'none',
+    padding: '9px 12px',
+    borderRadius: '999px',
+    fontWeight: '900',
+    cursor: 'pointer'
+  },
+  message: {
+    marginTop: '18px',
+    padding: '12px',
+    borderRadius: '10px',
+    background: '#dcfce7',
+    color: '#166534',
+    fontWeight: '900'
+  }
 }
 
 export default PainelDoadorPublico
