@@ -19,24 +19,32 @@ import HazardSystem3D, {
 /*
   VILA DOS BLOCOS 3D — MOTOR PRINCIPAL
 
-  Esta versão controla:
-  - movimento 360 graus com analógico;
-  - duas bolinhas amarelas no mobile;
-  - primeira bolinha: pegar ou soltar bloco;
-  - segunda bolinha: pular;
-  - painel de configuração no topo esquerdo;
-  - reiniciar e sair dentro das configurações;
-  - remoção dos botões antigos amontoados.
+  Objetivo desta versão:
+  - Mantém física simples com pulo, gravidade e colisão.
+  - Recebe fase inicial e pontos iniciais.
+  - Ao concluir fase, envia progresso para a página principal.
+  - Permite salvar fase atual, maior nível, pontos e ranking por perfil.
 */
 
 const PASSO_TECLADO = 0.82
 const VELOCIDADE_ANALOGICO = 0.22
 const INTERVALO_MOVIMENTO = 35
 
-function VilaBlocos3D({ personagemExterno, onVoltarMenu, onNivelChange }) {
-  /*
-    Personagem padrão caso o jogador entre direto na rota do jogo.
-  */
+const GRAVIDADE = 0.016
+const FORCA_PULO = 0.31
+const INTERVALO_FISICA = 16
+
+const RAIO_JOGADOR = 0.42
+const METADE_BLOCO = 0.45
+
+function VilaBlocos3D({
+  personagemExterno,
+  faseInicialIndex = 0,
+  pontosIniciais = 0,
+  onVoltarMenu,
+  onNivelChange,
+  onProgresso
+}) {
   const personagem = personagemExterno || {
     nome: 'Explorador',
     roupa: 'azul',
@@ -46,21 +54,10 @@ function VilaBlocos3D({ personagemExterno, onVoltarMenu, onNivelChange }) {
     acessorio: 'nenhum'
   }
 
-  /*
-    Fase atual.
-    O índice começa em 0, mas a fase possui número próprio.
-  */
-  const [faseIndex, setFaseIndex] = useState(0)
+  const [faseIndex, setFaseIndex] = useState(Number(faseInicialIndex) || 0)
 
-  /*
-    Dados da fase atual vindos do arquivo de fases.
-  */
   const fase = useMemo(() => obterFasePorIndice(faseIndex), [faseIndex])
 
-  /*
-    Posição inicial do jogador e posição da plataforma.
-    Ambas variam conforme o tamanho do mapa.
-  */
   const posicaoInicialFase = useMemo(() => {
     return obterPosicaoInicialDaFase(fase)
   }, [fase])
@@ -69,44 +66,38 @@ function VilaBlocos3D({ personagemExterno, onVoltarMenu, onNivelChange }) {
     return obterPosicaoPlataformaDaFase(fase)
   }, [fase])
 
-  /*
-    Estados principais do jogo.
-  */
   const [posicaoJogador, setPosicaoJogador] = useState(() =>
     obterPosicaoInicialDaFase(fase)
   )
+
   const [blocos, setBlocos] = useState(() => criarBlocosDaFase(fase))
   const [blocoNaMao, setBlocoNaMao] = useState(null)
   const [letrasColocadas, setLetrasColocadas] = useState([])
-  const [pontos, setPontos] = useState(0)
+  const [pontos, setPontos] = useState(Number(pontosIniciais) || 0)
+
+  const pontosRef = useRef(Number(pontosIniciais) || 0)
+
   const [mensagem, setMensagem] = useState(
     'No computador use WASD ou setas. No celular use o analógico e as bolinhas amarelas.'
   )
   const [status, setStatus] = useState('jogando')
   const [tempoRestante, setTempoRestante] = useState(fase.tempoLimite)
 
-  /*
-    Configurações do jogador.
-  */
   const [sensibilidade, setSensibilidade] = useState(1)
   const [direcaoJogador, setDirecaoJogador] = useState(0)
-  const [pulando, setPulando] = useState(false)
   const [settingsAberto, setSettingsAberto] = useState(false)
+  const [estaNoChao, setEstaNoChao] = useState(true)
 
-  /*
-    Controle do analógico.
-  */
   const [joystickVisual, setJoystickVisual] = useState({ x: 0, y: 0 })
 
   const joystickAreaRef = useRef(null)
   const joystickAtivoRef = useRef(false)
   const joystickVectorRef = useRef({ x: 0, z: 0 })
   const movimentoTimerRef = useRef(null)
-  const puloTimerRef = useRef(null)
 
-  /*
-    Dados calculados da fase.
-  */
+  const velocidadeYRef = useRef(0)
+  const estaNoChaoRef = useRef(true)
+
   const nivelAtual = fase.numero
   const palavraAtual = fase.palavra
   const proximaLetra = palavraAtual[letrasColocadas.length]
@@ -118,35 +109,66 @@ function VilaBlocos3D({ personagemExterno, onVoltarMenu, onNivelChange }) {
     fase.tempoLimite
   )
 
-  /*
-    Posição visual do jogador.
-    Quando pula, o personagem sobe um pouco no eixo Y.
-  */
   const posicaoVisualJogador = useMemo(() => {
-    return [posicaoJogador[0], pulando ? 0.65 : 0, posicaoJogador[2]]
-  }, [posicaoJogador, pulando])
+    return [posicaoJogador[0], posicaoJogador[1], posicaoJogador[2]]
+  }, [posicaoJogador])
 
-  /*
-    Ao mudar de fase, recria tudo da fase atual.
-  */
   useEffect(() => {
+    const novaPosicaoInicial = obterPosicaoInicialDaFase(fase)
+
+    velocidadeYRef.current = 0
+    estaNoChaoRef.current = true
+
     setBlocos(criarBlocosDaFase(fase))
-    setPosicaoJogador(posicaoInicialFase)
+    setPosicaoJogador(novaPosicaoInicial)
     setBlocoNaMao(null)
     setLetrasColocadas([])
     setStatus('jogando')
     setTempoRestante(fase.tempoLimite)
     setSettingsAberto(false)
+    setEstaNoChao(true)
     setMensagem(`Fase ${fase.numero}: ${fase.nome}. ${fase.objetivo}`)
 
     if (onNivelChange) {
       onNivelChange(fase.numero)
     }
-  }, [fase, posicaoInicialFase, onNivelChange])
+  }, [fase, onNivelChange])
 
-  /*
-    Timer das fases com perigo.
-  */
+  useEffect(() => {
+    if (status !== 'jogando') return
+
+    const intervalo = setInterval(() => {
+      setPosicaoJogador((posicaoAtual) => {
+        const [x, y, z] = posicaoAtual
+        const alturaApoio = obterAlturaApoioDoJogador(x, z, blocos)
+
+        let novaVelocidade = velocidadeYRef.current - GRAVIDADE
+        let novoY = y + novaVelocidade
+
+        if (novaVelocidade <= 0 && novoY <= alturaApoio) {
+          novoY = alturaApoio
+          novaVelocidade = 0
+
+          if (!estaNoChaoRef.current) {
+            estaNoChaoRef.current = true
+            setEstaNoChao(true)
+          }
+        } else {
+          if (estaNoChaoRef.current) {
+            estaNoChaoRef.current = false
+            setEstaNoChao(false)
+          }
+        }
+
+        velocidadeYRef.current = novaVelocidade
+
+        return [x, novoY, z]
+      })
+    }, INTERVALO_FISICA)
+
+    return () => clearInterval(intervalo)
+  }, [status, blocos])
+
   useEffect(() => {
     if (!temTempo || status !== 'jogando') return
 
@@ -173,14 +195,6 @@ function VilaBlocos3D({ personagemExterno, onVoltarMenu, onNivelChange }) {
     return () => clearInterval(intervalo)
   }, [temTempo, status, faseIndex])
 
-  /*
-    Controles de teclado para computador.
-
-    WASD ou setas: mover.
-    E: pegar ou soltar.
-    Espaço: pular.
-    R: reiniciar fase.
-  */
   useEffect(() => {
     function aoPressionarTecla(event) {
       const tecla = event.key.toLowerCase()
@@ -223,34 +237,22 @@ function VilaBlocos3D({ personagemExterno, onVoltarMenu, onNivelChange }) {
     blocos,
     letrasColocadas,
     faseIndex,
-    sensibilidade
+    sensibilidade,
+    estaNoChao
   ])
 
-  /*
-    Limpeza ao sair da tela.
-  */
   useEffect(() => {
     return () => {
       pararMovimentoContinuo()
-
-      if (puloTimerRef.current) {
-        clearTimeout(puloTimerRef.current)
-      }
     }
   }, [])
 
-  /*
-    Para o movimento caso vença ou perca.
-  */
   useEffect(() => {
     if (status !== 'jogando') {
       pararMovimentoContinuo()
     }
   }, [status])
 
-  /*
-    Encontra o bloco mais próximo do jogador.
-  */
   const blocoProximo = useMemo(() => {
     if (blocoNaMao || status !== 'jogando') return null
 
@@ -277,16 +279,17 @@ function VilaBlocos3D({ personagemExterno, onVoltarMenu, onNivelChange }) {
     return null
   }, [blocos, blocoNaMao, posicaoJogador, status])
 
-  /*
-    Verifica se o jogador está perto da plataforma.
-  */
   const pertoDaPlataforma = useMemo(() => {
     return calcularDistanciaXZ(posicaoJogador, posicaoPlataformaFase) <= 2.65
   }, [posicaoJogador, posicaoPlataformaFase])
 
-  /*
-    Movimento base do jogador.
-  */
+  function somarPontos(quantidade) {
+    const novoTotal = pontosRef.current + quantidade
+    pontosRef.current = novoTotal
+    setPontos(novoTotal)
+    return novoTotal
+  }
+
   function moverJogador(deltaX, deltaZ) {
     if (status !== 'jogando') return
 
@@ -297,16 +300,24 @@ function VilaBlocos3D({ personagemExterno, onVoltarMenu, onNivelChange }) {
     }
 
     setPosicaoJogador(([x, y, z]) => {
-      const novoX = limitar(x + deltaX, -limite, limite)
-      const novoZ = limitar(z + deltaZ, -limite, limite)
+      const desejadoX = limitar(x + deltaX, -limite, limite)
+      const desejadoZ = limitar(z + deltaZ, -limite, limite)
+
+      let novoX = x
+      let novoZ = z
+
+      if (podeOcuparPosicao(desejadoX, z, y, blocos)) {
+        novoX = desejadoX
+      }
+
+      if (podeOcuparPosicao(novoX, desejadoZ, y, blocos)) {
+        novoZ = desejadoZ
+      }
 
       return [novoX, y, novoZ]
     })
   }
 
-  /*
-    Movimento 360 graus usando o vetor do analógico.
-  */
   function moverJogadorPorVetor(vetorX, vetorZ) {
     if (status !== 'jogando') return
 
@@ -322,9 +333,6 @@ function VilaBlocos3D({ personagemExterno, onVoltarMenu, onNivelChange }) {
     moverJogador(normalizadoX * velocidade, normalizadoZ * velocidade)
   }
 
-  /*
-    Inicia o analógico.
-  */
   function iniciarJoystick(event) {
     if (status !== 'jogando') return
 
@@ -343,9 +351,6 @@ function VilaBlocos3D({ personagemExterno, onVoltarMenu, onNivelChange }) {
     }, INTERVALO_MOVIMENTO)
   }
 
-  /*
-    Atualiza a posição visual e o vetor real do analógico.
-  */
   function atualizarJoystick(event) {
     if (!joystickAtivoRef.current || !joystickAreaRef.current) return
 
@@ -373,9 +378,6 @@ function VilaBlocos3D({ personagemExterno, onVoltarMenu, onNivelChange }) {
     setJoystickVisual({ x, y })
   }
 
-  /*
-    Finaliza o analógico.
-  */
   function finalizarJoystick() {
     joystickAtivoRef.current = false
     joystickVectorRef.current = { x: 0, z: 0 }
@@ -390,11 +392,6 @@ function VilaBlocos3D({ personagemExterno, onVoltarMenu, onNivelChange }) {
     }
   }
 
-  /*
-    Ação principal:
-    - sem bloco na mão: pegar;
-    - com bloco na mão: soltar.
-  */
   function acaoPrincipal() {
     if (blocoNaMao) {
       soltarBloco()
@@ -481,9 +478,9 @@ function VilaBlocos3D({ personagemExterno, onVoltarMenu, onNivelChange }) {
 
     const novasLetras = [...letrasColocadas, blocoNaMao.letra]
     const pontosGanhos = blocoNaMao.correta ? 15 : 8
+    const pontosDepoisLetra = somarPontos(pontosGanhos)
 
     setLetrasColocadas(novasLetras)
-    setPontos((valor) => valor + pontosGanhos)
 
     setBlocos((lista) =>
       lista.map((item) =>
@@ -496,7 +493,7 @@ function VilaBlocos3D({ personagemExterno, onVoltarMenu, onNivelChange }) {
     setBlocoNaMao(null)
 
     if (novasLetras.join('') === palavraAtual) {
-      concluirFase()
+      concluirFase(novasLetras, pontosDepoisLetra)
       return
     }
 
@@ -505,10 +502,6 @@ function VilaBlocos3D({ personagemExterno, onVoltarMenu, onNivelChange }) {
     )
   }
 
-  /*
-    Devolve o bloco ao cenário quando ele é solto fora da plataforma
-    ou quando a letra está errada.
-  */
   function devolverBlocoParaOCenario() {
     if (!blocoNaMao) return
 
@@ -536,32 +529,45 @@ function VilaBlocos3D({ personagemExterno, onVoltarMenu, onNivelChange }) {
     setBlocoNaMao(null)
   }
 
-  /*
-    Pulo visual simples.
-  */
   function pular() {
-    if (status !== 'jogando' || pulando) return
+    if (status !== 'jogando') return
 
-    setPulando(true)
-
-    if (puloTimerRef.current) {
-      clearTimeout(puloTimerRef.current)
+    if (!estaNoChaoRef.current) {
+      setMensagem('Você já está no ar. Espere tocar o chão para pular novamente.')
+      return
     }
 
-    puloTimerRef.current = setTimeout(() => {
-      setPulando(false)
-    }, 420)
+    velocidadeYRef.current = FORCA_PULO
+    estaNoChaoRef.current = false
+    setEstaNoChao(false)
+
+    setMensagem('Pulo! Agora você consegue subir nos blocos.')
   }
 
-  function concluirFase() {
+  function concluirFase(letrasFinais = letrasColocadas, pontosBase = pontosRef.current) {
     setStatus('vitoria')
     setBlocoNaMao(null)
     pararMovimentoContinuo()
 
     const bonusTempo = tempoRestante ? Math.max(0, tempoRestante) : 0
     const bonusFase = fase.numero * 20
+    const pontosFinais = pontosBase + bonusFase + bonusTempo
 
-    setPontos((valor) => valor + bonusFase + bonusTempo)
+    pontosRef.current = pontosFinais
+    setPontos(pontosFinais)
+
+    if (onProgresso) {
+      onProgresso({
+        status: 'vitoria',
+        faseIndex,
+        proximaFaseIndex: faseIndex + 1,
+        nivel: fase.numero,
+        maiorNivel: fase.numero,
+        pontos: pontosFinais,
+        acertos: letrasFinais.length,
+        palavra: fase.palavra
+      })
+    }
 
     setMensagem(
       `Parabéns! Você completou ${fase.palavra}. ${fase.tema}: missão concluída!`
@@ -575,14 +581,18 @@ function VilaBlocos3D({ personagemExterno, onVoltarMenu, onNivelChange }) {
   function reiniciarFase() {
     pararMovimentoContinuo()
 
+    velocidadeYRef.current = 0
+    estaNoChaoRef.current = true
+
     setBlocos(criarBlocosDaFase(fase))
     setPosicaoJogador(posicaoInicialFase)
     setBlocoNaMao(null)
     setLetrasColocadas([])
     setStatus('jogando')
     setTempoRestante(fase.tempoLimite)
-    setMensagem(`Fase reiniciada. ${fase.objetivo}`)
     setSettingsAberto(false)
+    setEstaNoChao(true)
+    setMensagem(`Fase reiniciada. ${fase.objetivo}`)
   }
 
   function voltarMenu() {
@@ -675,6 +685,10 @@ function VilaBlocos3D({ personagemExterno, onVoltarMenu, onNivelChange }) {
 
           <span>
             Na mão: <b>{blocoNaMao ? blocoNaMao.letra : 'nenhum'}</b>
+          </span>
+
+          <span>
+            Pulo: <b>{estaNoChao ? 'pronto' : 'no ar'}</b>
           </span>
 
           {temTempo && (
@@ -823,9 +837,6 @@ function VilaBlocos3D({ personagemExterno, onVoltarMenu, onNivelChange }) {
   )
 }
 
-/*
-  CÂMERA SEGUINDO O JOGADOR
-*/
 function CameraFollow({ target }) {
   const { camera } = useThree()
 
@@ -838,15 +849,54 @@ function CameraFollow({ target }) {
     camera.position.y += (destinoY - camera.position.y) * 0.045
     camera.position.z += (destinoZ - camera.position.z) * 0.045
 
-    camera.lookAt(target[0], 0.8, target[2])
+    camera.lookAt(target[0], target[1] + 0.8, target[2])
   })
 
   return null
 }
 
-/*
-  HELPERS
-*/
+function obterBlocosSolidos(blocos) {
+  return blocos.filter((bloco) => !bloco.coletado && !bloco.colocado)
+}
+
+function obterAlturaApoioDoJogador(x, z, blocos) {
+  let altura = 0
+
+  obterBlocosSolidos(blocos).forEach((bloco) => {
+    const [bx, by, bz] = bloco.position
+
+    const dentroX = Math.abs(x - bx) <= METADE_BLOCO + RAIO_JOGADOR * 0.72
+    const dentroZ = Math.abs(z - bz) <= METADE_BLOCO + RAIO_JOGADOR * 0.72
+
+    if (dentroX && dentroZ) {
+      const topo = by + METADE_BLOCO
+
+      if (topo > altura) {
+        altura = topo
+      }
+    }
+  })
+
+  return altura
+}
+
+function podeOcuparPosicao(x, z, y, blocos) {
+  const colisao = obterBlocosSolidos(blocos).some((bloco) => {
+    const [bx, by, bz] = bloco.position
+    const topoBloco = by + METADE_BLOCO
+
+    const sobrepoeX = Math.abs(x - bx) <= METADE_BLOCO + RAIO_JOGADOR
+    const sobrepoeZ = Math.abs(z - bz) <= METADE_BLOCO + RAIO_JOGADOR
+
+    if (!sobrepoeX || !sobrepoeZ) return false
+
+    if (y >= topoBloco - 0.08) return false
+
+    return true
+  })
+
+  return !colisao
+}
 
 function calcularDistanciaXZ(posicaoA, posicaoB) {
   const dx = posicaoA[0] - posicaoB[0]

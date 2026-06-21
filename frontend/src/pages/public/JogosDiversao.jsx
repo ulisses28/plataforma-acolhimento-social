@@ -1,8 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import './jogosDiversao.css'
-
-import AventuraBlocos from '../../components/games/AventuraBlocos'
 
 import {
   apagarPerfilJogador,
@@ -18,13 +16,26 @@ import {
   listarRankingJogos
 } from '../../services/rankingJogosService'
 
+/*
+  PÁGINA: JOGUE E DIVIRTA-SE
+
+  Ajuste desta versão:
+  - Remove a abertura do jogo antigo AventuraBlocos dentro desta página.
+  - O botão "Jogar agora" da Aventura dos Blocos agora navega para:
+    /jogos/aventura-blocos
+  - Isso garante que sempre será aberta a versão nova do jogo 3D.
+  - Mantém o perfil local do jogador.
+  - Mantém o ranking local exibido na página.
+*/
+
 function JogosDiversao() {
+  const navigate = useNavigate()
+
   const [perfil, setPerfil] = useState(null)
   const [apelido, setApelido] = useState('')
   const [estiloAvatar, setEstiloAvatar] = useState('adventurer')
   const [avatarSeed, setAvatarSeed] = useState(gerarSeedAleatoria())
   const [categoriaAtiva, setCategoriaAtiva] = useState('todos')
-  const [jogoAberto, setJogoAberto] = useState(null)
   const [rankingAventura, setRankingAventura] = useState([])
 
   useEffect(() => {
@@ -56,7 +67,7 @@ function JogosDiversao() {
       icone: '🧱',
       titulo: 'Aventura dos Blocos',
       descricao:
-        'Monte palavras, resolva continhas, avance níveis e entre no ranking.',
+        'Monte palavras, resolva desafios, avance níveis e explore fases educativas em 3D.',
       botao: 'Jogar agora',
       status: 'ativo'
     },
@@ -68,7 +79,7 @@ function JogosDiversao() {
       icone: '💛',
       titulo: 'Perfil do Doador',
       descricao:
-        'Responda 10 perguntas e descubra seu nível de compatibilidade solidária.',
+        'Responda perguntas e descubra seu nível de compatibilidade solidária.',
       botao: 'Descobrir meu perfil',
       status: 'em-breve'
     },
@@ -166,6 +177,7 @@ function JogosDiversao() {
     })
 
     setPerfil(novoPerfil)
+    setRankingAventura(listarRankingJogos('aventura-blocos'))
   }
 
   function trocarAvatar() {
@@ -173,7 +185,9 @@ function JogosDiversao() {
   }
 
   function limparPerfil() {
-    const confirmar = confirm('Deseja apagar seu perfil de jogador deste navegador?')
+    const confirmar = confirm(
+      'Deseja apagar seu perfil de jogador deste navegador?'
+    )
 
     if (!confirmar) return
 
@@ -182,9 +196,15 @@ function JogosDiversao() {
     setApelido('')
     setEstiloAvatar('adventurer')
     setAvatarSeed(gerarSeedAleatoria())
-    setJogoAberto(null)
   }
 
+  /*
+    Abre o jogo selecionado.
+
+    Importante:
+    - Aventura dos Blocos agora vai para a rota nova.
+    - Não renderizamos mais o componente antigo AventuraBlocos aqui.
+  */
   function abrirJogo(jogo) {
     if (!perfil) {
       alert('Monte seu perfil de jogador antes de começar.')
@@ -192,7 +212,10 @@ function JogosDiversao() {
       const perfilArea = document.getElementById('perfil-jogador')
 
       if (perfilArea) {
-        perfilArea.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        perfilArea.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        })
       }
 
       return
@@ -204,20 +227,8 @@ function JogosDiversao() {
     }
 
     if (jogo.id === 'aventura-blocos') {
-      setJogoAberto('aventura-blocos')
-
-      setTimeout(() => {
-        const areaJogo = document.getElementById('area-jogo-aberto')
-
-        if (areaJogo) {
-          areaJogo.scrollIntoView({ behavior: 'smooth', block: 'start' })
-        }
-      }, 100)
+      navigate('/jogos/aventura-blocos')
     }
-  }
-
-  function atualizarRankingAventura(novoRanking) {
-    setRankingAventura(novoRanking)
   }
 
   function apagarRankingAventura() {
@@ -338,30 +349,6 @@ function JogosDiversao() {
         )}
       </section>
 
-      {jogoAberto === 'aventura-blocos' && (
-        <section className="games-play-section" id="area-jogo-aberto">
-          <div className="games-play-header">
-            <div>
-              <span className="games-kicker">Jogo aberto</span>
-              <h2>Aventura dos Blocos</h2>
-              <p>
-                Complete os desafios, avance níveis e tente entrar no ranking.
-              </p>
-            </div>
-
-            <button type="button" onClick={() => setJogoAberto(null)}>
-              Fechar jogo
-            </button>
-          </div>
-
-          <AventuraBlocos
-            perfilJogador={perfil}
-            onFechar={() => setJogoAberto(null)}
-            onRankingAtualizado={atualizarRankingAventura}
-          />
-        </section>
-      )}
-
       <section className="games-categories" id="jogos">
         {categorias.map((categoria) => (
           <button
@@ -427,7 +414,7 @@ function JogosDiversao() {
             </h2>
 
             <p>
-              O ranking fica salvo neste navegador. Depois podemos transformar
+              Este ranking fica salvo no navegador. Depois podemos transformar
               em ranking geral online com banco de dados.
             </p>
           </div>
@@ -527,7 +514,7 @@ function GameCard({ jogo, destaque = false, perfilCriado, onAbrir }) {
 
         <p>{jogo.descricao}</p>
 
-        {!perfilCriado && (
+        {!perfilCriado && jogoAtivo && (
           <span className="game-profile-required">
             Crie seu perfil antes de jogar
           </span>

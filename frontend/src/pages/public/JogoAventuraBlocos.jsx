@@ -4,7 +4,23 @@ import './jogoAventuraBlocos.css'
 
 import VilaBlocos3D from '../../components/games/vila-blocos-3d/VilaBlocos3D'
 
-const STORAGE_KEY = 'aventura_blocos_personagem'
+import { carregarPerfilJogador } from '../../services/jogosPerfilService'
+import { registrarPontuacaoJogo } from '../../services/rankingJogosService'
+
+/*
+  PÁGINA EXCLUSIVA: AVENTURA DOS BLOCOS
+
+  Objetivo desta versão:
+  - Mantém menu próprio do jogo.
+  - Mantém escolha/criação de personagem.
+  - Usa a versão nova VilaBlocos3D.
+  - Salva personagem, maior nível, fase atual e pontos por perfil de jogador.
+  - Se houver doador logado, o perfil fica separado para aquele doador.
+  - Atualiza ranking local ao concluir fase.
+*/
+
+const STORAGE_LEGADO_KEY = 'aventura_blocos_personagem'
+const PROGRESS_BASE_KEY = 'aventura_blocos_progresso_lar_batista'
 
 const personagensBase = [
   {
@@ -124,15 +140,27 @@ function JogoAventuraBlocos() {
   const [personagem, setPersonagem] = useState(personagensBase[0])
   const [nome, setNome] = useState('')
   const [abaCriacao, setAbaCriacao] = useState('roupas')
+
+  const [perfilJogador, setPerfilJogador] = useState(null)
   const [maiorNivel, setMaiorNivel] = useState(1)
+  const [faseInicialIndex, setFaseInicialIndex] = useState(0)
+  const [pontosIniciais, setPontosIniciais] = useState(0)
 
   useEffect(() => {
-    const salvo = carregarPersonagemSalvo()
+    const perfil = carregarPerfilJogador()
+    setPerfilJogador(perfil)
 
-    if (salvo) {
+    const progresso = carregarProgressoSalvo(perfil)
+    const legado = carregarLegadoSalvo()
+
+    const salvo = progresso || legado
+
+    if (salvo?.personagem) {
       setPersonagem(salvo.personagem)
-      setNome(salvo.nome || '')
+      setNome(salvo.nome || salvo.personagem.nome || '')
       setMaiorNivel(salvo.maiorNivel || 1)
+      setFaseInicialIndex(Number(salvo.faseIndex) || 0)
+      setPontosIniciais(Number(salvo.pontos) || 0)
     }
   }, [])
 
@@ -143,21 +171,43 @@ function JogoAventuraBlocos() {
     }
   }, [personagem, nome])
 
-  function salvarPersonagemAtual(personagemAtual = personagem, nomeAtual = nome) {
+  function salvarProgressoParcial(dadosExtras = {}) {
+    const perfilAtual = perfilJogador || carregarPerfilJogador()
+    const progressoAnterior = carregarProgressoSalvo(perfilAtual) || {}
+
     const dados = {
-      nome: nomeAtual,
-      personagem: personagemAtual,
+      ...progressoAnterior,
+      perfilId: perfilAtual?.id || 'visitante',
+      perfilApelido: perfilAtual?.apelido || 'Visitante Solidário',
+      perfilAvatarUrl: perfilAtual?.avatarUrl || '',
+      nome,
+      personagem: personagemComNome,
       maiorNivel,
-      atualizadoEm: new Date().toISOString()
+      faseIndex: faseInicialIndex,
+      pontos: pontosIniciais,
+      atualizadoEm: new Date().toISOString(),
+      ...dadosExtras
     }
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(dados))
+    localStorage.setItem(obterChaveProgresso(perfilAtual), JSON.stringify(dados))
+
+    /*
+      Mantém compatibilidade com a versão antiga.
+      Assim não perdemos dados que outras telas possam ler.
+    */
+    localStorage.setItem(STORAGE_LEGADO_KEY, JSON.stringify(dados))
+
+    return dados
   }
 
   function escolherPersonagem(item) {
     setPersonagem(item)
     setNome(item.nome)
-    salvarPersonagemAtual(item, item.nome)
+
+    salvarProgressoParcial({
+      nome: item.nome,
+      personagem: item
+    })
   }
 
   function atualizarCampo(campo, valor) {
@@ -167,11 +217,31 @@ function JogoAventuraBlocos() {
     }
 
     setPersonagem(atualizado)
-    salvarPersonagemAtual(atualizado, nome)
+
+    salvarProgressoParcial({
+      personagem: atualizado
+    })
+  }
+
+  function gerarAleatorio() {
+    const aleatorio = {
+      ...personagem,
+      ...gerarPersonagemAleatorio()
+    }
+
+    setPersonagem(aleatorio)
+
+    salvarProgressoParcial({
+      personagem: aleatorio
+    })
   }
 
   function iniciarJogo() {
-    salvarPersonagemAtual(personagemComNome, nome)
+    salvarProgressoParcial({
+      nome,
+      personagem: personagemComNome
+    })
+
     setTela('jogo')
   }
 
@@ -179,15 +249,80 @@ function JogoAventuraBlocos() {
     if (novoNivel > maiorNivel) {
       setMaiorNivel(novoNivel)
 
-      const dados = {
-        nome,
-        personagem,
-        maiorNivel: novoNivel,
-        atualizadoEm: new Date().toISOString()
-      }
-
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(dados))
+      salvarProgressoParcial({
+        maiorNivel: novoNivel
+      })
     }
+  }
+
+  /*
+    Recebe dados do motor VilaBlocos3D quando a fase é concluída.
+    Aqui salvamos progresso e atualizamos ranking local.
+  */
+  function aoSalvarProgressoJogo(dados) {
+    const perfilAtual = perfilJogador || carregarPerfilJogador()
+
+    const novoMaiorNivel = Math.max(
+      maiorNivel,
+      Number(dados.maiorNivel || dados.nivel || 1)
+    )
+
+    const novaFaseIndex =
+      dados.proximaFaseIndex !== undefined
+        ? Number(dados.proximaFaseIndex)
+        : Number(dados.faseIndex || faseInicialIndex)
+
+    const novosPontos = Number(dados.pontos || pontosIniciais)
+
+    setMaiorNivel(novoMaiorNivel)
+    setFaseInicialIndex(novaFaseIndex)
+    setPontosIniciais(novosPontos)
+
+    salvarProgressoParcial({
+      nome,
+      personagem: personagemComNome,
+      maiorNivel: novoMaiorNivel,
+      faseIndex: novaFaseIndex,
+      pontos: novosPontos,
+      ultimaFaseConcluida: dados.nivel || 1,
+      atualizadoEm: new Date().toISOString()
+    })
+
+    if (dados.status === 'vitoria') {
+      registrarPontuacaoJogo({
+        jogoId: 'aventura-blocos',
+        jogadorId: perfilAtual?.id || 'visitante',
+        doadorId: perfilAtual?.doadorId || '',
+        doadorEmail: perfilAtual?.doadorEmail || '',
+        apelido: perfilAtual?.apelido || personagemComNome.nome || 'Jogador Solidário',
+        avatarUrl: perfilAtual?.avatarUrl || '',
+        personagem: personagemComNome.nome || personagem.id || 'Personagem',
+        pontos: novosPontos,
+        nivel: dados.nivel || 1,
+        maiorNivel: novoMaiorNivel,
+        acertos: dados.acertos || 0
+      })
+    }
+  }
+
+  function zerarProgresso() {
+    const confirmar = confirm(
+      'Deseja zerar o progresso da Aventura dos Blocos para este perfil?'
+    )
+
+    if (!confirmar) return
+
+    const perfilAtual = perfilJogador || carregarPerfilJogador()
+
+    localStorage.removeItem(obterChaveProgresso(perfilAtual))
+    localStorage.removeItem(STORAGE_LEGADO_KEY)
+
+    setPersonagem(personagensBase[0])
+    setNome('')
+    setMaiorNivel(1)
+    setFaseInicialIndex(0)
+    setPontosIniciais(0)
+    setTela('inicio')
   }
 
   return (
@@ -196,9 +331,13 @@ function JogoAventuraBlocos() {
         <TelaInicio
           personagem={personagemComNome}
           maiorNivel={maiorNivel}
+          faseInicialIndex={faseInicialIndex}
+          pontosIniciais={pontosIniciais}
+          perfilJogador={perfilJogador}
           onEscolher={() => setTela('escolher')}
           onCriar={() => setTela('criar')}
           onJogar={iniciarJogo}
+          onZerar={zerarProgresso}
         />
       )}
 
@@ -223,6 +362,7 @@ function JogoAventuraBlocos() {
           setAba={setAbaCriacao}
           maiorNivel={maiorNivel}
           onCampo={atualizarCampo}
+          onAleatorio={gerarAleatorio}
           onVoltar={() => setTela('inicio')}
           onJogar={iniciarJogo}
         />
@@ -231,15 +371,28 @@ function JogoAventuraBlocos() {
       {tela === 'jogo' && (
         <TelaJogo
           personagem={personagemComNome}
+          faseInicialIndex={faseInicialIndex}
+          pontosIniciais={pontosIniciais}
           onVoltar={() => setTela('inicio')}
           onNivel={aoAtualizarNivel}
+          onProgresso={aoSalvarProgressoJogo}
         />
       )}
     </main>
   )
 }
 
-function TelaInicio({ personagem, maiorNivel, onEscolher, onCriar, onJogar }) {
+function TelaInicio({
+  personagem,
+  maiorNivel,
+  faseInicialIndex,
+  pontosIniciais,
+  perfilJogador,
+  onEscolher,
+  onCriar,
+  onJogar,
+  onZerar
+}) {
   return (
     <section className="aventura-home-screen">
       <div className="aventura-bg-world" />
@@ -249,9 +402,7 @@ function TelaInicio({ personagem, maiorNivel, onEscolher, onCriar, onJogar }) {
 
         <span className="aventura-pill">Aventura educativa</span>
 
-        <h1>
-          Aventura dos Blocos
-        </h1>
+        <h1>Aventura dos Blocos</h1>
 
         <p>
           Uma aventura divertida para aprender brincando
@@ -290,8 +441,12 @@ function TelaInicio({ personagem, maiorNivel, onEscolher, onCriar, onJogar }) {
 
         <div className="aventura-unlocks">
           <div>
-            <strong>Explore fases incríveis</strong>
-            <span>Sol, frio, neve e chuva aparecem conforme você avança.</span>
+            <strong>Perfil</strong>
+            <span>
+              {perfilJogador
+                ? `Jogando como ${perfilJogador.apelido}`
+                : 'Visitante local'}
+            </span>
           </div>
 
           <div>
@@ -300,14 +455,18 @@ function TelaInicio({ personagem, maiorNivel, onEscolher, onCriar, onJogar }) {
           </div>
 
           <div>
-            <strong>Desbloqueios</strong>
-            <span>Roupas, cabelos, sapatos e acessórios.</span>
+            <strong>Progresso</strong>
+            <span>
+              Fase salva: {faseInicialIndex + 1} • Pontos: {pontosIniciais}
+            </span>
           </div>
         </div>
 
         <div className="aventura-bottom-links">
-          <Link to="/tutorial">← Voltar para jogos</Link>
-          
+          <Link to="/jogos-diversao">← Voltar para jogos</Link>
+          <button type="button" className="aventura-reset-link" onClick={onZerar}>
+            Zerar progresso
+          </button>
         </div>
       </div>
     </section>
@@ -400,10 +559,12 @@ function TelaCriarPersonagem({
   setAba,
   maiorNivel,
   onCampo,
+  onAleatorio,
   onVoltar,
   onJogar
 }) {
   const opcoesAba = opcoes[aba] || []
+  const campo = campoPorAba(aba)
 
   return (
     <section className="aventura-create-screen">
@@ -415,7 +576,7 @@ function TelaCriarPersonagem({
         <span>Crie seu personagem</span>
         <p>
           Escolha cada detalhe e monte seu herói para viver grandes aventuras
-          e aprender brincando!
+          e aprender brincando.
         </p>
       </div>
 
@@ -435,184 +596,139 @@ function TelaCriarPersonagem({
           <div className="unlock-box">
             <strong>Avance e desbloqueie!</strong>
             <p>
-              À medida que você joga, conquista estrelas, sobe de nível e novos
-              itens ficam disponíveis.
+              À medida que você joga, conquista estrelas, sobe de nível e
+              libera novos itens visuais.
             </p>
           </div>
 
-          <div className="evolution-box">
-            <strong>Cresça e evolua!</strong>
-
-            <div>
-              <EvolutionStep label="Criança" nivel="1" />
-              <span>→</span>
-              <EvolutionStep label="Adolescente" nivel="25" />
-              <span>→</span>
-              <EvolutionStep label="Adulto" nivel="60" />
-            </div>
-          </div>
+          <button type="button" className="random-button" onClick={onAleatorio}>
+            Sortear visual
+          </button>
         </aside>
 
-        <div className="create-preview">
-          <div className="create-world">
-            <BonecoPixel personagem={personagem} gigante />
+        <section className="create-preview">
+          <div className="character-stage">
+            <BonecoPixel personagem={{ ...personagem, nome }} grande />
           </div>
 
-          <div className="preview-tools">
-            <button type="button">Girar</button>
-            <button type="button">Zoom</button>
-            <button type="button">Fundo</button>
+          <h2>{nome.trim() || personagem.nome || 'Seu personagem'}</h2>
+
+          <div className="evolution-row">
+            <EvolutionStep label="Início" nivel={1} />
+            <EvolutionStep label="Aventureiro" nivel={5} />
+            <EvolutionStep label="Explorador" nivel={10} />
           </div>
-        </div>
-      </div>
+        </section>
 
-      <div className="create-tabs">
-        <button
-          type="button"
-          className={aba === 'roupas' ? 'active' : ''}
-          onClick={() => setAba('roupas')}
-        >
-          👕 Roupas
-        </button>
+        <section className="create-options">
+          <div className="create-tabs">
+            {Object.keys(opcoes).map((item) => (
+              <button
+                key={item}
+                type="button"
+                className={aba === item ? 'active' : ''}
+                onClick={() => setAba(item)}
+              >
+                {nomeDaAba(item)}
+              </button>
+            ))}
+          </div>
 
-        <button
-          type="button"
-          className={aba === 'cabelos' ? 'active' : ''}
-          onClick={() => setAba('cabelos')}
-        >
-          💇 Cabelos
-        </button>
+          <div className="item-grid">
+            {opcoesAba.map((item) => {
+              const bloqueado = item.nivelMinimo > maiorNivel
+              const ativo = personagem[campo] === item.id
 
-        <button
-          type="button"
-          className={aba === 'olhos' ? 'active' : ''}
-          onClick={() => setAba('olhos')}
-        >
-          👁️ Olhos
-        </button>
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={ativo ? 'item-card active' : 'item-card'}
+                  disabled={bloqueado}
+                  onClick={() => onCampo(campo, item.id)}
+                >
+                  <ItemIcon tipo={aba} id={item.id} />
+                  <strong>{item.nome}</strong>
+                  <span>
+                    {bloqueado
+                      ? `Libera no nível ${item.nivelMinimo}`
+                      : 'Disponível'}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
 
-        <button
-          type="button"
-          className={aba === 'sapatos' ? 'active' : ''}
-          onClick={() => setAba('sapatos')}
-        >
-          👟 Sapatos
-        </button>
-
-        <button
-          type="button"
-          className={aba === 'acessorios' ? 'active' : ''}
-          onClick={() => setAba('acessorios')}
-        >
-          👓 Acessórios
-        </button>
-      </div>
-
-      <div className="item-grid">
-        {opcoesAba.map((item) => {
-          const bloqueado = maiorNivel < item.nivelMinimo
-          const campo = campoPorAba(aba)
-          const ativo = personagem[campo] === item.id
-
-          return (
-            <button
-              key={item.id}
-              type="button"
-              className={ativo ? 'active' : ''}
-              disabled={bloqueado}
-              onClick={() => onCampo(campo, item.id)}
-            >
-              <ItemIcon tipo={aba} id={item.id} />
-              <strong>{item.nome}</strong>
-
-              {bloqueado ? (
-                <span>Nv. {item.nivelMinimo}</span>
-              ) : ativo ? (
-                <span>✓</span>
-              ) : null}
+          <div className="create-actions">
+            <button type="button" onClick={onVoltar}>
+              Voltar
             </button>
-          )
-        })}
-      </div>
 
-      <div className="screen-actions create-actions">
-        <button type="button" onClick={onVoltar}>
-          ← Voltar
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            const aleatorio = gerarPersonagemAleatorio()
-            onCampo('roupa', aleatorio.roupa)
-            onCampo('cabelo', aleatorio.cabelo)
-            onCampo('olhos', aleatorio.olhos)
-            onCampo('sapato', aleatorio.sapato)
-            onCampo('acessorio', aleatorio.acessorio)
-          }}
-        >
-          🎲 Aleatório
-        </button>
-
-        <button type="button" className="yellow" onClick={onJogar}>
-          ▶ Play
-        </button>
+            <button type="button" className="yellow" onClick={onJogar}>
+              Jogar agora
+            </button>
+          </div>
+        </section>
       </div>
     </section>
   )
 }
 
-function TelaJogo({ personagem, onVoltar, onNivel }) {
+function TelaJogo({
+  personagem,
+  faseInicialIndex,
+  pontosIniciais,
+  onVoltar,
+  onNivel,
+  onProgresso
+}) {
   return (
-    <section className="aventura-only-game">
+    <section className="aventura-game-screen">
       <VilaBlocos3D
         personagemExterno={personagem}
+        faseInicialIndex={faseInicialIndex}
+        pontosIniciais={pontosIniciais}
         onVoltarMenu={onVoltar}
         onNivelChange={onNivel}
+        onProgresso={onProgresso}
       />
     </section>
   )
 }
 
-function BonecoPixel({ personagem, grande = false, gigante = false }) {
+function BonecoPixel({ personagem = {}, grande = false }) {
   return (
-    <div
-      className={[
-        'pixel-boneco',
-        personagem.roupa,
-        personagem.cabelo,
-        personagem.olhos,
-        personagem.sapato,
-        personagem.acessorio,
-        grande ? 'grande' : '',
-        gigante ? 'gigante' : ''
-      ].join(' ')}
-    >
-      <div className="p-cabelo" />
-      <div className="p-cabeca">
-        <span className="p-olho esquerdo" />
-        <span className="p-olho direito" />
-        <span className="p-boca" />
-        {personagem.acessorio === 'oculos' && <span className="p-oculos" />}
+    <div className={grande ? 'boneco-pixel grande' : 'boneco-pixel'}>
+      <div className={`boneco-cabelo ${personagem.cabelo || 'castanho'}`} />
+
+      <div className="boneco-cabeca">
+        <span className={`olho ${personagem.olhos || 'castanho'}`} />
+        <span className={`olho ${personagem.olhos || 'castanho'}`} />
+        <span className="boca" />
       </div>
 
-      <div className="p-corpo">
-        <span className="p-braco esquerdo" />
-        <span className="p-tronco" />
-        <span className="p-braco direito" />
-      </div>
+      <div className={`boneco-corpo ${personagem.roupa || 'azul'}`} />
 
-      <div className="p-pernas">
+      <div className="boneco-bracos">
         <span />
         <span />
       </div>
+
+      <div className="boneco-pernas">
+        <span className={personagem.sapato || 'preto'} />
+        <span className={personagem.sapato || 'preto'} />
+      </div>
+
+      {personagem.acessorio && personagem.acessorio !== 'nenhum' && (
+        <span className={`boneco-acessorio ${personagem.acessorio}`} />
+      )}
     </div>
   )
 }
 
-function MiniHead({ personagem }) {
+function MiniHead({ personagem = {} }) {
   return (
-    <div className={`mini-head ${personagem.cabelo}`}>
+    <div className={`mini-head ${personagem.cabelo || 'castanho'}`}>
       <span />
     </div>
   )
@@ -645,11 +761,22 @@ function campoPorAba(aba) {
   if (aba === 'cabelos') return 'cabelo'
   if (aba === 'olhos') return 'olhos'
   if (aba === 'sapatos') return 'sapato'
+
   return 'acessorio'
 }
 
+function nomeDaAba(aba) {
+  if (aba === 'roupas') return 'Roupas'
+  if (aba === 'cabelos') return 'Cabelos'
+  if (aba === 'olhos') return 'Olhos'
+  if (aba === 'sapatos') return 'Sapatos'
+
+  return 'Acessórios'
+}
+
 function gerarPersonagemAleatorio() {
-  const escolher = (lista) => lista[Math.floor(Math.random() * lista.length)].id
+  const escolher = (lista) =>
+    lista[Math.floor(Math.random() * lista.length)].id
 
   return {
     roupa: escolher(opcoesCriacao.roupas.filter((item) => item.nivelMinimo === 1)),
@@ -660,9 +787,27 @@ function gerarPersonagemAleatorio() {
   }
 }
 
-function carregarPersonagemSalvo() {
+function obterChaveProgresso(perfil) {
+  if (perfil?.id) {
+    return `${PROGRESS_BASE_KEY}_${perfil.id}`
+  }
+
+  return `${PROGRESS_BASE_KEY}_visitante`
+}
+
+function carregarProgressoSalvo(perfil) {
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY))
+    const dados = localStorage.getItem(obterChaveProgresso(perfil))
+    return dados ? JSON.parse(dados) : null
+  } catch {
+    return null
+  }
+}
+
+function carregarLegadoSalvo() {
+  try {
+    const dados = localStorage.getItem(STORAGE_LEGADO_KEY)
+    return dados ? JSON.parse(dados) : null
   } catch {
     return null
   }
