@@ -9,6 +9,8 @@ import nossosProjetosImg from '../../assets/nossosProjetos1.png'
 import transparenciaImg from '../../assets/transparencia1.png'
 import quemSomos from '../../assets/quemSomos1.png'
 import doeAgoraImg from '../../assets/doeAgora.png'
+import instagramLarbatista from '../../assets/instagramLarbatista.png'
+import facebookLarbatista from '../../assets/facebooklarbatista.png'
 import HeroNewsCarousel from '../../components/news/HeroNewsCarousel'
 
 import { listarNoticias } from '../../services/noticiasService'
@@ -500,8 +502,8 @@ function Home() {
 
           <div className="numbers-section">
             <div>
-              <strong>350+</strong>
-              <span>Crianças e jovens acolhidos</span>
+              <strong>70+</strong>
+              <span>Crianças e jovens acolhidos por ano</span>
             </div>
 
             <div>
@@ -515,7 +517,7 @@ function Home() {
             </div>
 
             <div>
-              <strong>15+</strong>
+              <strong>70+</strong>
               <span>Anos de história e transformação</span>
             </div>
           </div>
@@ -551,8 +553,8 @@ function Home() {
             type="Instagram"
             handle="@larbatistaalbertinemeador"
             href={INSTAGRAM_URL}
-            image={quemSomos}
-            alt="Prévia do Instagram do Lar Batista"
+            image={instagramLarbatista}
+            alt="Imagem oficial do Instagram do Lar Batista"
             button="Ver no Instagram →"
           />
 
@@ -560,8 +562,8 @@ function Home() {
             type="Facebook"
             handle="/larbatistaam"
             href={FACEBOOK_URL}
-            image={heroImg}
-            alt="Prévia do Facebook do Lar Batista"
+            image={facebookLarbatista}
+            alt="Página oficial do Facebook do Lar Batista"
             button="Ver no Facebook →"
           />
         </div>
