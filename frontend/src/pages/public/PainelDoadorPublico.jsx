@@ -5,19 +5,30 @@ import { listarDoacoes } from '../../services/doacoesService'
 import logoLar from '../../assets/logo-lar.jpg'
 import { registrarInteracao } from '../../services/analyticsService'
 
+import {
+  solicitarCodigoRecuperacao,
+  redefinirSenhaDoador
+} from '../../services/doadorAuthService'
+
 /*
   PÁGINA: PAINEL DO DOADOR
 
   Objetivo desta versão:
   - Manter ações principais do painel.
-  - Adicionar campo "Gênero" no cadastro do doador.
-  - Permitir visualizar e editar gênero.
-  - Manter histórico de doações e comprovante.
-  - Atualizar localStorage para compatibilidade com o sistema atual.
+  - Manter atualização de cadastro.
+  - Manter histórico de doações.
+  - Manter comprovante.
+  - Alterar senha dentro do próprio painel.
+  - Enviar código de verificação por e-mail.
+  - Bloquear reenvio por 3 minutos e 20 segundos.
+  - Depois liberar como "Reenviar código de verificação".
 */
 
 const DOADORES_KEY = 'doadores_lar_batista'
 const DOADOR_LOGADO_KEY = 'doador_logado_lar_batista'
+
+const TEMPO_REENVIO_CODIGO = 200
+const BASE_COOLDOWN_SENHA_PAINEL_KEY = 'painel_doador_senha_ultimo_envio'
 
 const OPCOES_GENERO = [
   'Prefiro não dizer',
@@ -38,6 +49,7 @@ function PainelDoadorPublico() {
   const [aba, setAba] = useState('')
   const [editando, setEditando] = useState(false)
   const [mensagem, setMensagem] = useState('')
+  const [tipoMensagem, setTipoMensagem] = useState('sucesso')
 
   const [nome, setNome] = useState('')
   const [telefone, setTelefone] = useState('')
@@ -47,11 +59,13 @@ function PainelDoadorPublico() {
   const [cidade, setCidade] = useState('')
   const [estado, setEstado] = useState('')
 
-  const [senhaAtual, setSenhaAtual] = useState('')
   const [novaSenha, setNovaSenha] = useState('')
   const [confirmarSenha, setConfirmarSenha] = useState('')
-  const [codigoRecuperacao, setCodigoRecuperacao] = useState('')
   const [codigoDigitado, setCodigoDigitado] = useState('')
+
+  const [segundosReenvio, setSegundosReenvio] = useState(0)
+  const [carregandoCodigo, setCarregandoCodigo] = useState(false)
+  const [carregandoSenha, setCarregandoSenha] = useState(false)
 
   useEffect(() => {
     const logado = localStorage.getItem(DOADOR_LOGADO_KEY)
@@ -73,6 +87,22 @@ function PainelDoadorPublico() {
     setEstado(dados.estado || '')
   }, [navigate])
 
+  /*
+    Contador do botão de reenvio do código.
+    Mesmo se atualizar a página, o tempo continua porque fica salvo no localStorage.
+  */
+  useEffect(() => {
+    function atualizarContador() {
+      setSegundosReenvio(calcularSegundosRestantesSenha(email))
+    }
+
+    atualizarContador()
+
+    const intervalo = setInterval(atualizarContador, 1000)
+
+    return () => clearInterval(intervalo)
+  }, [email, aba])
+
   function registrarAcao() {
     try {
       registrarInteracao()
@@ -81,6 +111,16 @@ function PainelDoadorPublico() {
         Não interrompe o painel se o analytics falhar.
       */
     }
+  }
+
+  function mostrarSucesso(texto) {
+    setTipoMensagem('sucesso')
+    setMensagem(texto)
+  }
+
+  function mostrarErro(texto) {
+    setTipoMensagem('erro')
+    setMensagem(texto)
   }
 
   /*
@@ -93,17 +133,17 @@ function PainelDoadorPublico() {
     registrarAcao()
 
     if (!nome.trim()) {
-      setMensagem('Informe o nome ou razão social.')
+      mostrarErro('Informe o nome ou razão social.')
       return
     }
 
     if (!email.trim()) {
-      setMensagem('Informe o e-mail.')
+      mostrarErro('Informe o e-mail.')
       return
     }
 
     if (!genero.trim()) {
-      setMensagem('Selecione o gênero ou marque Prefiro não dizer.')
+      mostrarErro('Selecione o gênero ou marque Prefiro não dizer.')
       return
     }
 
@@ -132,73 +172,128 @@ function PainelDoadorPublico() {
 
     setDoador(atualizado)
     setEditando(false)
-    setMensagem('Cadastro atualizado com sucesso.')
+    mostrarSucesso('Cadastro atualizado com sucesso.')
   }
 
   /*
-    Mantido por compatibilidade, embora o fluxo mais seguro de senha
-    esteja no login com envio de código por e-mail.
+    Envia o código de verificação por e-mail usando o backend.
+    Este é o mesmo fluxo usado na tela de recuperação de senha.
   */
-  function gerarCodigoRecuperacao() {
+  async function enviarCodigoSenhaPainel() {
     registrarAcao()
+    setMensagem('')
 
-    const codigo = String(Math.floor(100000 + Math.random() * 900000))
+    const emailDoador = email.trim().toLowerCase()
 
-    setCodigoRecuperacao(codigo)
-    setMensagem(
-      `Código de recuperação gerado: ${codigo}. Em produção real, ele seria enviado para ${email || telefone}.`
-    )
+    if (!emailDoador) {
+      mostrarErro('E-mail do doador não encontrado.')
+      return
+    }
+
+    const restante = calcularSegundosRestantesSenha(emailDoador)
+
+    if (restante > 0) {
+      mostrarErro(
+        `Aguarde ${formatarTempoReenvioSenha(restante)} para reenviar o código.`
+      )
+      return
+    }
+
+    try {
+      setCarregandoCodigo(true)
+
+      await solicitarCodigoRecuperacao(emailDoador)
+
+      registrarEnvioCodigoSenha(emailDoador)
+      setSegundosReenvio(TEMPO_REENVIO_CODIGO)
+
+      mostrarSucesso(
+        'Código de verificação enviado para o e-mail cadastrado. Confira sua caixa de entrada e spam.'
+      )
+    } catch (error) {
+      mostrarErro(
+        error?.response?.data?.mensagem ||
+          error?.data?.mensagem ||
+          error?.mensagem ||
+          error?.message ||
+          'Não foi possível enviar o código de verificação.'
+      )
+    } finally {
+      setCarregandoCodigo(false)
+    }
   }
 
-  function alterarSenha(e) {
+  /*
+    Altera a senha usando:
+    - e-mail do doador;
+    - código recebido por e-mail;
+    - nova senha.
+
+    Não usamos mais senha atual aqui, porque a validação segura é feita
+    pelo código enviado por e-mail.
+  */
+  async function alterarSenha(e) {
     e.preventDefault()
     registrarAcao()
+    setMensagem('')
 
-    if (!senhaAtual.trim()) {
-      setMensagem('Informe a senha atual.')
+    const emailDoador = email.trim().toLowerCase()
+
+    if (!emailDoador) {
+      mostrarErro('E-mail do doador não encontrado.')
       return
     }
 
     if (!codigoDigitado.trim()) {
-      setMensagem('Informe o código de recuperação.')
+      mostrarErro('Informe o código enviado por e-mail.')
       return
     }
 
-    if (codigoDigitado !== codigoRecuperacao) {
-      setMensagem('Código de recuperação inválido.')
+    if (!novaSenha.trim()) {
+      mostrarErro('Informe a nova senha.')
       return
     }
 
-    if (novaSenha.length < 6) {
-      setMensagem('A nova senha deve ter no mínimo 6 caracteres.')
+    if (!senhaFortePainel(novaSenha.trim())) {
+      mostrarErro(
+        'A nova senha deve ter no mínimo 8 caracteres, letra maiúscula, minúscula, número e caractere especial.'
+      )
       return
     }
 
-    if (novaSenha !== confirmarSenha) {
-      setMensagem('A confirmação da senha não confere.')
+    if (novaSenha.trim() !== confirmarSenha.trim()) {
+      mostrarErro('A confirmação da senha não confere.')
       return
     }
 
-    const atualizado = {
-      ...doador,
-      senha: novaSenha
+    try {
+      setCarregandoSenha(true)
+
+      await redefinirSenhaDoador({
+        email: emailDoador,
+        codigo: codigoDigitado.trim(),
+        novaSenha: novaSenha.trim()
+      })
+
+      removerCooldownSenha(emailDoador)
+
+      setNovaSenha('')
+      setConfirmarSenha('')
+      setCodigoDigitado('')
+      setSegundosReenvio(0)
+
+      mostrarSucesso('Senha alterada com sucesso.')
+    } catch (error) {
+      mostrarErro(
+        error?.response?.data?.mensagem ||
+          error?.data?.mensagem ||
+          error?.mensagem ||
+          error?.message ||
+          'Não foi possível alterar a senha. Verifique o código recebido.'
+      )
+    } finally {
+      setCarregandoSenha(false)
     }
-
-    const lista = JSON.parse(localStorage.getItem(DOADORES_KEY)) || []
-    const novaLista = lista.map((item) =>
-      item.id === atualizado.id ? atualizado : item
-    )
-
-    localStorage.setItem(DOADORES_KEY, JSON.stringify(novaLista))
-    localStorage.setItem(DOADOR_LOGADO_KEY, JSON.stringify(atualizado))
-
-    setDoador(atualizado)
-    setSenhaAtual('')
-    setNovaSenha('')
-    setConfirmarSenha('')
-    setCodigoDigitado('')
-    setCodigoRecuperacao('')
-    setMensagem('Senha alterada com sucesso.')
   }
 
   /*
@@ -210,6 +305,11 @@ function PainelDoadorPublico() {
 
     const janela = window.open('', '_blank')
     const municipioDoador = doadorLogado.cidade || doadorLogado.municipio || '-'
+
+    if (!janela) {
+      mostrarErro('Não foi possível abrir a janela do comprovante.')
+      return
+    }
 
     janela.document.write(`
       <html>
@@ -428,9 +528,8 @@ function PainelDoadorPublico() {
               style={styles.botao}
               onClick={() => {
                 registrarAcao()
-                localStorage.setItem('email_recuperacao_doador', doador.email || '')
-                localStorage.removeItem(DOADOR_LOGADO_KEY)
-                navigate('/doador/login')
+                setAba('senha')
+                setMensagem('')
               }}
             >
               Alterar senha
@@ -536,32 +635,48 @@ function PainelDoadorPublico() {
               <h2 style={styles.sectionTitle}>Alterar senha</h2>
 
               <p style={styles.infoText}>
-                Para segurança, gere um código de recuperação pelo e-mail ou telefone cadastrado.
+                Por segurança, enviaremos um código de verificação para o
+                e-mail cadastrado no painel.
               </p>
 
-              <button
-                type="button"
-                style={styles.recoveryButton}
-                onClick={gerarCodigoRecuperacao}
-              >
-                Gerar código por e-mail/telefone
-              </button>
-
               <form onSubmit={alterarSenha} style={styles.form}>
-                <label style={styles.label}>Senha atual</label>
+                <label style={styles.label}>E-mail cadastrado</label>
                 <input
-                  type="password"
-                  value={senhaAtual}
-                  onChange={(e) => setSenhaAtual(e.target.value)}
-                  style={styles.input}
+                  value={email}
+                  disabled
+                  style={styles.inputDisabled}
                 />
 
-                <label style={styles.label}>Código de recuperação</label>
+                <label style={styles.label}>Código recebido por e-mail</label>
                 <input
                   value={codigoDigitado}
                   onChange={(e) => setCodigoDigitado(e.target.value)}
                   style={styles.input}
+                  placeholder="Ex: 123456"
                 />
+
+                <button
+                  type="button"
+                  style={
+                    segundosReenvio > 0 || carregandoCodigo
+                      ? styles.recoveryButtonDisabled
+                      : styles.recoveryButton
+                  }
+                  onClick={enviarCodigoSenhaPainel}
+                  disabled={segundosReenvio > 0 || carregandoCodigo}
+                >
+                  {textoBotaoCodigoSenha({
+                    carregandoCodigo,
+                    segundosReenvio,
+                    email
+                  })}
+                </button>
+
+                <p style={styles.infoTextSmall}>
+                  O código será enviado para o e-mail cadastrado. Depois do
+                  envio, aguarde 3 minutos e 20 segundos para solicitar outro
+                  código.
+                </p>
 
                 <label style={styles.label}>Nova senha</label>
                 <input
@@ -569,6 +684,7 @@ function PainelDoadorPublico() {
                   value={novaSenha}
                   onChange={(e) => setNovaSenha(e.target.value)}
                   style={styles.input}
+                  placeholder="Nova senha forte"
                 />
 
                 <label style={styles.label}>Confirmar nova senha</label>
@@ -577,10 +693,19 @@ function PainelDoadorPublico() {
                   value={confirmarSenha}
                   onChange={(e) => setConfirmarSenha(e.target.value)}
                   style={styles.input}
+                  placeholder="Confirme a nova senha"
                 />
 
-                <button type="submit" style={styles.saveButton}>
-                  Confirmar alteração de senha
+                <button
+                  type="submit"
+                  style={
+                    carregandoSenha
+                      ? styles.saveButtonDisabled
+                      : styles.saveButton
+                  }
+                  disabled={carregandoSenha}
+                >
+                  {carregandoSenha ? 'Alterando senha...' : 'Confirmar nova senha'}
                 </button>
               </form>
             </section>
@@ -634,10 +759,84 @@ function PainelDoadorPublico() {
             </section>
           )}
 
-          {mensagem && <p style={styles.message}>{mensagem}</p>}
+          {mensagem && (
+            <p
+              style={
+                tipoMensagem === 'erro'
+                  ? styles.errorMessage
+                  : styles.successMessage
+              }
+            >
+              {mensagem}
+            </p>
+          )}
         </section>
       </div>
     </main>
+  )
+}
+
+/*
+  Funções auxiliares da recuperação de senha no painel.
+*/
+
+function obterChaveCooldownSenha(email) {
+  const emailSeguro = String(email || 'geral')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9@._-]/g, '-')
+
+  return `${BASE_COOLDOWN_SENHA_PAINEL_KEY}_${emailSeguro}`
+}
+
+function calcularSegundosRestantesSenha(email) {
+  const chave = obterChaveCooldownSenha(email)
+  const ultimoEnvio = Number(localStorage.getItem(chave))
+
+  if (!ultimoEnvio) return 0
+
+  const segundosPassados = Math.floor((Date.now() - ultimoEnvio) / 1000)
+  const restante = TEMPO_REENVIO_CODIGO - segundosPassados
+
+  return Math.max(0, restante)
+}
+
+function registrarEnvioCodigoSenha(email) {
+  localStorage.setItem(obterChaveCooldownSenha(email), String(Date.now()))
+}
+
+function removerCooldownSenha(email) {
+  localStorage.removeItem(obterChaveCooldownSenha(email))
+}
+
+function existeEnvioAnteriorSenha(email) {
+  return Boolean(localStorage.getItem(obterChaveCooldownSenha(email)))
+}
+
+function formatarTempoReenvioSenha(segundos) {
+  const minutos = Math.floor(segundos / 60)
+  const resto = segundos % 60
+
+  return `${String(minutos).padStart(2, '0')}:${String(resto).padStart(2, '0')}`
+}
+
+function textoBotaoCodigoSenha({ carregandoCodigo, segundosReenvio, email }) {
+  if (carregandoCodigo) return 'Enviando código...'
+
+  if (segundosReenvio > 0) {
+    return `Aguarde ${formatarTempoReenvioSenha(segundosReenvio)} para reenviar`
+  }
+
+  if (existeEnvioAnteriorSenha(email)) {
+    return 'Reenviar código de verificação'
+  }
+
+  return 'Enviar código por e-mail'
+}
+
+function senhaFortePainel(valor) {
+  return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.#_-]).{8,}$/.test(
+    valor
   )
 }
 
@@ -756,6 +955,16 @@ const styles = {
     fontWeight: '900',
     cursor: 'pointer'
   },
+  saveButtonDisabled: {
+    marginTop: '20px',
+    background: '#94a3b8',
+    color: '#fff',
+    border: 'none',
+    padding: '13px',
+    borderRadius: '12px',
+    fontWeight: '900',
+    cursor: 'not-allowed'
+  },
   recoveryButton: {
     background: '#0B5FC3',
     color: '#fff',
@@ -763,11 +972,29 @@ const styles = {
     padding: '12px 18px',
     borderRadius: '999px',
     fontWeight: '900',
-    cursor: 'pointer'
+    cursor: 'pointer',
+    marginTop: '12px'
+  },
+  recoveryButtonDisabled: {
+    background: '#94a3b8',
+    color: '#fff',
+    border: 'none',
+    padding: '12px 18px',
+    borderRadius: '999px',
+    fontWeight: '900',
+    cursor: 'not-allowed',
+    marginTop: '12px'
   },
   infoText: {
     color: '#475569',
     lineHeight: '1.6'
+  },
+  infoTextSmall: {
+    color: '#64748b',
+    lineHeight: '1.5',
+    fontSize: '13px',
+    fontWeight: '700',
+    marginTop: '10px'
   },
   empty: {
     color: '#64748b',
@@ -805,12 +1032,20 @@ const styles = {
     fontWeight: '900',
     cursor: 'pointer'
   },
-  message: {
+  successMessage: {
     marginTop: '18px',
     padding: '12px',
     borderRadius: '10px',
     background: '#dcfce7',
     color: '#166534',
+    fontWeight: '900'
+  },
+  errorMessage: {
+    marginTop: '18px',
+    padding: '12px',
+    borderRadius: '10px',
+    background: '#fee2e2',
+    color: '#991b1b',
     fontWeight: '900'
   }
 }
