@@ -1020,3 +1020,981 @@
     font-size: 12px;
   }
 }
+/* =========================================================
+   MINI JOGOS ATIVOS
+========================================================= */
+
+.mini-game-card {
+  background: #ffffff;
+  border: 1px solid #dbeafe;
+  border-radius: 24px;
+  padding: 26px;
+  box-shadow: 0 16px 36px rgba(11, 61, 145, 0.1);
+}
+
+.mini-game-top {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 18px;
+  align-items: start;
+  margin-bottom: 22px;
+}
+
+.mini-game-top h3 {
+  color: #0b3d91;
+  margin: 0 0 8px;
+  font-size: clamp(1.5rem, 3vw, 2.1rem);
+}
+
+.mini-game-top p {
+  color: #64748b;
+  font-weight: 700;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.mini-game-progress {
+  min-width: 72px;
+  min-height: 72px;
+  border-radius: 22px;
+  background: #0b4fa3;
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  font-weight: 950;
+  font-size: 1.15rem;
+  box-shadow: 0 12px 24px rgba(11, 79, 163, 0.18);
+}
+
+.quiz-question-box {
+  background: #f8fbff;
+  border: 1px solid #dbeafe;
+  border-radius: 22px;
+  padding: 22px;
+}
+
+.quiz-question-box > strong {
+  display: block;
+  color: #0b2447;
+  font-size: 1.2rem;
+  line-height: 1.45;
+  margin-bottom: 18px;
+}
+
+.quiz-options {
+  display: grid;
+  gap: 12px;
+}
+
+.quiz-option {
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid #bfdbfe;
+  background: #ffffff;
+  color: #0b2447;
+  border-radius: 14px;
+  padding: 13px 14px;
+  text-align: left;
+  font-weight: 900;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.quiz-option:hover {
+  transform: translateY(-2px);
+  border-color: #0b4fa3;
+  box-shadow: 0 8px 18px rgba(11, 61, 145, 0.09);
+}
+
+.quiz-option.correct {
+  background: #dcfce7;
+  border-color: #22c55e;
+  color: #166534;
+}
+
+.quiz-option.wrong {
+  background: #fee2e2;
+  border-color: #ef4444;
+  color: #991b1b;
+}
+
+.quiz-feedback {
+  margin-top: 18px;
+  background: #ffffff;
+  border: 1px solid #e5edf8;
+  border-radius: 18px;
+  padding: 18px;
+}
+
+.quiz-feedback strong {
+  color: #0b3d91;
+}
+
+.quiz-feedback p {
+  color: #475569;
+  line-height: 1.6;
+  font-weight: 700;
+}
+
+.quiz-feedback button,
+.mini-game-result button,
+.mini-game-actions button {
+  background: #0b4fa3;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.mini-game-result {
+  text-align: center;
+  background: #f8fbff;
+  border: 1px solid #dbeafe;
+  border-radius: 22px;
+  padding: 28px;
+}
+
+.mini-game-result.compact {
+  margin-top: 20px;
+}
+
+.mini-game-result > span {
+  display: block;
+  font-size: 4rem;
+  margin-bottom: 12px;
+}
+
+.mini-game-result h3 {
+  color: #0b3d91;
+  margin: 0 0 10px;
+  font-size: 2rem;
+}
+
+.mini-game-result p {
+  color: #475569;
+  line-height: 1.7;
+  font-weight: 700;
+}
+
+.mini-game-score {
+  display: inline-flex;
+  margin: 10px 0;
+  background: #ffc928;
+  color: #06295c;
+  border-radius: 999px;
+  padding: 10px 18px;
+  font-size: 1.2rem;
+  font-weight: 950;
+}
+
+.mini-game-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.mini-game-actions a {
+  background: #ffc928;
+  color: #06295c;
+  text-decoration: none;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-weight: 950;
+}
+
+/* MEMÓRIA */
+
+.memory-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.memory-card {
+  min-height: 112px;
+  border: 1px solid #bfdbfe;
+  background: linear-gradient(135deg, #0b4fa3, #07336f);
+  color: #ffffff;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  gap: 6px;
+  padding: 12px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.memory-card:hover {
+  transform: translateY(-3px);
+}
+
+.memory-card.flipped {
+  background: #ffffff;
+  color: #0b3d91;
+  border-color: #ffc928;
+}
+
+.memory-card span {
+  font-size: 2.4rem;
+}
+
+.memory-card small {
+  font-weight: 950;
+}
+
+/* CAÇA-PALAVRAS */
+
+.word-game-layout {
+  display: grid;
+  grid-template-columns: 1fr 260px;
+  gap: 22px;
+  align-items: start;
+}
+
+.word-board {
+  background: #0b2447;
+  color: #ffffff;
+  border-radius: 22px;
+  padding: 18px;
+  display: grid;
+  gap: 6px;
+  overflow-x: auto;
+}
+
+.word-row {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 6px;
+  min-width: 420px;
+}
+
+.word-row span {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 10px;
+  font-weight: 950;
+  font-size: 1rem;
+}
+
+.word-list {
+  display: grid;
+  gap: 10px;
+}
+
+.word-list button {
+  min-height: 44px;
+  border: 1px solid #bfdbfe;
+  background: #ffffff;
+  color: #0b3d91;
+  border-radius: 999px;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.word-list button.found {
+  background: #dcfce7;
+  border-color: #22c55e;
+  color: #166534;
+}
+
+/* RESPONSIVO DOS MINI JOGOS */
+
+@media (max-width: 800px) {
+  .mini-game-top,
+  .word-game-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .mini-game-progress {
+    width: 100%;
+    min-height: 54px;
+    border-radius: 16px;
+  }
+
+  .memory-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .mini-game-card {
+    padding: 18px;
+  }
+
+  .memory-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .memory-card {
+    min-height: 96px;
+  }
+
+  .mini-game-actions {
+    flex-direction: column;
+  }
+
+  .mini-game-actions button,
+  .mini-game-actions a {
+    width: 100%;
+    text-align: center;
+  }
+}
+/* =========================================================
+   MINI JOGOS ATIVOS
+========================================================= */
+
+.mini-game-card {
+  background: #ffffff;
+  border: 1px solid #dbeafe;
+  border-radius: 24px;
+  padding: 26px;
+  box-shadow: 0 16px 36px rgba(11, 61, 145, 0.1);
+}
+
+.mini-game-top {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 18px;
+  align-items: start;
+  margin-bottom: 22px;
+}
+
+.mini-game-top h3 {
+  color: #0b3d91;
+  margin: 0 0 8px;
+  font-size: clamp(1.5rem, 3vw, 2.1rem);
+}
+
+.mini-game-top p {
+  color: #64748b;
+  font-weight: 700;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.mini-game-progress {
+  min-width: 72px;
+  min-height: 72px;
+  border-radius: 22px;
+  background: #0b4fa3;
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  font-weight: 950;
+  font-size: 1.15rem;
+  box-shadow: 0 12px 24px rgba(11, 79, 163, 0.18);
+}
+
+.quiz-question-box {
+  background: #f8fbff;
+  border: 1px solid #dbeafe;
+  border-radius: 22px;
+  padding: 22px;
+}
+
+.quiz-question-box > strong {
+  display: block;
+  color: #0b2447;
+  font-size: 1.2rem;
+  line-height: 1.45;
+  margin-bottom: 18px;
+}
+
+.quiz-options {
+  display: grid;
+  gap: 12px;
+}
+
+.quiz-option {
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid #bfdbfe;
+  background: #ffffff;
+  color: #0b2447;
+  border-radius: 14px;
+  padding: 13px 14px;
+  text-align: left;
+  font-weight: 900;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.quiz-option:hover {
+  transform: translateY(-2px);
+  border-color: #0b4fa3;
+  box-shadow: 0 8px 18px rgba(11, 61, 145, 0.09);
+}
+
+.quiz-option.correct {
+  background: #dcfce7;
+  border-color: #22c55e;
+  color: #166534;
+}
+
+.quiz-option.wrong {
+  background: #fee2e2;
+  border-color: #ef4444;
+  color: #991b1b;
+}
+
+.quiz-feedback {
+  margin-top: 18px;
+  background: #ffffff;
+  border: 1px solid #e5edf8;
+  border-radius: 18px;
+  padding: 18px;
+}
+
+.quiz-feedback strong {
+  color: #0b3d91;
+}
+
+.quiz-feedback p {
+  color: #475569;
+  line-height: 1.6;
+  font-weight: 700;
+}
+
+.quiz-feedback button,
+.mini-game-result button,
+.mini-game-actions button {
+  background: #0b4fa3;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.mini-game-result {
+  text-align: center;
+  background: #f8fbff;
+  border: 1px solid #dbeafe;
+  border-radius: 22px;
+  padding: 28px;
+}
+
+.mini-game-result.compact {
+  margin-top: 20px;
+}
+
+.mini-game-result > span {
+  display: block;
+  font-size: 4rem;
+  margin-bottom: 12px;
+}
+
+.mini-game-result h3 {
+  color: #0b3d91;
+  margin: 0 0 10px;
+  font-size: 2rem;
+}
+
+.mini-game-result p {
+  color: #475569;
+  line-height: 1.7;
+  font-weight: 700;
+}
+
+.mini-game-score {
+  display: inline-flex;
+  margin: 10px 0;
+  background: #ffc928;
+  color: #06295c;
+  border-radius: 999px;
+  padding: 10px 18px;
+  font-size: 1.2rem;
+  font-weight: 950;
+}
+
+.mini-game-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.mini-game-actions a {
+  background: #ffc928;
+  color: #06295c;
+  text-decoration: none;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-weight: 950;
+}
+
+/* MEMÓRIA */
+
+.memory-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.memory-card {
+  min-height: 112px;
+  border: 1px solid #bfdbfe;
+  background: linear-gradient(135deg, #0b4fa3, #07336f);
+  color: #ffffff;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  gap: 6px;
+  padding: 12px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.memory-card:hover {
+  transform: translateY(-3px);
+}
+
+.memory-card.flipped {
+  background: #ffffff;
+  color: #0b3d91;
+  border-color: #ffc928;
+}
+
+.memory-card span {
+  font-size: 2.4rem;
+}
+
+.memory-card small {
+  font-weight: 950;
+}
+
+/* CAÇA-PALAVRAS */
+
+.word-game-layout {
+  display: grid;
+  grid-template-columns: 1fr 260px;
+  gap: 22px;
+  align-items: start;
+}
+
+.word-board {
+  background: #0b2447;
+  color: #ffffff;
+  border-radius: 22px;
+  padding: 18px;
+  display: grid;
+  gap: 6px;
+  overflow-x: auto;
+}
+
+.word-row {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 6px;
+  min-width: 420px;
+}
+
+.word-row span {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 10px;
+  font-weight: 950;
+  font-size: 1rem;
+}
+
+.word-list {
+  display: grid;
+  gap: 10px;
+}
+
+.word-list button {
+  min-height: 44px;
+  border: 1px solid #bfdbfe;
+  background: #ffffff;
+  color: #0b3d91;
+  border-radius: 999px;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.word-list button.found {
+  background: #dcfce7;
+  border-color: #22c55e;
+  color: #166534;
+}
+
+/* RESPONSIVO DOS MINI JOGOS */
+
+@media (max-width: 800px) {
+  .mini-game-top,
+  .word-game-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .mini-game-progress {
+    width: 100%;
+    min-height: 54px;
+    border-radius: 16px;
+  }
+
+  .memory-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .mini-game-card {
+    padding: 18px;
+  }
+
+  .memory-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .memory-card {
+    min-height: 96px;
+  }
+
+  .mini-game-actions {
+    flex-direction: column;
+  }
+
+  .mini-game-actions button,
+  .mini-game-actions a {
+    width: 100%;
+    text-align: center;
+  }
+}
+/* =========================================================
+   MINI JOGOS ATIVOS
+========================================================= */
+
+.mini-game-card {
+  background: #ffffff;
+  border: 1px solid #dbeafe;
+  border-radius: 24px;
+  padding: 26px;
+  box-shadow: 0 16px 36px rgba(11, 61, 145, 0.1);
+}
+
+.mini-game-top {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 18px;
+  align-items: start;
+  margin-bottom: 22px;
+}
+
+.mini-game-top h3 {
+  color: #0b3d91;
+  margin: 0 0 8px;
+  font-size: clamp(1.5rem, 3vw, 2.1rem);
+}
+
+.mini-game-top p {
+  color: #64748b;
+  font-weight: 700;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.mini-game-progress {
+  min-width: 72px;
+  min-height: 72px;
+  border-radius: 22px;
+  background: #0b4fa3;
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  font-weight: 950;
+  font-size: 1.15rem;
+  box-shadow: 0 12px 24px rgba(11, 79, 163, 0.18);
+}
+
+.quiz-question-box {
+  background: #f8fbff;
+  border: 1px solid #dbeafe;
+  border-radius: 22px;
+  padding: 22px;
+}
+
+.quiz-question-box > strong {
+  display: block;
+  color: #0b2447;
+  font-size: 1.2rem;
+  line-height: 1.45;
+  margin-bottom: 18px;
+}
+
+.quiz-options {
+  display: grid;
+  gap: 12px;
+}
+
+.quiz-option {
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid #bfdbfe;
+  background: #ffffff;
+  color: #0b2447;
+  border-radius: 14px;
+  padding: 13px 14px;
+  text-align: left;
+  font-weight: 900;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.quiz-option:hover {
+  transform: translateY(-2px);
+  border-color: #0b4fa3;
+  box-shadow: 0 8px 18px rgba(11, 61, 145, 0.09);
+}
+
+.quiz-option.correct {
+  background: #dcfce7;
+  border-color: #22c55e;
+  color: #166534;
+}
+
+.quiz-option.wrong {
+  background: #fee2e2;
+  border-color: #ef4444;
+  color: #991b1b;
+}
+
+.quiz-feedback {
+  margin-top: 18px;
+  background: #ffffff;
+  border: 1px solid #e5edf8;
+  border-radius: 18px;
+  padding: 18px;
+}
+
+.quiz-feedback strong {
+  color: #0b3d91;
+}
+
+.quiz-feedback p {
+  color: #475569;
+  line-height: 1.6;
+  font-weight: 700;
+}
+
+.quiz-feedback button,
+.mini-game-result button,
+.mini-game-actions button {
+  background: #0b4fa3;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.mini-game-result {
+  text-align: center;
+  background: #f8fbff;
+  border: 1px solid #dbeafe;
+  border-radius: 22px;
+  padding: 28px;
+}
+
+.mini-game-result.compact {
+  margin-top: 20px;
+}
+
+.mini-game-result > span {
+  display: block;
+  font-size: 4rem;
+  margin-bottom: 12px;
+}
+
+.mini-game-result h3 {
+  color: #0b3d91;
+  margin: 0 0 10px;
+  font-size: 2rem;
+}
+
+.mini-game-result p {
+  color: #475569;
+  line-height: 1.7;
+  font-weight: 700;
+}
+
+.mini-game-score {
+  display: inline-flex;
+  margin: 10px 0;
+  background: #ffc928;
+  color: #06295c;
+  border-radius: 999px;
+  padding: 10px 18px;
+  font-size: 1.2rem;
+  font-weight: 950;
+}
+
+.mini-game-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.mini-game-actions a {
+  background: #ffc928;
+  color: #06295c;
+  text-decoration: none;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-weight: 950;
+}
+
+/* MEMÓRIA */
+
+.memory-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.memory-card {
+  min-height: 112px;
+  border: 1px solid #bfdbfe;
+  background: linear-gradient(135deg, #0b4fa3, #07336f);
+  color: #ffffff;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  gap: 6px;
+  padding: 12px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.memory-card:hover {
+  transform: translateY(-3px);
+}
+
+.memory-card.flipped {
+  background: #ffffff;
+  color: #0b3d91;
+  border-color: #ffc928;
+}
+
+.memory-card span {
+  font-size: 2.4rem;
+}
+
+.memory-card small {
+  font-weight: 950;
+}
+
+/* CAÇA-PALAVRAS */
+
+.word-game-layout {
+  display: grid;
+  grid-template-columns: 1fr 260px;
+  gap: 22px;
+  align-items: start;
+}
+
+.word-board {
+  background: #0b2447;
+  color: #ffffff;
+  border-radius: 22px;
+  padding: 18px;
+  display: grid;
+  gap: 6px;
+  overflow-x: auto;
+}
+
+.word-row {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 6px;
+  min-width: 420px;
+}
+
+.word-row span {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 10px;
+  font-weight: 950;
+  font-size: 1rem;
+}
+
+.word-list {
+  display: grid;
+  gap: 10px;
+}
+
+.word-list button {
+  min-height: 44px;
+  border: 1px solid #bfdbfe;
+  background: #ffffff;
+  color: #0b3d91;
+  border-radius: 999px;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.word-list button.found {
+  background: #dcfce7;
+  border-color: #22c55e;
+  color: #166534;
+}
+
+/* RESPONSIVO DOS MINI JOGOS */
+
+@media (max-width: 800px) {
+  .mini-game-top,
+  .word-game-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .mini-game-progress {
+    width: 100%;
+    min-height: 54px;
+    border-radius: 16px;
+  }
+
+  .memory-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .mini-game-card {
+    padding: 18px;
+  }
+
+  .memory-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .memory-card {
+    min-height: 96px;
+  }
+
+  .mini-game-actions {
+    flex-direction: column;
+  }
+
+  .mini-game-actions button,
+  .mini-game-actions a {
+    width: 100%;
+    text-align: center;
+  }
+}
